@@ -328,6 +328,8 @@ function utilInitialize()
 
   export PATH=${PATH}:${STACK_RUN_BIN}
 
+  export BASH_BIN=${PWD}/bash-bin
+
   logFinished ${idt} "utilInitialize"
 }
 
