@@ -82,13 +82,15 @@ function logForce()
 
 function logInfo()
 {
-  if [[ ${2} != "" && ${3} != "" ]]; then
-    LOG="-${2}: ${3}"
-  else
-    LOG="-${2}"
-  fi
-  if [[ ${LOG} != "" ]]; then
-    logMethod ${1} "${LOG}"
+  if [[ ${STACK_LOG} == 1 || ${STACK_LOG_VERBOSE} == 1 || ${STACK_LOG_VERBOSE_SUPER} == 1 ]]; then
+    if [[ ${2} != "" && ${3} != "" ]]; then
+      LOG="${2}: ${3}"
+    else
+      LOG="${2}"
+    fi
+    if [[ ${LOG} != "" ]]; then
+      logMethod ${1} "-${LOG}"
+    fi
   fi
 }
 
@@ -102,16 +104,21 @@ function logTarget()
   logInfo ${1} "target" "${2}"
 }
 
+function logMessage()
+{
+  logInfo ${1} "message" "${2}"
+}
+
+function logWarning()
+{
+  logInfo ${1} "warning" "${2}"
+}
+
 function logError()
 {
   if [[ ${2} != "" ]]; then
-    MSG="error: ${2}"
-    if [[ ${STACK_LOG} == 1 || ${STACK_LOG_VERBOSE} == 1 || ${STACK_LOG_VERBOSE_SUPER} == 1 ]]; then
-      logInfo ${1} "${MSG}"
-      log "${MSG}"
-    else
-      log "${MSG}"
-    fi
+    logInfo ${1} "error" "${2}"
+    log "error: ${2}"
   fi
 }
 
@@ -126,17 +133,16 @@ function logSuccess()
 
 function logStart()
 {
-  idt="$(toInt ${1})"
   logOut ${1} "${2}: started"
   if [[ ${3} != "" ]]; then
-    logInfo ${1} "message" "${3}"
+    logMessage ${1} "${3}"
   fi
 }
 
 function logFinished()
 {
   if [[ ${3} != "" ]]; then
-    logInfo ${1} "message" "${3}"
+    logMessage ${1} "${3}"
   fi
   logOut ${1} "${2}: finished"
 }
@@ -144,6 +150,7 @@ function logFinished()
 function runSource()
 {
   RUN_FILE=${2}
+  RUN_PARAMS=${3}
   idt="$(toInt ${1})"
   logStart ${idt} "runSource"
   logTarget ${idt} "${RUN_FILE}"
@@ -154,7 +161,7 @@ function runSource()
     logError ${idt} "run file not found"
   else
     chmod +x ${RUN_FILE}
-    source ${RUN_FILE}
+    source ${RUN_FILE} ${RUN_PARAMS}
     logSuccess ${idt}
     logFinished ${idt} "runSource"
     return 1
@@ -328,7 +335,7 @@ function utilInitialize()
 
   export PATH=${PATH}:${STACK_RUN_BIN}
 
-  export BASH_BIN=${PWD}/bash-bin
+  #export BASH_BIN=${PWD}/installer/bash-bin
 
   logFinished ${idt} "utilInitialize"
 }
@@ -336,39 +343,80 @@ function utilInitialize()
 function envsParserFile()
 {
   idt="$(toInt ${1})"
-  logStart ${idt} "envsParserFile"
   FILE=$2
+  logStart ${idt} "envsParserFile"
+  logTarget ${idt} "${FILE}"
   if [[ -f ${FILE} ]]; then
-    ENVSLIST=()
-    ENVSLIST+=($(printenv | grep STACK_ENVIRONMENT ))
-    ENVSLIST+=($(printenv | grep STACK_DOMAIN ))
-    ENVSLIST+=($(printenv | grep STACK_PROTOCOL ))
-    ENVSLIST+=($(printenv | grep STACK_SERVICE ))
-    ENVSLIST+=($(printenv | grep STACK_SERVICE_DNS ))
-    ENVSLIST+=($(printenv | grep STACK_RESOURCE ))
-    ENVSLIST+=($(printenv | grep STACK_NETWORK ))
-    ENVSLIST+=($(printenv | grep STACK_PROXY ))
-    ENVSLIST+=($(printenv | grep STACK_LOG ))
+    ENVSLIST=($(printenv))
+  
+    FILE_BACK=${FILE}-sed.bak
+    rm -rf ${FILE_BACK}
+    cp -r ${FILE} ${FILE_BACK}
 
-    logInfo ${idt} "replace-envs-in-${FILE}"
     for ENV in "${ENVSLIST[@]}"
     do
       ENV=(${ENV//=/ })
       replace="\${${ENV[0]}}"
       replacewith=${ENV[1]}
-      if [[ ${replace} == "" || ${replace} == "_" || ${replacewith} == ""  ]]; then
+      if [[ "$replacewith" == *"/"* ]]; then
         continue;
+      else
+        echo $(sed -i s/${replace}/${replacewith}/g ${FILE})&>/dev/null
       fi
-      FILE_BACK=${FILE}-sed.bak
-      rm -rf ${FILE_BACK}
-      cp -r ${FILE} ${FILE_BACK}
-      echo $(sed -i "s/${replace}/${replacewith}/g" ${FILE})&>/dev/null
     done
 
+    logSuccess ${idt}
     logFinished ${idt} "envsParserFile"
     return 1;
   fi
   logFinished ${idt} "envsParserFile"
+  return 0;
+}
+
+function envsToSimpleEnvs()
+{
+  idt="$(toInt ${1})"
+  FILE=$2
+  logStart ${idt} "envsToSimpleEnvs"
+  logTarget ${idt} "${FILE}"
+  if [[ -f ${FILE} ]]; then
+
+    FILE_BACK=${FILE}-sed.bak
+    rm -rf ${FILE_BACK}
+    cp -r ${FILE} ${FILE_BACK}
+
+    #REMOVE
+    ENVSLIST=()
+    ENVSLIST+=("#")
+    for PHRASE in "${ENVSLIST[@]}"
+    do
+      echo $(sed -i /${PHRASE}/d ${FILE})&>/dev/null
+    done
+
+    #EMPTY LINES
+    echo $(sed -i '/^$/d' ${FILE})&>/dev/null
+    
+
+    #REPLACE
+    ENVSLIST=()
+    ENVSLIST+=("export ")
+    ENVSLIST+=("export;")
+    for ENV in "${ENVSLIST[@]}"
+    do
+      ENV=(${ENV//=/ })
+      replace=${ENV[0]}
+      if [[ ${replace} == "" ]]; then
+        continue;
+      fi
+      echo "sed -i s/${replace}//g ${FILE}"
+      echo $(sed -i "s/${replace}//g" ${FILE})&>/dev/null
+    done
+
+    logSuccess ${idt}
+    logFinished ${idt} "envsToSimpleEnvs"
+    return 1;
+  fi
+  logFinished ${idt} "envsToSimpleEnvs"
   return 0;
 }
 
