@@ -1,4 +1,4 @@
 #!/bin/bash
 
 u-env Person
-u-git-send
+u-git-send "$@"

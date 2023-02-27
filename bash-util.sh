@@ -408,7 +408,6 @@ function envsToSimpleEnvs()
       if [[ ${replace} == "" ]]; then
         continue;
       fi
-      echo "sed -i s/${replace}//g ${FILE}"
       echo $(sed -i "s/${replace}//g" ${FILE})&>/dev/null
     done
 
