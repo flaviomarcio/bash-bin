@@ -411,6 +411,14 @@ function envsToSimpleEnvs()
       echo $(sed -i "s/${replace}//g" ${FILE})&>/dev/null
     done
 
+    BUILD_IMAGE_NAME=$(sed "s/.dockerfile//g" <<< "${BUILD_IMAGE_NAME}")
+
+    FILE_SRC=/tmp/$(basename ${FILE})
+    rm -rf ${FILE_SRC}
+    cp -r ${FILE} ${FILE_SRC}
+    sort ${FILE_SRC}>${FILE}
+    rm -rf ${FILE_SRC}
+
     logSuccess ${idt}
     logFinished ${idt} "envsToSimpleEnvs"
     return 1;
@@ -418,7 +426,6 @@ function envsToSimpleEnvs()
   logFinished ${idt} "envsToSimpleEnvs"
   return 0;
 }
-
 
 function envsParserDir()
 {
