@@ -280,6 +280,55 @@ function copyFile()
   logFinished ${idt} "copyFile"
 }
 
+function fileDedupliceLines()
+{
+  logStart ${idt} "fileDedupliceLines"
+  idt="$(toInt ${1})"
+  DEDUP_FILENAME=${2}
+
+  if [[ ${DEDUP_FILENAME} == "" ]]; then
+    return 1;
+  fi
+
+  logTarget ${idt} "${DEDUP_FILENAME}"
+
+  if ! [[ -f ${DEDUP_FILENAME} ]]; then
+    return 1;
+  fi
+
+  TMP_DEDUP_FILENAME="/tmp/fileDedupliceLines-${RANDOM}.tmp"
+  if [[ -f ${TMP_DEDUP_FILENAME}  ]]; then
+    rm -rf ${TMP_DEDUP_FILENAME}
+  fi
+  
+  while IFS= read -r line
+  do
+    if [[ ${line} == "" ]]; then
+      echo ${line} > ${TMP_DEDUP_FILENAME} 
+    elif ! [[ -f ${TMP_DEDUP_FILENAME} ]]; then
+      echo ${line} > ${TMP_DEDUP_FILENAME} 
+    elif [[ "${line}" == *'/'* ]]; then
+      echo ${line} >> ${TMP_DEDUP_FILENAME}
+    else
+      #remove existing lines
+      sed -i "/$line/d" ${TMP_DEDUP_FILENAME}
+      echo ${line} >> ${TMP_DEDUP_FILENAME} 
+    fi    
+  done < "${DEDUP_FILENAME}"
+
+  rm -rf ${DEDUP_FILENAME}
+  mv ${TMP_DEDUP_FILENAME} ${DEDUP_FILENAME}
+  
+
+  logFinished ${idt} "fileDedupliceLines"
+  if [[ -f ${DEDUP_FILENAME} ]]; then
+    return 1
+  else
+    return 0
+  fi
+}
+
+
 function copyFileIfNotExists()
 {
   idt="$(toInt ${1})"
@@ -394,8 +443,10 @@ function envsToSimpleEnvs()
     done
 
     #EMPTY LINES
-    echo $(sed -i '/^$/d' ${FILE})&>/dev/null
-    
+    ENV_TO_SIMPLE_FILENAME="/tmp/envsToSimpleEnvs-${RANDOM}.tmp"
+    sort ${FILE} > ${ENV_TO_SIMPLE_FILENAME}
+    echo $(sed -i '/^$/d' ${ENV_TO_SIMPLE_FILENAME})&>/dev/null    
+    fileDedupliceLines ${idt} "${ENV_TO_SIMPLE_FILENAME}"
 
     #REPLACE
     ENVSLIST=()
@@ -407,19 +458,14 @@ function envsToSimpleEnvs()
       replace=${ENV[0]}
       if [[ ${replace} == "" ]]; then
         continue;
+      else
+        echo $(sed -i "s/${replace}//g" ${ENV_TO_SIMPLE_FILENAME})&>/dev/null
       fi
-      echo $(sed -i "s/${replace}//g" ${FILE})&>/dev/null
     done
 
-    BUILD_IMAGE_NAME=$(sed "s/.dockerfile//g" <<< "${BUILD_IMAGE_NAME}")
-
-    if [[ -f ${FILE} ]]; then
-      FILE_SRC=/tmp/$(basename ${FILE})
-      rm -rf ${FILE_SRC}
-      cp -r ${FILE} ${FILE_SRC}
-      sort ${FILE_SRC}>${FILE}
-      rm -rf ${FILE_SRC}
-    fi
+    #move temp file to source file
+    sort ${ENV_TO_SIMPLE_FILENAME}>${FILE}
+    rm -rf ${ENV_TO_SIMPLE_FILENAME}
 
     logSuccess ${idt}
     logFinished ${idt} "envsToSimpleEnvs"
