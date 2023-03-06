@@ -3,6 +3,8 @@
 if [[ ${ROOT_DIR} == "" ]]; then
   export ROOT_DIR=${PWD}
 fi
+
+export REPLACE_SEPARADOR_250="%REPLACE-250"
 export STACK_RUN_BIN=${ROOT_DIR}/bin
 
 
@@ -304,23 +306,23 @@ function fileDedupliceLines()
   while IFS= read -r line
   do
     if [[ "${line}" == *'/'* ]]; then
-      lineX=${line/\//'\/'}
-      echo "line== ${line} lineX=${lineX}"
+      line=$(sed "s/\//$REPLACE_SEPARADOR_250/g" <<< "${line}")
     fi
-
 
     if [[ ${line} == "" ]]; then
       echo ${line} > ${TMP_DEDUP_FILENAME} 
     elif ! [[ -f ${TMP_DEDUP_FILENAME} ]]; then
       echo ${line} > ${TMP_DEDUP_FILENAME} 
-    # elif [[ "${line}" == *'/'* ]]; then
-    #   echo ${line} >> ${TMP_DEDUP_FILENAME}
+    elif [[ "${line}" == *'/'* ]]; then
+      echo ${line} >> ${TMP_DEDUP_FILENAME}
     else
       #remove existing lines
       sed -i "/$line/d" ${TMP_DEDUP_FILENAME}
       echo ${line} >> ${TMP_DEDUP_FILENAME} 
     fi    
   done < "${DEDUP_FILENAME}"
+
+  echo $(sed -i "s/${REPLACE_SEPARADOR_250}/\//g" ${TMP_DEDUP_FILENAME})&>/dev/null
 
   rm -rf ${DEDUP_FILENAME}
   mv ${TMP_DEDUP_FILENAME} ${DEDUP_FILENAME}
@@ -412,13 +414,16 @@ function envsParserFile()
     do
       ENV=(${ENV//=/ })
       replace="\${${ENV[0]}}"
-      replacewith=${ENV[1]}
+      replacewith=$(sed "s/\//$REPLACE_SEPARADOR_250/g" <<< "${ENV[1]}")
+
       if [[ "$replacewith" == *"/"* ]]; then
         continue;
       else
         echo $(sed -i s/${replace}/${replacewith}/g ${FILE})&>/dev/null
       fi
     done
+
+    echo $(sed -i s/$REPLACE_SEPARADOR_250/\//g ${FILE})&>/dev/null
 
     logSuccess ${idt}
     logFinished ${idt} "envsParserFile"
