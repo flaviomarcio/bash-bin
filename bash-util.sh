@@ -303,12 +303,18 @@ function fileDedupliceLines()
   
   while IFS= read -r line
   do
+    if [[ "${line}" == *'/'* ]]; then
+      lineX=${line/\//'\/'}
+      echo "line== ${line} lineX=${lineX}"
+    fi
+
+
     if [[ ${line} == "" ]]; then
       echo ${line} > ${TMP_DEDUP_FILENAME} 
     elif ! [[ -f ${TMP_DEDUP_FILENAME} ]]; then
       echo ${line} > ${TMP_DEDUP_FILENAME} 
-    elif [[ "${line}" == *'/'* ]]; then
-      echo ${line} >> ${TMP_DEDUP_FILENAME}
+    # elif [[ "${line}" == *'/'* ]]; then
+    #   echo ${line} >> ${TMP_DEDUP_FILENAME}
     else
       #remove existing lines
       sed -i "/$line/d" ${TMP_DEDUP_FILENAME}
