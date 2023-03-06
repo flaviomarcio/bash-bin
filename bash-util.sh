@@ -324,9 +324,10 @@ function fileDedupliceLines()
 
   echo $(sed -i "s/${REPLACE_SEPARADOR_250}/\//g" ${TMP_DEDUP_FILENAME})&>/dev/null
 
-  rm -rf ${DEDUP_FILENAME}
-  mv ${TMP_DEDUP_FILENAME} ${DEDUP_FILENAME}
-  
+
+  sort ${TMP_DEDUP_FILENAME} > ${DEDUP_FILENAME}
+  rm -rf ${TMP_DEDUP_FILENAME}
+ 
 
   logFinished ${idt} "fileDedupliceLines"
   if [[ -f ${DEDUP_FILENAME} ]]; then
