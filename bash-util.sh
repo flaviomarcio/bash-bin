@@ -6,6 +6,7 @@ fi
 
 export REPLACE_SEPARADOR_250="%REPLACE-250"
 export STACK_RUN_BIN=${ROOT_DIR}/bin
+export STACK_RUN_ACTIONS=${STACK_RUN_BIN}/actions
 
 
 function toInt()
