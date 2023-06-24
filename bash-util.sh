@@ -512,3 +512,13 @@ function envsParserDir()
   logFinished ${idt} "envsParserDir"
   return 1;
 }
+
+function clearTerm()
+{
+  if [[ ${STACK_LOG} == 1 || ${STACK_LOG_VERBOSE} == 1 || ${STACK_LOG_VERBOSE_SUPER} == 1 ]]; then
+    return 0
+  fi
+  clear
+  return 1;
+}
+ 
