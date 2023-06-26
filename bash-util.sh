@@ -275,7 +275,7 @@ function copyFile()
   elif [[ -f ${DST} ]]; then
     logError ${idt} "destine-exists-[${DST}]"
   else
-    cp -r ${SRC} ${DST}
+    cp -rf ${SRC} ${DST}
     if [[ -f ${DST} ]]; then
       logSuccess ${idt}
     fi
@@ -355,7 +355,7 @@ function copyFileIfNotExists()
       rm -rf ${DST}
       logInfo ${idt} "remove" ${DST}
     fi
-    cp -r ${SRC} ${DST}
+    cp -rf ${SRC} ${DST}
     if [[ -d ${DST} ]]; then
       logSuccess ${idt}
     fi
@@ -410,7 +410,7 @@ function envsParserFile()
   
     FILE_BACK=${FILE}-sed.bak
     rm -rf ${FILE_BACK}
-    cp -r ${FILE} ${FILE_BACK}
+    cp -rf ${FILE} ${FILE_BACK}
 
     for ENV in "${ENVSLIST[@]}"
     do
@@ -445,7 +445,7 @@ function envsToSimpleEnvs()
 
     FILE_BACK=${FILE}-sed.bak
     rm -rf ${FILE_BACK}
-    cp -r ${FILE} ${FILE_BACK}
+    cp -rf ${FILE} ${FILE_BACK}
 
     #REMOVE
     ENVSLIST=()
