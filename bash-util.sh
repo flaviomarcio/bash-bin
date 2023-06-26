@@ -8,6 +8,12 @@ export REPLACE_SEPARADOR_250="%REPLACE-250"
 export STACK_RUN_BIN=${ROOT_DIR}/bin
 export STACK_RUN_ACTIONS=${STACK_RUN_BIN}/actions
 
+function logVerboseSet()
+{
+  STACK_LOG=1
+  STACK_LOG_VERBOSE=1
+  STACK_LOG_VERBOSE_SUPER=1
+}
 
 function toInt()
 {
@@ -318,7 +324,7 @@ function fileDedupliceLines()
       echo ${line} >> ${TMP_DEDUP_FILENAME}
     else
       #remove existing lines
-      sed -i "/$line/d" ${TMP_DEDUP_FILENAME}
+      echo $(sed -i "/$line/d" ${TMP_DEDUP_FILENAME})&>/dev/null
       echo ${line} >> ${TMP_DEDUP_FILENAME} 
     fi    
   done < "${DEDUP_FILENAME}"
@@ -384,6 +390,12 @@ function utilInitialize()
     fi
   done
 
+  export DOCKER_ARGS_DEFAULT="--quiet --log-level ERROR"
+  export MAVEN_ARGS_DEFAULT="--quiet"
+  if [[ ${STACK_LOG} == 0 ]]; then    
+    export GIT_ARGS_DEFAULT="--quiet"
+  fi
+  
   if [[ ${STACK_LOG_VERBOSE_SUPER} == 1 ]]; then
     echo "Log super verbose enabled"
   elif [[ ${STACK_LOG_VERBOSE} == 1 ]]; then
