@@ -534,3 +534,76 @@ function clearTerm()
   return 1;
 }
  
+#!/bin/bash
+
+export COLOR_RED="\e[31m"
+export COLOR_GREEN="\e[32m"
+export COLOR_YELLOW="\e[33m"
+export COLOR_BLUE="\e[34m"
+export COLOR_MAGENTA="\e[35m"
+export COLOR_CIANO="\e[36m"
+
+
+function replaceString()
+{
+  SOURCE="${1}"
+  TARGET="${2}"
+  REPLAC="${3}"
+
+  if [[ "${SOURCE}" == "" ]]; then
+    return 0;
+  fi
+
+  if [[ "${TARGET}" == "${REPLAC}" ]]; then
+    echo ${SOURCE} 
+    return 0;
+  fi
+
+  OUTPUT=${SOURCE}
+  while :
+  do
+    LAST_OUTPUT=${OUTPUT}
+    OUTPUT=$(echo ${LAST_OUTPUT} | sed "s/${TARGET}/${REPLAC}/g")
+    if [[ "${OUTPUT}" == "${LAST_OUTPUT}" ]]; then
+      break
+    fi
+    break;
+  done
+  echo ${OUTPUT}
+  return 1
+}
+
+function echoColor()
+{
+  echo -e "${1}${2}\e[0m"
+}
+
+function echR()
+{
+  echoColor ${COLOR_RED} "$@"
+}
+
+function echG()
+{
+  echoColor ${COLOR_GREEN} "$@"
+}
+
+function echY()
+{
+  echoColor ${COLOR_YELLOW} "$@"
+}
+
+function echB()
+{
+  echoColor ${COLOR_BLUE} "$@"
+}
+
+function echM()
+{
+  echoColor ${COLOR_MAGENTA} "$@"
+}
+
+function echC()
+{
+  echoColor ${COLOR_CIANO} "$@"
+}
