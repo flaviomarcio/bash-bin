@@ -17,7 +17,7 @@ function logVerboseSet()
 
 function toInt()
 {
-  v=${1}
+  v="${1}"
   if [[ ${v} == "" ]]; then
     v=0
   fi
@@ -26,19 +26,19 @@ function toInt()
 
 function incInt()
 {
-  v=${1}
-  if [[ ${v} == "" ]]; then
-    v=0
+  v=$(toInt ${1})
+  i=$(toInt ${2})
+  if [[ ${i} == 0 ]]; then
+    i=1
   fi
-  v=$(toInt ${v})
-  let "v=${v} + 1"
+  let "v=${v} + ${i}"
   echo ${v}
 }
 
 function logIdent()
 {
   IDENT=$(toInt ${1})
-  CHAR=${2}
+  CHAR="${2}"
 
   if [[ ${CHAR} == "" ]]; then
     CHAR="."
@@ -46,22 +46,25 @@ function logIdent()
 
   if [[ ${IDENT} == "" ]]; then
     echo -n ${CHAR}
-    return;
+    return 0;
   fi
 
-  for i in $(seq 1 4);
-  do
-    TEXT="${TEXT}${CHAR}"
-  done
-  TEXT="${TEXT}"
-  
-  for i in $(seq 1 ${IDENT})
-  do
-    CHARS="${TEXT}${CHARS}"
-  done
-  echo -n ${CHARS}
+  echo $(strRightJustified 4 ${CHAR} ${CHAR} )
+  return 1
 
-  return;
+  # for i in $(seq 1 4);
+  # do
+  #   TEXT="${TEXT}${CHAR}"
+  # done
+  # TEXT="${TEXT}"
+  
+  # for i in $(seq 1 ${IDENT})
+  # do
+  #   CHARS="${TEXT}${CHARS}"
+  # done
+  # echo -n ${CHARS}
+
+  return 0;
 }
 
 function log()
@@ -72,7 +75,7 @@ function log()
 function logOut()
 {
   if [[ ${STACK_LOG} == 1 || ${STACK_LOG_VERBOSE} == 1 || ${STACK_LOG_VERBOSE_SUPER} == 1 ]]; then
-    if [[ ${2} != "" ]]; then
+    if [[ "${2}" != "" ]]; then
       echo "log: $(logIdent ${1})${2}"
     fi
   fi
@@ -80,86 +83,86 @@ function logOut()
 
 function logMethod()
 {
-  logOut "$(incInt ${1})" "${2}" "${3}"
+  logOut "$(incInt ${1})" ${2} "${3}"
 }
 
 function logForce()
 {
-  v=${2}
+  v="${2}"
   log "$(logIdent ${1}) ${v}"
 }
 
 function logInfo()
 {
   if [[ ${STACK_LOG} == 1 || ${STACK_LOG_VERBOSE} == 1 || ${STACK_LOG_VERBOSE_SUPER} == 1 ]]; then
-    if [[ ${2} != "" && ${3} != "" ]]; then
+    if [[ "${2}" != "" && "${3}" != "" ]]; then
       LOG="${2}: ${3}"
     else
       LOG="${2}"
     fi
     if [[ ${LOG} != "" ]]; then
-      logMethod ${1} "-${LOG}"
+      logMethod "${1}" "-${LOG}"
     fi
   fi
 }
 
 function logCommand()
 {
-  logInfo ${1} "command" "${2}"
+  logInfo "${1}" "command" "${2}"
 }
 
 function logTarget()
 {
-  logInfo ${1} "target" "${2}"
+  logInfo "${1}" "target" "${2}"
 }
 
 function logMessage()
 {
-  logInfo ${1} "message" "${2}"
+  logInfo "${1}" "message" "${2}"
 }
 
 function logWarning()
 {
-  logInfo ${1} "warning" "${2}"
+  logInfo "${1}" "warning" "${2}"
 }
 
 function logError()
 {
-  if [[ ${2} != "" ]]; then
-    logInfo ${1} "error" "${2}"
+  if [[ "${2}" != "" ]]; then
+    logInfo "${1}" "error" "${2}"
     log "error: ${2}"
   fi
 }
 
 function logSuccess()
 {
-  if [[ ${2} == "" ]]; then
-    logInfo ${1} "result" "success"
+  if [[ "${2}" == "" ]]; then
+    logInfo "${1}" "result" "success"
   else
-    logInfo ${1} "result" "success" "${2}"
+    logInfo "${1}" "result" "success" "${2}"
   fi
 }
 
 function logStart()
 {
-  logOut ${1} "${2}: started"
-  if [[ ${3} != "" ]]; then
-    logMessage ${1} "${3}"
+  logOut "${1}" "${2}: started"
+  if [[ "${3}" != "" ]]; then
+    logMessage "${1}" "${3}"
   fi
 }
 
 function logFinished()
 {
-  if [[ ${3} != "" ]]; then
-    logMessage ${1} "${3}"
+  if [[ "${3}" != "" ]]; then
+    logMessage "${1}" "${3}"
   fi
-  logOut ${1} "${2}: finished"
+  logOut "${1}" "${2}: finished"
 }
 
 function runSource()
 {
-  RUN_FILE=${2}
-  RUN_PARAMS=${3}
+  RUN_FILE="${2}"
+  RUN_PARAMS="${3}"
   idt="$(toInt ${1})"
   logStart ${idt} "runSource"
   logTarget ${idt} "${RUN_FILE}"
@@ -182,7 +185,7 @@ function runSource()
 function cdDir()
 {
   idt="$(toInt ${1})"
-  NEW_DIR=${2}
+  NEW_DIR="${2}"
   OLD_DIR=${PWD}
   logStart ${idt} "cdDir"
   logInfo ${idt} "of" ${OLD_DIR}
@@ -206,8 +209,8 @@ function fileExists()
 {
   idt="$(toInt ${1})"
   logStart ${idt} "fileExists"
-  TARGET=${2}
-  DIR=${3}
+  TARGET="${2}"
+  DIR="${3}"
   if [[ ${DIR} == "" ]]; then
     DIR=${PWD}
   fi
@@ -230,21 +233,21 @@ function makeDir()
 {
   idt="$(toInt ${1})"
   logStart ${idt} "makeDir"
-  MAKE_DIR=${2}
-  MAKE_PERMISSION=${3}
+  MAKE_DIR="${2}"
+  MAKE_PERMISSION="${3}"
 
   logTarget ${idt} ${MAKE_DIR}
   logInfo ${idt} "permission" ${MAKE_PERMISSION}
 
   if [[ ${MAKE_DIR} == "" || ${MAKE_PERMISSION} == "" ]]; then
     logError ${idt} "Invalid-parameters:MAKE_DIR==${MAKE_DIR},MAKE_PERMISSION==${MAKE_PERMISSION}"
-    return;
+    return 0;
   fi
 
   if [[ ${MAKE_DIR} == "" ]]; then
     MSG="dir-is-empty"
     logError ${idt} "${MSG}"
-    return;
+    return 0;
   fi
 
   if ! [[ -d ${MAKE_DIR}  ]]; then
@@ -269,13 +272,13 @@ function copyFile()
 {
   idt="$(toInt ${1})"
   logStart ${idt} "copyFile"
-  SRC=${2}
-  DST=${3}
+  SRC="${2}"
+  DST="${3}"
 
   logTarget ${idt} ${SRC}
   logInfo ${idt} "destine" ${DST}
 
-  logMethod ${1} "Copying ${SRC} to ${DST}"
+  logMethod "${1}" "Copying ${SRC} to ${DST}"
   if [[ -f ${SRC} ]]; then
     logError ${idt} "sources-does-not-exists[${SRC}]"
   elif [[ -f ${DST} ]]; then
@@ -293,7 +296,7 @@ function fileDedupliceLines()
 {
   logStart ${idt} "fileDedupliceLines"
   idt="$(toInt ${1})"
-  DEDUP_FILENAME=${2}
+  DEDUP_FILENAME="${2}"
 
   if [[ ${DEDUP_FILENAME} == "" ]]; then
     return 1;
@@ -378,12 +381,14 @@ function utilInitialize()
   export STACK_LOG_VERBOSE_SUPER=0
   for PARAM in "$@"
   do
-    if [[ $PARAM == "-l" ]]; then
+    if [[ ${PARAM} == "-d" || ${PARAM} == "--debug" ]]; then
+      export PUBLIC_LOG_LEVEL=true
+    elif [[ ${PARAM} == "-l" ]]; then
       export STACK_LOG=1            
-    elif [[ $PARAM == "-lv" ]]; then
+    elif [[ ${PARAM} == "-lv" ]]; then
       export STACK_LOG=1            
       export STACK_LOG_VERBOSE=1            
-    elif [[ $PARAM == "-lvs" ]]; then
+    elif [[ ${PARAM} == "-lvs" ]]; then
       export STACK_LOG=1            
       export STACK_LOG_VERBOSE=1            
       export STACK_LOG_VERBOSE_SUPER=1
@@ -395,6 +400,15 @@ function utilInitialize()
   if [[ ${STACK_LOG} == 0 ]]; then    
     export GIT_ARGS_DEFAULT="--quiet"
   fi
+
+  if [[ ${PUBLIC_LOG_LEVEL} == true ]]; then
+    echo "DEBUG MODE"
+  elif [[ ${STACK_LOG_VERBOSE} == 1 ]]; then
+    echo "Log verbose enabled"
+  elif [[ ${STACK_LOG} == 1 ]]; then
+    echo "Log enabled"
+  fi
+  
   
   if [[ ${STACK_LOG_VERBOSE_SUPER} == 1 ]]; then
     echo "Log super verbose enabled"
@@ -504,8 +518,8 @@ function envsParserDir()
 {
   idt="$(toInt ${1})"
   logStart ${idt} "envsParserDir"
-  export DIR=${2}
-  export EXT=${3}
+  export DIR="${2}"
+  export EXT="${3}"
 
   if [[ ${DIR} == "" || ${EXT} == "" ]]; then
     if [[ -d ${DIR} ]]; then
@@ -527,11 +541,9 @@ function envsParserDir()
 
 function clearTerm()
 {
-  if [[ ${STACK_LOG} == 1 || ${STACK_LOG_VERBOSE} == 1 || ${STACK_LOG_VERBOSE_SUPER} == 1 ]]; then
-    return 0
+  if [[ ${PUBLIC_LOG_LEVEL} != true ]]; then
+    clear
   fi
-  clear
-  return 1;
 }
  
 #!/bin/bash
@@ -543,6 +555,66 @@ export COLOR_BLUE="\e[34m"
 export COLOR_MAGENTA="\e[35m"
 export COLOR_CIANO="\e[36m"
 
+function strAlign()
+{
+  __s_j_align="${1}"
+  __s_j_count=$(toInt "${2}")
+  __s_j_return="${3}"
+  __s_j_char="${4}"
+
+  if [[ 0 -eq ${__s_j_count} ]]; then
+    echo ${__s_j_return}
+    return 1;
+  fi
+  if [[ ${__s_j_char} == "" ]]; then 
+    __s_j_char=" ";
+  fi
+  if [[ ${__s_j_return} == "" ]]; then
+    __s_j_return=${__s_j_char};
+  fi
+
+  __s_j_left=1
+  for i in $(seq 1 ${__s_j_count});
+  do
+    __s_j_len=$(expr length "${__s_j_return}")
+    if [[ ${__s_j_len} -ge ${__s_j_count} ]]; then
+      break
+    fi
+
+    if [[ ${__s_j_align} == "left" ]]; then
+      __s_j_return="${__s_j_return}${__s_j_char}"
+    elif [[ ${__s_j_align} == "right" ]]; then
+      __s_j_return="${__s_j_char}${__s_j_return}"
+    elif [[ ${__s_j_align} == "center" ]]; then
+      if [[ ${__s_j_left} == 0 ]]; then
+        __s_j_return="${__s_j_return}${__s_j_char}"
+        __s_j_left=1
+      else
+        __s_j_return="${__s_j_char}${__s_j_return}"
+        __s_j_left=0
+      fi
+    else
+      return 0
+    fi
+  done
+  echo "${__s_j_return}"
+  return 1
+}
+
+function strLeftJustified()
+{
+  strAlign left "${1}" ${2} "${3}"
+}
+
+function strRightJustified()
+{
+  strAlign right "${1}" ${2} "${3}"
+}
+
+function strCenterJustified()
+{
+  strAlign center "${1}" ${2} "${3}"
+}
 
 function replaceString()
 {
@@ -606,4 +678,235 @@ function echM()
 function echC()
 {
   echoColor ${COLOR_CIANO} "$@"
+}
+
+function echIdent()
+{
+  __e_i_level=$(toInt ${1})
+  __e_i_step=$(toInt "${2}")
+  let "__e_i_step=${__e_i_step}"
+
+  #echo "    __e_i_level=${__e_i_level}, __e_i_step==${__e_i_step}"
+
+  __e_i_out=
+  __e_i_spacer="  "
+  for i in $(seq 1 ${__e_i_step});
+  do
+    __e_i_out="${__e_i_out}${__e_i_spacer}"
+  done
+
+  for __e_i_level_i in $(seq 1 ${__e_i_level});
+  do
+    if [[ ${__e_i_level_i} == 5 ]]; then
+      __e_i_spacer=" ."
+    else
+      __e_i_spacer="  "
+    fi
+    __e_i_out="${__e_i_out}${__e_i_spacer}"
+  done
+
+  echo "${__e_i_out}"
+
+  #__e_i_out=$(strAlign right "${__e_i_step}" " " " ")
+  #echo "${__e_i_out}"
+}
+
+function echText()
+{
+  __e_s_lev=${1}
+  __e_s_inc=${2}
+  __e_s_spa="$(echIdent "${__e_s_lev}" "${__e_s_inc}")"
+  __e_s_txt="${3}"
+  __e_s_log="${4}"
+
+  if [[ ${PUBLIC_LOG_LEVEL} == true && ${__e_s_log} != "" ]]; then
+    echo "${__e_s_spa} ${__e_s_txt} - [ ${__e_s_log} ]"
+  else
+    echo "${__e_s_spa} ${__e_s_txt}"
+  fi
+}
+
+function __private_echStart()
+{
+  echo "$(echText 1 "${1}" "${2}" "${3}")"
+}
+
+function __private_echFinished()
+{
+  __e_a_f_identity="${1}"
+  __e_a_f_return="${2}"
+  __e_a_f_message="${3}"
+  __e_a_f_output="${4}"
+
+  if [[ ${__e_a_f_return} != "" && ${__e_a_f_return} != 1 ]]; then
+    if [[ ${__e_a_f_return} == 2 ]]; then
+      echWarning "${__e_a_f_identity}" "${__e_a_f_message}" "${__e_a_f_output}"
+    else
+      echFail "${__e_a_f_identity}" "${__e_a_f_message}" "${__e_a_f_output}"
+    fi
+  fi
+  echG "$(echText 1 "${__e_a_f_identity}" "Finished" "${3}")"
+  export __e_a_f_output=
+}
+
+function __private_echAttibute()
+{
+  __e_p_identity="${1}" 
+  __e_p_key="${2}"
+  __e_p_value="${3}"
+  if [[ ${__e_p_key} != "" && ${__e_p_value} != "" ]]; then
+    __e_p_value="- ${__e_p_key}: ${__e_p_value}"
+  else
+    __e_p_value="- ${__e_p_key}${__e_p_value}"
+  fi
+
+  echo "$(echText 2 "${__e_p_identity}" "${__e_p_value}")"
+}
+
+function echStart()
+{
+  echM "$(__private_echStart "${1}" "${2}" "${3}")"
+}
+
+function echContinue()
+{
+  echG
+  echG "$(echText "${1}" "${1}" "[ENTER] to continue")"
+  echG
+  read
+}
+
+function echTitle()
+{
+  echB "$(__private_echStart "${1}" "${2}" "${3}")"
+}
+
+function echTopic()
+{
+  echM "$(__private_echStart "${1}" "${2}" "${3}")"
+}
+
+function echProperty()
+{
+  echC "$(__private_echAttibute "${1}" "${2}" "${3}")"
+}
+
+function echAction()
+{
+  echY "$(__private_echStart "${1}" "${2}" "${3}")"
+}
+
+function echFinished()
+{
+  __private_echFinished "${1}" "${2}" "${3}"
+}
+
+function echCommand()
+{
+  __e_c_env_i=1
+  __e_c_command=
+  export __echCommand=
+  for __e_c_env in "$@"
+  do
+    if [[ ${__e_c_env_i} == "" ]]; then
+      __e_c_command="${__e_c_command} ${__e_c_env}"
+    fi
+    __e_c_env_i=
+  done
+
+  __e_c_out=$(echText 2 "${1}" "- ${__e_c_command}")
+  
+  echY "${__e_c_out}"
+  if [[ ${__e_c_command} != "" ]]; then
+    export __echCommand=$(exec ${__e_c_command})
+    return "$?"
+  fi
+  return 0
+}
+
+function echStep()
+{
+  echC "$(__private_echStart "${1}" "${2}" "${3}")"
+}
+
+function echInfo()
+{
+  echo "$(__private_echAttibute "${1}" "${2}" "${3}")"
+}
+
+function echWarning()
+{
+  __e_f_txt=" ${2} "
+  __e_f_out=" ${3} "
+  if [[ ${__e_f_out} == "" ]]; then
+    __e_f_out=${__echCommand}
+  fi
+  export __echCommand=
+  __e_f_len=$(expr length "${__e_f_txt}")
+  let "__e_f_len_inc=${__e_f_len} * 2"
+
+  lnContinuoEQU=$(strCenterJustified ${__e_f_len_inc} "=" "=")
+  lnContinuoMSG=$(strCenterJustified ${__e_f_len_inc} "${__e_f_txt}" "*")
+  lnContinuoSPC=$(strCenterJustified ${__e_f_len} "" "*")
+  lnContinuoSPC=$(strCenterJustified ${__e_f_len_inc} "${lnContinuoSPC}" " ")  
+
+  
+  lnContinuoEQU="+${lnContinuoEQU}+"
+  lnContinuoSPC="+${lnContinuoSPC}+"
+  lnContinuoMSG="+${lnContinuoMSG}+"
+
+ 
+  echY "$(echText 2 "${1}" "")"
+  echY "$(echText 2 "${1}" "${lnContinuoEQU}")"
+  echY "$(echText 2 "${1}" "${lnContinuoSPC}")"
+  echY "$(echText 2 "${1}" "${lnContinuoMSG}")"
+  echY "$(echText 2 "${1}" "${lnContinuoSPC}")"
+  echY "$(echText 2 "${1}" "${lnContinuoEQU}")"
+
+  if [[ ${__e_f_out} != "" ]]; then
+    echY "$(echText 2 "${1}" "")"
+    printf "${__e_f_out}"
+  fi
+  echY "$(echText 2 "${1}" "")"
+  export __e_f_out=
+  return 1
+}
+
+function echFail()
+{
+  __e_f_txt=" ${2} "
+  __e_f_out=" ${3} "
+  if [[ ${__e_f_out} == "" ]]; then
+    __e_f_out=${__echCommand}
+  fi
+  export __echCommand=
+
+  __e_f_len=$(expr length "${__e_f_txt}")
+  let "__e_f_len_inc=${__e_f_len} * 2"
+  
+  lnContinuoEQU=$(strCenterJustified ${__e_f_len_inc} "=" "=")
+  lnContinuoMSG=$(strCenterJustified ${__e_f_len_inc} "${__e_f_txt}" "*")
+  lnContinuoSPC=$(strCenterJustified ${__e_f_len} "" "*")
+  lnContinuoSPC=$(strCenterJustified ${__e_f_len_inc} "${lnContinuoSPC}" " ")  
+
+  
+  lnContinuoEQU="+${lnContinuoEQU}+"
+  lnContinuoSPC="+${lnContinuoSPC}+"
+  lnContinuoMSG="+${lnContinuoMSG}+"
+
+ 
+  echR "$(echText 2 "${1}" "")"
+  echR "$(echText 2 "${1}" "${lnContinuoEQU}")"
+  echR "$(echText 2 "${1}" "${lnContinuoSPC}")"
+  echR "$(echText 2 "${1}" "${lnContinuoMSG}")"
+  echR "$(echText 2 "${1}" "${lnContinuoSPC}")"
+  echR "$(echText 2 "${1}" "${lnContinuoEQU}")"
+
+  if [[ ${__e_f_out} != "" ]]; then
+    echR "$(echText 2 "${1}" "")"
+    echo "${__e_f_out}"
+  fi
+  echR "$(echText 2 "${1}" "")"
+  export __e_f_out=  
+  return 1
 }
