@@ -172,7 +172,7 @@ function runSource()
   elif ! [[ -f ${RUN_FILE} ]]; then
     logError ${idt} "run file not found"
   else
-    chmod +x ${RUN_FILE}
+    echo $(chmod +x ${RUN_FILE})&>/dev/null
     source ${RUN_FILE} ${RUN_PARAMS}
     logSuccess ${idt}
     logFinished ${idt} "runSource"
@@ -258,9 +258,12 @@ function makeDir()
     fi
   fi  
 
-
   if [[ ${MAKE_PERMISSION} != "" ]]; then
-    chmod ${MAKE_PERMISSION} ${MAKE_DIR};
+    #echo "chmod ${MAKE_PERMISSION} ${MAKE_DIR})>/dev/null 2>&1"
+    __makeDirUser=$(echo $(ls -l ${MAKE_DIR}) | awk '{print $5}')
+    if [[ ${__makeDirUser} == ${USER} ]]; then
+      echo $(chmod ${MAKE_PERMISSION} ${MAKE_DIR})>/dev/null 2>&1
+    fi
   fi
 
   logSuccess ${idt}
@@ -814,11 +817,15 @@ function echCommand()
     __e_c_env_i=
   done
 
-  __e_c_out=$(echText 2 "${1}" "- ${__e_c_command}")
-  
+  __e_c_out=$(echText 2 "${1}" "-${__e_c_command}")
+
   echY "${__e_c_out}"
   if [[ ${__e_c_command} != "" ]]; then
-    export __echCommand=$(exec ${__e_c_command})
+    if [[ -f ${__e_c_command} ]]; then
+      export __echCommand=$(source ${__e_c_command})
+    else
+      export __echCommand=$(exec ${__e_c_command})
+    fi
     return "$?"
   fi
   return 0
