@@ -1,6 +1,7 @@
 #!/bin/bash
 
 . lib-bash.sh
+. lib-system.sh
 
 # export DOCKER_OPTION=
 # export DOCKER_SCOPE=
@@ -488,14 +489,6 @@ function dockerPrepare()
   fi
 
   export DOCKER_NETWORK="${DOCKER_SCOPE}-network"
-
-  #IP'S 
-  export HOST_IP="127.0.0.1"
-  if [[ -d /mnt ]]; then
-      export PUBLIC_HOST_IPv4=$(ip -4 route get 8.8.8.8 | awk {'print $7'} | tr -d '\n')
-  else
-      export PUBLIC_HOST_IPv4=$(ipconfig.exe | grep -a IPv4 | grep -a 192 | sed 's/ //g' | sed 's/Endere□oIPv4//g' | awk -F ':' '{print $2}')
-  fi
  
 
   export DOCKER_INIT_DIR=${DOCKER_DIR}/init 

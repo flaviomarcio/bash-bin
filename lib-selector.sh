@@ -1,6 +1,19 @@
 #!/bin/bash
 
 . lib-bash.sh
+. lib-system.sh
+
+function __private_print_os_information()
+{
+  echG "OS informations"
+  echC "  - $(uname -a)"
+  echC "  - IPv4: "${PUBLIC_HOST_IPv4}
+  echC "  - $(docker --version)"
+  echC "  - Docker swarm is $(docker info --format '{{ .Swarm.LocalNodeState }}')"
+  echo ""
+  echG "Docker managmento tools"
+  echo ""
+}
 
 function __private_project_tags()
 {
