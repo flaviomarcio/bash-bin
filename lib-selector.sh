@@ -129,7 +129,7 @@ function selectorCommands()
   echB "    Client"
   echC "      - execute: [redis-cli] or [redis-cli -h sro-redis.local]"
   echR "  Dica"
-  echB "    Acesse o container [crdc_srv_sro-debian-dev]"
+  echB "    Acesse o container [adm]"
   echG "      Nele você terá todos os recursos de um linux"
   echG "      Poderá instalar outros aplicativos"
   echG "      Já conterá os aplicativos"
@@ -139,9 +139,9 @@ function selectorCommands()
   echC "        - postgresql-client"
   echC "        - postgresql-common"
   echC "        - redis-tools"
-  echB "    Sua pastas [crdc-data] e [HOME] estarão mapeadas em :"
-  echC "      - [/sro-host/home]"
-  echC "      - [/sro-host/crdc-data]"
+  echB "    Sua pastas [application] e [HOME] estarão mapeadas em :"
+  echC "      - [/app/home]"
+  echC "      - [/app/data]"
 }
 
 function selectorPGPass()

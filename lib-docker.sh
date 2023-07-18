@@ -391,7 +391,7 @@ function mavenBuild()
   cd ${DOCKER_DIR_DATA}/src
 
 
-  REPOSITORY_SSH="git@bitbucket.org:crdc_portal_registro/${STACK_NAME}.git"
+  REPOSITORY_SSH="git@bitbucket.org:XXXXXXXXXXXX/${STACK_NAME}.git"
   SRC_DIR=${DOCKER_DIR_DATA}/src/${STACK_NAME}
   DST_DIR=${DOCKER_DIR_DATA}/bin/${STACK_NAME}.jar
 
