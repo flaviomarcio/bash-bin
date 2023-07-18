@@ -300,7 +300,7 @@ function selectCustomer()
   return 1;
 }
 
-function selectEnviroment()
+function selectEnvironment()
 {
   clearTerm
   echM $'\n'"Environment menu"$'\n'
