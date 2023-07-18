@@ -274,3 +274,81 @@ function selectorDNSOption()
   done
   return 0
 }
+
+function selectCustomer()
+{
+  export PUBLIC_STACK_TARGET_FILE=${HOME}/applications/stack_targets.env
+  if [[ -f ${PUBLIC_STACK_TARGET_FILE} ]]; then
+    options=$(cat ${PUBLIC_STACK_TARGET_FILE})
+    options="quit company ${options}"
+  else
+    options="quit company"
+  fi
+  options=(${options})
+
+  clearTerm
+  echM $'\n'"Customer menu"$'\n'
+  PS3="Choose a option: "
+  select opt in "${options[@]}"
+  do
+    if [[ ${opt} == "quit" ]]; then
+      return 0
+    fi
+    export STACK_TARGET=${opt}
+    break;
+  done
+  return 1;
+}
+
+function selectEnviroment()
+{
+  clearTerm
+  echM $'\n'"Environment menu"$'\n'
+  PS3="Choose a option: "
+  
+  options=(testing development staging production quit)
+
+  select opt in "${options[@]}"
+  do
+    export STACK_ENVIRONMENT=${opt}
+    case $opt in
+        "development")
+          break
+            ;;
+        "testing")
+          break
+            ;;
+        "stating")
+          break
+            ;;
+        "production")
+          break
+            ;;
+        "quit")
+          return 0
+            ;;
+        *) echo "invalid option $opt";
+    esac
+  done
+  return 1
+}
+
+function selectDeployOpt()
+{
+  export STACK_INSTALL_BUILD_ARGS=
+  clearTerm
+  echM $'\n'"Stack deploy mode"$'\n'
+  PS3="Choose a option: "
+
+  options=(Back all build deploy)
+
+  select opt in "${options[@]}"
+  do
+    if [[ ${opt} == "build" ]]; then
+      export STACK_INSTALL_BUILD_ARGS=${opt}
+    fi
+    return 1;
+  done
+
+  return 0;
+}
