@@ -8,10 +8,15 @@ function gitClone()
 
   __git_clone_repository=${1}
   __git_clone_branch=${2}
-  __git_clone_name=${3}
-  __git_clone_dir=${4}
+  __git_clone_dir=${3}
+  __git_clone_name=${4}
+
+  if [[ ${__git_clone_name} == "" ]]; then
+    __git_clone_name="src"
+  fi
+
   mkdir -p ${__git_clone_dir}
-  if [[ -d ${__git_clone_dir} ]]; then
+  if ! [[ -d ${__git_clone_dir} ]]; then
     echY "  target: ${__git_clone_dir}"  
     echR "  ===============================  "
     echR "         *****************         "
@@ -31,21 +36,10 @@ function gitClone()
     return 0;
   fi
 
-  __git_clone_name=$(basename ${__git_clone_repository} | sed 's/.git//g')
-  if [[ ${__git_clone_name} = "" ]]; then
-    echY "  target: ${__git_clone_name}"  
-    echR "  ===============================  "
-    echR "         *****************         "
-    echR "  *******Invalid git name********  "
-    echR "         *****************         "
-    echR "  ===============================  "
-    return 0;
-  fi
-
   cd ${__git_clone_dir}
   __git_clone_src_dir=${__git_clone_dir}/${__git_clone_name}
   rm -rf ${__git_clone_src_dir};
-  __git_clone_src_cmd="git clone -q ${__git_clone_repository}"
+  __git_clone_src_cmd="git clone -q ${__git_clone_repository} ${__git_clone_name}"
   echC "    - ${__git_clone_repository}"
   echC "    - Branch: ${__git_clone_branch}"
   echC "    - Source dir: ${__git_clone_src_dir}"
@@ -65,5 +59,6 @@ function gitClone()
   echY "    - ${__git_clone_src_cmd}"
   echo $(${__git_clone_src_cmd})>/dev/null 2>&1
   echG "  Finished"
+  __func_return=${__git_clone_src_dir}
   return 1
 }

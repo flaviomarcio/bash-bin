@@ -3,13 +3,38 @@
 . lib-strings.sh
 . lib-system.sh
 
+function buildCompilerCheck()
+{
+  __private_build_compiler_dir=${1}
+  __func_return=
+  if [[ -d ${__private_build_compiler_dir}  ]]; then
+    if [[ -f ${__private_build_compiler_dir}/pom.xml ]]; then
+      __func_return="maven"
+      return 1;
+    fi
+
+    if [[ -f ${__private_build_compiler_dir}/Makefile.txt ]]; then
+      __func_return="cmake"
+      return 1;
+    fi
+
+    __private_build_compiler_check=$(find ${__private_build_compiler_dir} -name '*.pro')
+    if [[ ${__private_build_compiler_check} != ""  ]]; then
+      __func_return="qmake"
+      return 1;
+    fi
+  fi
+
+  return 0;
+
+}
+
 function mavenBuild()
 {
+  export __func_return=
   __mvn_build_src_dir=${1}
   __mvn_build_bin_dir=${2}
-  __mvn_jar_name=${3}
-
-  export __mvn_jar_file=
+  __mvn_jar_filter=${3}
 
   echG "  Source building with Maven"
   __mvn_check=$(mvn --version)
@@ -51,15 +76,12 @@ function mavenBuild()
   cd ${__mvn_build_src_dir}
 
   __mvn_build_src_bin_dir=${__mvn_build_src_dir}/target
-  __mvn_jar_destine_file=${__mvn_build_bin_dir}/${__mvn_jar_name}.jar
-  rm -rf ${__mvn_jar_destine_file} 
 
-  CMD="mvn install -DskipTests"
+  __mvn_cmd="mvn install -DskipTests"
   echM "    Maven build"
   echC "      - Source dir: ${__mvn_build_src_dir}"
-  echC "      - JAR file: ${__mvn_jar_destine_file}"
-  echY "      - ${CMD}"
-  __mvn_output=$(${CMD})
+  echY "      - ${__mvn_cmd}"
+  __mvn_output=$(${__mvn_cmd})
   __mvn_check=$(echo ${__mvn_output} | grep ERROR)
   if [[ ${__mvn_check} != "" ]]; then
     echR "    source build fail:"
@@ -71,13 +93,11 @@ function mavenBuild()
     return 0;
   fi
   echG "    Finished"
-  
-  echM "    Binaries prepare"
-  echC "      - JAR file: ${__mvn_jar_destine_file}"
-  export __mvn_jar_source_file=$(find ${__mvn_build_src_bin_dir} -name 'app*.jar')
-  cp -r ${__mvn_jar_source_file} ${__mvn_jar_destine_file}
 
-  if ! [[ -f ${__mvn_jar_destine_file} ]]; then
+  echM "    Binaries prepare"
+  export __mvn_jar_source_file=$(find ${__mvn_build_src_bin_dir} -name ${__mvn_jar_filter})
+  echC "      - JAR file: ${__mvn_jar_source_file}"
+  if [[ ${__mvn_jar_source_file} == "" ]]; then
     echR "      ==============================  "
     echR "      ******JAR file not found******  "
     echR "      ******JAR file not found******  "
@@ -85,6 +105,6 @@ function mavenBuild()
     return 0;
   fi
   echG "    Finished"
-  export __mvn_jar_file=${__mvn_jar_destine_file}
+  export __func_return=${__mvn_jar_source_file}
   return 1
 }
