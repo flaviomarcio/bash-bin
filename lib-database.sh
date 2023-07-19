@@ -1,6 +1,6 @@
 #!/bin/bash
 
-. lib-bash.sh
+. lib-strings.sh
 
 # export DATABASE_SCOPE=
 # export DATABASE_DIR=

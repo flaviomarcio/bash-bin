@@ -412,22 +412,16 @@ function utilInitialize()
   fi
 
   if [[ ${PUBLIC_LOG_LEVEL} == true ]]; then
-    echo "DEBUG MODE"
+    echo ""
+    echY "DEBUG MODE"
   elif [[ ${STACK_LOG_VERBOSE} == 1 ]]; then
-    echo "Log verbose enabled"
+    echo ""
+    echY "Log verbose enabled"
   elif [[ ${STACK_LOG} == 1 ]]; then
-    echo "Log enabled"
+    echo ""
+    echY "Log enabled"
   fi
   
-  
-  if [[ ${STACK_LOG_VERBOSE_SUPER} == 1 ]]; then
-    echo "Log super verbose enabled"
-  elif [[ ${STACK_LOG_VERBOSE} == 1 ]]; then
-    echo "Log verbose enabled"
-  elif [[ ${STACK_LOG} == 1 ]]; then
-    echo "Log enabled"
-  fi
-
   export PATH=${PATH}:${STACK_RUN_BIN}
 
   #export BASH_BIN=${PWD}/installer/bash-bin

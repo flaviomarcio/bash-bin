@@ -1,7 +1,8 @@
 #!/bin/bash
 
-. lib-bash.sh
+. lib-strings.sh
 . lib-system.sh
+. lib-docker.sh
 
 function __private_print_os_information()
 {
@@ -9,9 +10,9 @@ function __private_print_os_information()
   echC "  - $(uname -a)"
   echC "  - IPv4: "${PUBLIC_HOST_IPv4}
   echC "  - $(docker --version)"
-  echC "  - Docker swarm is $(docker info --format '{{ .Swarm.LocalNodeState }}')"
+  echC "  - Docker swarm is $(dockerSwarmState)"
   echo ""
-  echG "Docker managmento tools"
+  echG "Docker managment tools"
   echo ""
 }
 

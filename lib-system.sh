@@ -1,7 +1,6 @@
 #!/bin/bash
 
-. lib-bash.sh
-. lib-selector.sh
+. lib-strings.sh
 
 function systemIPvPrepare()
 {
@@ -22,7 +21,7 @@ function systemDNSList()
     return 0
   fi
 
-  DNSList=(${PUBLIC_SERVICES_NAME}))
+  DNSList=(${PUBLIC_SERVICES_NAME})
   DNSOut=
   for DNS in "${DNSList[@]}"
   do
