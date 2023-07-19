@@ -10,12 +10,8 @@ function __private_print_os_information()
 {
   echG "OS informations"
   echC "  - $(uname -a)"
-  echC "  - IPv4: "${PUBLIC_HOST_IPv4}
-  echC "  - $(docker --version)"
-  echC "  - Enviroment: ${__public_enviroment}"
-  echC "  - Target: ${__public_target}"
-  echo ""
-  echG "Docker managment tools"
+  echC "  - $(docker --version), IPv4: ${PUBLIC_HOST_IPv4}"
+  echC "  - Target:${__public_target}, Enviroment:${__public_enviroment}"
 }
 
 function __private_project_tags()
@@ -180,49 +176,49 @@ function selectorDNS()
 
 function selectorProjectTags()
 {
-  while :
+  export __selector=
+  options=(Back $(__private_project_tags))
+  clearTerm
+  __private_print_os_information
+  echG $'\n'"Stack project tags menu"$'\n'
+  PS3=$'\n'"Choose option: "
+  select opt in "${options[@]}"
   do
-    export __selector=
-    options=(Back $(__private_project_tags))
-    PS3="Stack project menu"$'\n'"Choose option: "
-    select opt in "${options[@]}"
-    do
-      export __selector=${opt}
-      if [[ ${opt} == "Back" ]]; then
-        return 0
-      elif [[ ${opt} != "" ]]; then
-        echo $(__private_project_names ${opt})
-        return 1
-      else
-        break
-      fi
-    done
+    export __selector=${opt}
+    if [[ ${opt} == "Back" ]]; then
+      return 0
+    elif [[ ${opt} != "" ]]; then
+      echo $(__private_project_names ${opt})
+      return 1
+    else
+      break
+    fi
   done
   return 0
 }
 
 function selectorProjects()
 {
-  while :
+  export __selector=
+  clearTerm
+  __private_print_os_information
+  options=(Back All Tag $(__private_project_names))
+  echG $'\n'"Project menu"$'\n'
+  PS3=$'\n'"Choose option: "
+  select opt in "${options[@]}"
   do
-    export __selector=
-    options=(Back All Tag $(__private_project_names))
-    PS3="Stack project menu"$'\n'"Choose option: "
-    select opt in "${options[@]}"
-    do
-      export __selector=${opt}
-      if [[ ${opt} == "Back" ]]; then
-        return 0;
-      elif [[ ${opt} == "All" ]]; then
-        echo $(__private_project_names)
-        return 1
-      elif [[ ${opt} != "" ]]; then
-        echo ${opt}
-        return 1
-      else
-        break
-      fi
-    done
+    export __selector=${opt}
+    if [[ ${opt} == "Back" ]]; then
+      return 0;
+    elif [[ ${opt} == "All" ]]; then
+      echo $(__private_project_names)
+      return 1
+    elif [[ ${opt} != "" ]]; then
+      echo ${opt}
+      return 1
+    else
+      break
+    fi
   done
   return 0
 }
@@ -231,8 +227,8 @@ function selectorDockerOption()
 {
   export __selector=Docker-Stack
   return 1
-  echG "Docker mode option"
-  PS3="Stack build option menu"$'\n'"Choose option: "
+  echG $'\n'"Docker option menu"$'\n'
+  PS3=$'\n'"Choose option: "
   options=(Back Docker-Stack Docker-Compose)
   select opt in "${options[@]}"
   do
@@ -256,7 +252,8 @@ function selectorBuildOption()
 {
   export __selector=
   options=(Back build-and-deploy build deploy)
-  PS3="Stack repository menu"$'\n'"Choose option: "
+  echG $'\n'"Docker build option menu"$'\n'
+  PS3=$'\n'"Choose option: "
   select opt in "${options[@]}"
   do
     export __selector=${opt}
@@ -274,23 +271,22 @@ function selectorBuildOption()
 
 function selectorDNSOption()
 {
-  while :
+  export __selector=
+  clearTerm
+  options=(Back etc-hosts print)
+  echG $'\n'"DNS options"$'\n'
+  PS3=$'\n'"Choose option: "
+  select opt in "${options[@]}"
   do
-    export __selector=
-    options=(Back etc-hosts print)
-    PS3="DNS options"$'\n'"Choose option: "
-    select opt in "${options[@]}"
-    do
-      export __selector=${opt}
-      if [[ ${opt} == "Back" ]]; then
-        return 0;
-      elif [[ ${opt} != "" ]]; then
-        echo ${opt}
-        return 1
-      else
-        break
-      fi
-    done
+    export __selector=${opt}
+    if [[ ${opt} == "Back" ]]; then
+      return 0;
+    elif [[ ${opt} != "" ]]; then
+      echo ${opt}
+      return 1
+    else
+      break
+    fi
   done
   return 0
 }
@@ -308,8 +304,9 @@ function selectorCustomer()
   options=(${options})
 
   clearTerm
+  __private_print_os_information
   echM $'\n'"Customer menu"$'\n'
-  PS3="Choose a option: "
+  PS3=$'\n'"Choose a option: "
   select opt in "${options[@]}"
   do
     export __selector=${opt}
@@ -326,8 +323,9 @@ function selectorEnvironment()
 {
   export __selector=
   clearTerm
+  __private_print_os_information
   echM $'\n'"Environment menu"$'\n'
-  PS3="Choose a option: "
+  PS3=$'\n'"Choose a option: "
   
   options=(${__selector_environments})
 
@@ -362,7 +360,7 @@ function selectorDeployOption()
   export __selector=
   clearTerm
   echM $'\n'"Stack deploy mode"$'\n'
-  PS3="Choose a option: "
+  PS3=$'\n'"Choose a option: "
 
   options=(Back all build deploy)
 
@@ -388,8 +386,9 @@ function selector()
     return 0
   fi
   clearTerm
+  __private_print_os_information
   echM $'\n'"${__selector_title}"$'\n'
-  PS3="Choose a option: "
+  PS3=$'\n'"Choose a option: "
   options=(${__selector_args})
   select opt in "${options[@]}"
   do

@@ -225,7 +225,7 @@ function dockerConfigure()
 {
   clearTerm
   echM $'\n'"Docker configure"$'\n'
-  PS3="Choose a option: "
+  PS3=$'\n'"Choose a option: "
   options=(Back Swarm-Init Swarm-Leave)
   select opt in "${options[@]}"
   do

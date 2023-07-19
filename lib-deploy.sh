@@ -10,6 +10,7 @@ function deploy()
   __deploy_jar_file=
 
   clearTerm
+  __private_print_os_information
   echM "  Deploy"
   __deploy_environment=${1}
   __deploy_target=${2}
