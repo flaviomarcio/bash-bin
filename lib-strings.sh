@@ -421,8 +421,6 @@ function utilInitialize()
     echo ""
     echY "Log enabled"
   fi
-  
-  export PATH=${PATH}:${STACK_RUN_BIN}
 
   #export BASH_BIN=${PWD}/installer/bash-bin
 
