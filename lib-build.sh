@@ -92,9 +92,6 @@ function mavenBuild()
     printf "${__mvn_output}"
     return 0;
   fi
-  echG "    Finished"
-
-  echM "    Binaries prepare"
   export __mvn_jar_source_file=$(find ${__mvn_build_src_bin_dir} -name ${__mvn_jar_filter})
   echC "      - JAR file: ${__mvn_jar_source_file}"
   if [[ ${__mvn_jar_source_file} == "" ]]; then

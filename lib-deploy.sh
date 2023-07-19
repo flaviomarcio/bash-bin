@@ -28,6 +28,7 @@ function deploy()
   __deploy_dependency_dir=(${13})
 
 
+  
   __deploy_check_build=false
   __deploy_check_deploy=false
   if [[ ${__deploy_build_option} == "build" ]]; then
