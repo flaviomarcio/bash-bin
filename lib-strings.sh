@@ -386,6 +386,7 @@ function utilInitialize()
 {
   idt="$(toInt ${1})"
   logStart ${idt} "utilInitialize"
+  export PUBLIC_LOG_LEVEL=false
   export STACK_LOG=0            
   export STACK_LOG_VERBOSE=0            
   export STACK_LOG_VERBOSE_SUPER=0
@@ -393,6 +394,9 @@ function utilInitialize()
   do
     if [[ ${PARAM} == "-d" || ${PARAM} == "--debug" ]]; then
       export PUBLIC_LOG_LEVEL=true
+      export STACK_LOG=1            
+      export STACK_LOG_VERBOSE=1    
+      export STACK_LOG_VERBOSE_SUPER=1
     elif [[ ${PARAM} == "-l" ]]; then
       export STACK_LOG=1            
     elif [[ ${PARAM} == "-lv" ]]; then
@@ -543,6 +547,7 @@ function envsParserDir()
 
 function clearTerm()
 {
+  export __selector=
   if [[ ${PUBLIC_LOG_LEVEL} != true ]]; then
     clear
   fi

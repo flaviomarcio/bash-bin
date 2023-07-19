@@ -277,24 +277,54 @@ function dockerNetworkCreate()
   return 1
 }
 
+function dockerBuildDockerFile()
+{
+  IMAGE_NAME=${2}
+  FILE_SRC=${3}
+  FILE_DST=${4}
+
+  if [[ -d ${DOCKER_CONF_DIR} ]]; then
+    cp -r -T ${DOCKER_CONF_DIR} ${BUILD_TEMP_DIR}
+  fi
+
+  log "Building docker image [${IMAGE_NAME}]"
+  if ! [[ -f ${FILE_SRC} ]]; then
+      logError ${1} "Docker file not found [${FILE_SRC}]"
+    __RETURN=1;
+  else
+    rm -rf ${FILE_DST};
+    cp -r ${FILE_SRC} ${FILE_DST}
+    cd ${BUILD_TEMP_DIR}
+    docker --log-level ERROR build --quiet --network host -t ${IMAGE_NAME} .
+
+    cd ${ROOT_DIR}
+    __RETURN=1;
+  fi
+  return ${__RETURN}
+}
 
 function dockerBuildCompose()
 {
-  export DOCKER_SERVICE=
-  export DOCKER_HOSTNAME=
-  export DOCKER_ENV_FILE=
-  export DOCKER_JAR_NAME=
-  export STACK_NETWORK_NAME=
-  export COMPOSE_CONVERT_WINDOWS_PATHS=
+  # export APPLICATION_DEPLOY_IMAGE=
+  # export APPLICATION_NAME=
+  # export APPLICATION_DEPLOY_HOSTNAME=
+  # export APPLICATION_DEPLOY_ENV_FILE=
+  # export APPLICATION_DEPLOY_APP_DIR=
+  # export APPLICATION_DEPLOY_NETWORK_NAME=
+  # export COMPOSE_CONVERT_WINDOWS_PATHS=1  
+  # export DOCKER_JAR_NAME=
   __docker_build_bin_jar=
+  __docker_build_compose_dir=
 
   __docker_build_name=${1}
-  __docker_build_compose_file=${2}
-  __docker_build_init_dir=${3}
-  __docker_build_bin_dir=${4}
-  __docker_build_bin_name=${5}
-
-  
+  __docker_build_image=${2}
+  __docker_build_dockerfile=${3}
+  __docker_build_compose_file=${4}
+  __docker_build_env_file=${5}
+  __docker_build_builder_dir=${6}
+  __docker_build_bin_dir=${7}
+  __docker_build_bin_name=${8}
+  __docker_build_network_name=${9}
 
   echM "    Docker containers create"  
   if ! [[ -f  ${__docker_build_compose_file} ]]; then
@@ -307,19 +337,25 @@ function dockerBuildCompose()
     return 0;
   fi
 
+  __docker_build_compose_dir=$(dirname ${__docker_build_compose_file})
+
   if [[ ${__docker_build_bin_name} != "" ]]; then
     __docker_build_bin_jar=${__docker_build_bin_dir}/${__docker_build_bin_name}.jar
   fi
 
   __docker_build_service=$(__private_dockerParserServiceName ${__docker_build_name})  
   __docker_build_hostname=$(__private_dockerParserHostName ${__docker_build_name})  
-  __docker_build_env_file=$(__private_prepareContainerEnvs ${__docker_build_name} ${__docker_build_init_dir} ${__docker_build_bin_dir} "${__docker_build_bin_jar}" )
-  
-  
+  #__docker_build_env_file=$(__private_prepareContainerEnvs ${__docker_build_name} ${__docker_build_compose_dir} ${__docker_build_bin_dir} "${__docker_build_bin_jar}" )
 
-  cd ${__docker_build_init_dir}
+  cd ${__docker_build_compose_dir}
+
   # ref https://docs.docker.com/compose/environment-variables/envvars/
-  __docker_build_cmd="docker stack deploy --compose-file ${__docker_build_compose_file} ${__docker_build_service}"
+  
+  __docker_build_cmd_1="docker --log-level ERROR build --quiet --file $(basename ${__docker_build_dockerfile}) -t ${__docker_build_service} ."
+  __docker_build_cmd_2="docker --log-level ERROR image tag ${__docker_build_service} ${__docker_build_image}"
+  __docker_build_cmd_3="docker --log-level ERROR push ${__docker_build_image}"
+  __docker_build_cmd_4="docker stack deploy --compose-file $(basename ${__docker_build_compose_file}) ${__docker_build_service}"
+
 
   echB "      Information"
   echC "        - Service: [${__docker_build_service}]"
@@ -335,21 +371,39 @@ function dockerBuildCompose()
   echC "        - JAR name: ${__docker_build_bin_jar}"
   fi
   
-  export DOCKER_SERVICE=${__docker_build_service}
-  export DOCKER_HOSTNAME=${__docker_build_hostname}
-  export DOCKER_ENV_FILE=${__docker_build_env_file}
+  export APPLICATION_DEPLOY_IMAGE=${__docker_build_image}
+  export APPLICATION_NAME=${__docker_build_service}
+  export APPLICATION_DEPLOY_HOSTNAME=${__docker_build_hostname}
+  export APPLICATION_DEPLOY_ENV_FILE=${__docker_build_env_file}
+  export APPLICATION_DEPLOY_APP_DIR=${__docker_build_compose_dir}
+  export APPLICATION_DEPLOY_NETWORK_NAME=${__docker_build_network_name}
+  export APPLICATION_DEPLOY_DNS=${__docker_build_service}
+
+  export COMPOSE_CONVERT_WINDOWS_PATHS=1
   if ! [[ -f ${__docker_build_bin_jar} ]]; then
     export DOCKER_JAR_NAME=${__docker_build_bin_jar}
   fi
-  export STACK_NETWORK_NAME=${__docker_build_network_name}
-  export COMPOSE_CONVERT_WINDOWS_PATHS=1
+
+  printenv > ${PWD}/os.env
+  __deploy_tags=(HIST S_COLORS XDG printenv shell __ XCURSOR XCURSOR WINDOWID PWD PATH OLDPWD KDE LD_ LANG COLOR DESKTOP DISPLAY DBUS HOME TERM XAUTHORITY XMODIFIERS USER DOCKER_ARGS_DEFAULT)
+  for __deploy_tag in "${__deploy_tags[@]}"
+  do
+    sed -i "/${__deploy_tag}/d" ${PWD}/os.env
+  done  
+
 
   echB "      Building ..."
-  echY "        - ${__docker_build_cmd}"
-  echo $(${__docker_build_cmd})&>/dev/null
-  CHECK=$(docker service ls | grep ${DOCKER_SERVICE})
-  if [[ ${CHECK} == "" ]]; then
-  echR "    [FAIL]Service not found:${DOCKER_SERVICE}"
+  echY "        - ${__docker_build_cmd_1}"
+  echo $(${__docker_build_cmd_1})&>/dev/null
+  echY "        - ${__docker_build_cmd_2}"
+  echo $(${__docker_build_cmd_2})&>/dev/null
+  echY "        - ${__docker_build_cmd_3}"
+  echo $(${__docker_build_cmd_3})&>/dev/null
+  echY "        - ${__docker_build_cmd_4}"
+  echo $(${__docker_build_cmd_4})&>/dev/null
+  __docker_build_check=$(docker service ls | grep ${__docker_build_service})
+  if [[ ${__docker_build_check} == "" ]]; then
+  echR "    [FAIL]Service not found:${__docker_build_service}"
     return 0
   fi
   echG "    Finished"

@@ -545,6 +545,7 @@ function envsParserDir()
 
 function clearTerm()
 {
+  export __selector=
   if [[ ${PUBLIC_LOG_LEVEL} != true ]]; then
     clear
   fi
