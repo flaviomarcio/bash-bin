@@ -11,7 +11,9 @@ function __private_print_os_information()
   echG "OS informations"
   echC "  - $(uname -a)"
   echC "  - $(docker --version), IPv4: ${PUBLIC_HOST_IPv4}"
-  echC "  - Target:${__public_target}, Enviroment:${__public_enviroment}"
+  if [[ ${__public_target} != "" ]]; then
+    echC "  - Target:${__public_target}, Enviroment:${__public_enviroment}"
+  fi
 }
 
 function __private_project_tags()
