@@ -140,7 +140,7 @@ function deploy()
 
       if [[ ${__func_return} == "maven"  ]]; then
         mavenBuild ${__deploy_git_dir} ${__deploy_git_repository} "app*.jar"
-        if [ "$?" -eq 1 ]; then
+        if ! [ "$?" -eq 1 ]; then
           return 0
         fi
         __deploy_jar_file=${__deploy_builder_dir}/app.jar
@@ -149,15 +149,29 @@ function deploy()
     fi
   fi
 
+
   if [[ ${__deploy_check_deploy} == true ]]; then
+
     dockerCleanup ${__deploy_service_name}
     if ! [ "$?" -eq 1 ]; then
+      echB "    target: ${__deploy_git_dir}"
+      echR "    ===============================   "
+      echR "             ************             "
+      echR "    *********Cleanup fail**********   "
+      echR "             ************             "
+      echR "    ===============================   "
       return 0;
     fi
 
     __deploy_network_name=${__deploy_environment}-${__deploy_target}-inbound
     dockerNetworkCreate ${__deploy_network_name}
     if ! [ "$?" -eq 1 ]; then
+      echB "    target: ${__deploy_git_dir}"
+      echR "    ===============================  "
+      echR "           ******************        "
+      echR "    ******network create fail******  "
+      echR "           ******************        "
+      echR "    ===============================  "
       return 0;
     fi
 
@@ -172,7 +186,7 @@ function deploy()
         "${__deploy_jar_file}" \
         "${__deploy_network_name}"
 
-    if [ "$?" -eq 1 ]; then
+    if ! [ "$?" -eq 1 ]; then
       return 0
     fi
   fi

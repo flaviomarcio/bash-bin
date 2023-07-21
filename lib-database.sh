@@ -2,9 +2,7 @@
 
 . lib-strings.sh
 
-# export DATABASE_SCOPE=
 # export DATABASE_DIR=
-# export DATABASE_GIT_BRANCH=
 
 function __private_db_envs_clear()
 {
@@ -13,10 +11,6 @@ function __private_db_envs_clear()
 
 function __private_db_envs_check()
 {
-  if [[ ${DATABASE_SCOPE} == "" ]]; then
-      echo "Invalid \${DATABASE_SCOPE}"
-      return 0
-  fi
   if [[ ${DATABASE_DIR} == "" ]]; then
       echo "Invalid \${DATABASE_DIR}"
       return 0
@@ -293,9 +287,7 @@ function databaseDDLMakerExec()
 
 function databasePrepare()
 {
-  export DATABASE_SCOPE=${1}
-  export DATABASE_DIR=${2}
-  export DATABASE_GIT_BRANCH=${3}
+  export DATABASE_DIR=${1}
   export DATABASE_DDL_FILE="${DATABASE_DIR}/initdb.sql"
   __private_db_envs_check
   if ! [ "$?" -eq 1 ]; then
