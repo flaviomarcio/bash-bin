@@ -12,11 +12,11 @@ function __private_db_envs_clear()
 function __private_db_envs_check()
 {
   if [[ ${DATABASE_DIR} == "" ]]; then
-      echo "Invalid \${DATABASE_DIR}"
+      echR "Invalid \${DATABASE_DIR}"
       return 0
   fi
   if ! [[ -d ${DATABASE_DIR} ]]; then
-      echo "Invalid database dir: ${DATABASE_DIR}"
+      echR "Invalid database dir: ${DATABASE_DIR}"
       return 0
   fi
   return 1
@@ -38,7 +38,7 @@ function __private_db_cleanup_sql()
 function __private_db_scan_files()
 {
   DB_SCAN_RETURN=
-  DB_SCAN_DIR=${1}/projects
+  DB_SCAN_DIR=${1}
   DB_SCAN_FILTERS=(${2})
 
   if ! [[ -d ${DB_SCAN_DIR} ]]; then
@@ -50,8 +50,10 @@ function __private_db_scan_files()
   do
     DB_SCAN_STEP_FILES=
     for DB_SCAN_FILTER in ${DB_SCAN_FILTERS[*]}; 
-    do 
-      DB_SCAN_FILTER="${DB_SCAN_FILTER}*.sql"
+    do
+      if [[ $(echo ${DB_SCAN_FILTER} | grep sql) == "" ]]; then
+        DB_SCAN_FILTER="${DB_SCAN_FILTER}*.sql"
+      fi
       DB_SCAN_DIR_STEP="${DB_SCAN_DIR}/${DB_SCAN_STEP_DIR}"
       DB_SCAN_FILES=($(echo $(find ${DB_SCAN_DIR}/${DB_SCAN_STEP_DIR} -iname ${DB_SCAN_FILTER} | sort)))
       for DB_SCAN_FILE in ${DB_SCAN_FILES[*]};
@@ -70,13 +72,13 @@ function __private_db_scan_files()
 
 function __private_db_scan_files_filters()
 {
-  echo "drops tables constraints-pk constraints-fk constraints-check indexes initdata view fakedata"
+  echo "drops tables constraints-pk constraints.sql constraints-fk constraints-check indexes initdata view fakedata"
   return 1
 }
 
 function __private_db_scan_files_for_local()
 {
-  __private_db_scan_files "${1}" "drops tables constraints-pk constraints-fk constraints-check indexes initdata view fakedata"
+  __private_db_scan_files "${1}" "drops tables constraints.sql constraints-pk constraints-fk constraints-check indexes initdata view fakedata"
   if ! [ "$?" -eq 1 ]; then
     return 0;       
   fi
@@ -85,7 +87,7 @@ function __private_db_scan_files_for_local()
 
 function __private_db_scan_files_for_ddl()
 {
-  __private_db_scan_files "${1}" "tables constraints-pk constraints-fk constraints-check indexes initdata view fakedata"
+  __private_db_scan_files "${1}" "tables constraints.sql constraints-pk constraints-fk constraints-check indexes initdata view fakedata"
   if ! [ "$?" -eq 1 ]; then
     return 0;       
   fi
@@ -94,16 +96,16 @@ function __private_db_scan_files_for_ddl()
 
 function __private_db_ddl_apply_scan()
 {
-  __private_db_envs_check
-  if ! [ "$?" -eq 1 ]; then
+  __private_db_ddl_apply_scan_taget=${1}
+  if ! [ -d ${__private_db_ddl_apply_scan_taget} ]; then
     return 0;       
   fi
-  DDL_SCAN_FILES=($(__private_db_scan_files_for_local "${DATABASE_DIR}"))
-  for DDL_SCAN_FILE in ${DDL_SCAN_FILES[*]};
+  __private_db_ddl_apply_scan_files=($(__private_db_scan_files_for_local "${__private_db_ddl_apply_scan_taget}"))
+  for __private_db_ddl_apply_scan_file in ${__private_db_ddl_apply_scan_files[*]};
   do    
-    DDL_SCAN_DIR_FILES="${DDL_SCAN_DIR_FILES} ${DDL_SCAN_FILE}"
+    __private_db_ddl_apply_scan_return="${__private_db_ddl_apply_scan_return} ${__private_db_ddl_apply_scan_file}"
   done
-  echo ${DDL_SCAN_DIR_FILES}
+  echo ${__private_db_ddl_apply_scan_return}
   return 1
 }
 
@@ -117,13 +119,13 @@ function __private_pg_envs_check()
     export POSTGRES_HOST="localhost"
   fi
   if [[ ${POSTGRES_USER} == "" ]]; then
-    export POSTGRES_USER=postgres
+    export POSTGRES_USER=services
   fi
   if [[ ${POSTGRES_PASS} == "" ]]; then
-    export POSTGRES_PASS=postgres
+    export POSTGRES_PASS=services
   fi
   if [[ ${POSTGRES_DB} == "" ]]; then
-    export POSTGRES_DB=postgres
+    export POSTGRES_DB=services
   fi
   if [[ ${POSTGRES_PORT} == "" ]]; then
     export POSTGRES_PORT=5432
@@ -189,28 +191,31 @@ function databaseUpdateExec()
   echC "        - export POSTGRES_PASS=${POSTGRES_PASS}"
   echC "        - export POSTGRES_PORT=${POSTGRES_PORT}"
   echY "        - psql -q -h \${POSTGRES_HOST} -U \${POSTGRES_USER} -p \${POSTGRES_PORT} -d \${POSTGRES_DB} -a -f \${FILE}\""
-  echY "        - psql -q -h ${POSTGRES_HOST} -U ${POSTGRES_USER} -p ${POSTGRES_PORT} -d ${POSTGRES_DB} -a -f \${FILE}\""
   echB "      -Executing"
   DB_DDL_FILE_TMP="/tmp/ddl_file.sql"
   EXEC_FILES=$(__private_db_ddl_apply_scan ${DATABASE_DIR})
-  for EXEC_FILE in ${EXEC_FILES[*]};
-  do
-    if [[ ${EXEC_FILE} == "["* ]] ; then
-      echG "        -Executing ${EXEC_FILE}"     
-    else
-      BASE1=$(basename ${EXEC_FILE})
-      BASE2=$(dirname ${EXEC_FILE})
-      BASE3=$(dirname ${BASE2})
-      BASE2=$(basename ${BASE2})
-      BASE3=$(basename ${BASE3})
-      echC "          - ${BASE1} from ${BASE2}"
-      echo "set client_min_messages to WARNING; ">${DB_DDL_FILE_TMP};
-      cat ${EXEC_FILE} >> ${DB_DDL_FILE_TMP};
-      __private_pg_script_exec ${DB_DDL_FILE_TMP}
-    fi
-
-  done
-  echB "Finished"
+  if [[ ${EXEC_FILES} == "" ]]; then
+    echR "        - No files found"
+  else
+    for EXEC_FILE in ${EXEC_FILES[*]};
+    do
+      if [[ ${EXEC_FILE} == "["* ]] ; then
+        echG "        -Executing ${EXEC_FILE}"     
+      else
+        BASE1=$(basename ${EXEC_FILE})
+        BASE2=$(dirname ${EXEC_FILE})
+        BASE3=$(dirname ${BASE2})
+        BASE2=$(basename ${BASE2})
+        BASE3=$(basename ${BASE3})
+        echC "          - ${BASE1} from ${BASE2}"
+        echo "set client_min_messages to WARNING; ">${DB_DDL_FILE_TMP};
+        cat ${EXEC_FILE} >> ${DB_DDL_FILE_TMP};
+        __private_pg_script_exec ${DB_DDL_FILE_TMP}
+      fi
+    done
+  fi
+  echB "      Finished"
+  echB "    Finished"
   return 1
 }
 
@@ -291,6 +296,7 @@ function databasePrepare()
   export DATABASE_DDL_FILE="${DATABASE_DIR}/initdb.sql"
   __private_db_envs_check
   if ! [ "$?" -eq 1 ]; then
+    echContinue
     return 0;       
   fi
   return 1
