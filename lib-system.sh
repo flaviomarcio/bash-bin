@@ -1,6 +1,10 @@
 #!/bin/bash
 
-. lib-strings.sh
+if [[ ${BASH_BIN} == "" ]]; then
+  export BASH_BIN=${PWD}
+fi
+
+. ${BASH_BIN}/lib-strings.sh
 
 function systemIPvPrepare()
 {
