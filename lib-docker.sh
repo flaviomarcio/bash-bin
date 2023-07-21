@@ -107,39 +107,47 @@ function dockerSwarmVerify()
 
 function dockerCleanup()
 {
-  __docker_cleanup_tags=${1}
-  if [[ ${__docker_cleanup_tags} == "" ]]; then
-    return 1;    
-  fi
-
-  __docker_cleanup_tags=($(__private_dockerParserServiceName ${__docker_cleanup_tags}))
-
-  __docker_cleanup_tag_go=false
-  for __docker_cleanup_tag in "${__docker_cleanup_tags[@]}"
-  do
-    __docker_cleanup_check=$(docker service ls | grep ${__docker_cleanup_tag} | awk '{print $1}')
-    if [[ ${__docker_cleanup_check} != "" ]]; then
-      __docker_cleanup_tag_go=true
-      break
-    fi
-  done
-
-  if [[ ${__docker_cleanup_tag_go} == true ]]; then
-    return 1;
-  fi
-
   echM "    Docker cleanup"
-  for __docker_cleanup_tag in "${__docker_cleanup_tags[@]}"
-  do
-    __docker_cleanup_cmd="docker --log-level ERROR service rm \$(docker service ls | grep ${__docker_cleanup_tag} | awk '{print \$1}')"
-    echR "      Removing tag[${__docker_cleanup_tag}]..."
-    echY "        - ${__docker_cleanup_cmd}"  
-    __docker_cleanup_check=$(docker service ls | grep ${__docker_cleanup_tag} | awk '{print $1}')
-    if [[ ${__docker_cleanup_check} == "" ]]; then
-      continue
+  __docker_cleanup_tags=${1}
+  __docker_cleanup_removed=false
+  if [[ ${__docker_cleanup_tags} == "" ]]; then
+    __docker_cleanup_tags=($(docker service ls --quiet))
+    for __docker_cleanup_tag in "${__docker_cleanup_tags[@]}"
+    do
+      __docker_cleanup_tag=$(docker service inspect ${__docker_cleanup_tag} --format '{{ .Spec.Name }}')
+      echR "      Removing service [${__docker_cleanup_tag}]..."
+      echo $(docker --log-level ERROR service rm ${__docker_cleanup_tag} )&>/dev/null
+      __docker_cleanup_removed=true
+    done
+  else
+    __docker_cleanup_tags=($(__private_dockerParserServiceName ${__docker_cleanup_tags}))
+    for __docker_cleanup_tag in "${__docker_cleanup_tags[@]}"
+    do
+      __docker_cleanup_check=$(docker service ls | grep ${__docker_cleanup_tag} | awk '{print $1}')
+      if [[ ${__docker_cleanup_check} != "" ]]; then
+        break
+      fi
+    done
+
+    for __docker_cleanup_tag in "${__docker_cleanup_tags[@]}"
+    do
+      __docker_cleanup_cmd="docker --log-level ERROR service rm \$(docker service ls | grep ${__docker_cleanup_tag} | awk '{print \$1}')"
+      echR "      Removing tag[${__docker_cleanup_tag}]..."
+      echY "        - ${__docker_cleanup_cmd}"  
+      __docker_cleanup_check=$(docker service ls | grep ${__docker_cleanup_tag} | awk '{print $1}')
+      if [[ ${__docker_cleanup_check} == "" ]]; then
+        continue
+      fi
+      echo $(docker --log-level ERROR service rm $(docker service ls | grep ${__docker_cleanup_tag} | awk '{print $1}') )&>/dev/null
+      __docker_cleanup_removed=true
+    done
+
+  fi
+    if [[ ${__docker_cleanup_removed} == false ]]; then
+      echC "      - No services for clear"
+      echG "    Finished"
+      return 1
     fi
-    echo $(docker --log-level ERROR service rm $(docker service ls | grep ${__docker_cleanup_tag} | awk '{print $1}') )&>/dev/null
-  done
   echG "    Finished"
   return 1
 }
@@ -158,7 +166,7 @@ function dockerReset()
 {
   __docker_reset_tags=${1}
   echG "  Docker reset"
-  dockerCleanup ${__docker_reset_tags}
+  dockerCleanup
   dockerPrune
   echG "  Finished"
 }
