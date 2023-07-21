@@ -888,7 +888,13 @@ function echFail()
 
   __e_f_len=$(expr length "${__e_f_txt}")
   let "__e_f_len_inc=${__e_f_len} * 2"
-  
+
+  echo "__e_f_len=${__e_f_len}"
+  echo "__e_f_len_inc=${__e_f_len}"
+  echo "__e_f_txt=${__e_f_txt}"
+  echo "__e_f_out=${__e_f_out}"
+  read
+
   lnContinuoEQU=$(strCenterJustified ${__e_f_len_inc} "=" "=")
   lnContinuoMSG=$(strCenterJustified ${__e_f_len_inc} "${__e_f_txt}" "*")
   lnContinuoSPC=$(strCenterJustified ${__e_f_len} "" "*")

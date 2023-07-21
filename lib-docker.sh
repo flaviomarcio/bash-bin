@@ -6,6 +6,8 @@
 # export DOCKER_SCOPE=
 # export DOCKER_DIR=
 
+
+
 function __prepare_container_envs()
 {
   if [[ ${1} == "" ]]; then
@@ -524,3 +526,18 @@ function dockerPrepare()
   chmod +x ${DOCKER_BIN_RUN}
   return 1
 }
+
+function dockerRegistryImageCheck()
+{
+  export __dockerRegistryImageCheckImage=${1}
+  __dockerRegistryImageCheck=$(echo $(curl -s -H "Accept: application/vnd.docker.distribution.manifest.v2+json" -X GET "http://${STACK_REGISTRY_DNS}/v2/${__dockerRegistryImageCheckImage}/manifests/latest") | jq '.config.mediaType')
+
+  if [[ ${__dockerRegistryImageCheck} == "" || ${__dockerRegistryImageCheck} == "null" ]]; then
+    return 0;
+  fi
+
+  
+  return 1;
+}
+
+
