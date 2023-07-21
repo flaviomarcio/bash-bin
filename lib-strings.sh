@@ -592,26 +592,32 @@ function strAlign()
         __s_j_left=0
       fi
     else
+      __s_j_align=
+      __s_j_count=
+      __s_j_char=
       return 0
     fi
   done
+  __s_j_align=
+  __s_j_count=
+  __s_j_char=
   echo "${__s_j_return}"
   return 1
 }
 
 function strLeftJustified()
 {
-  strAlign left "${1}" ${2} "${3}"
+  strAlign "left" "${1}" "${2}" "${3}" " "
 }
 
 function strRightJustified()
 {
-  strAlign right "${1}" ${2} "${3}"
+  strAlign "right" "${1}" "${2}" "${3}" " "
 }
 
 function strCenterJustified()
 {
-  strAlign center "${1}" ${2} "${3}"
+  strAlign "center" "${1}" "${2}" "${3}" " "
 }
 
 function replaceString()
@@ -845,7 +851,7 @@ function echWarning()
   fi
   export __echCommand=
   __e_f_len=$(expr length "${__e_f_txt}")
-  let "__e_f_len_inc=${__e_f_len} * 2"
+  let "__e_f_len_inc=${__e_f_len} + 4"
 
   lnContinuoEQU=$(strCenterJustified ${__e_f_len_inc} "=" "=")
   lnContinuoMSG=$(strCenterJustified ${__e_f_len_inc} "${__e_f_txt}" "*")
@@ -884,19 +890,12 @@ function echFail()
   export __echCommand=
 
   __e_f_len=$(expr length "${__e_f_txt}")
-  let "__e_f_len_inc=${__e_f_len} * 2"
-
-  echo "__e_f_len=${__e_f_len}"
-  echo "__e_f_len_inc=${__e_f_len}"
-  echo "__e_f_txt=${__e_f_txt}"
-  echo "__e_f_out=${__e_f_out}"
-  read
+  let "__e_f_len_inc=${__e_f_len} + 8"
 
   lnContinuoEQU=$(strCenterJustified ${__e_f_len_inc} "=" "=")
   lnContinuoMSG=$(strCenterJustified ${__e_f_len_inc} "${__e_f_txt}" "*")
   lnContinuoSPC=$(strCenterJustified ${__e_f_len} "" "*")
   lnContinuoSPC=$(strCenterJustified ${__e_f_len_inc} "${lnContinuoSPC}" " ")  
-
   
   lnContinuoEQU="+${lnContinuoEQU}+"
   lnContinuoSPC="+${lnContinuoSPC}+"
@@ -914,7 +913,6 @@ function echFail()
     echR "$(echText 2 "${1}" "")"
     echo "${__e_f_out}"
   fi
-  echR "$(echText 2 "${1}" "")"
   export __e_f_out=  
   return 1
 }
