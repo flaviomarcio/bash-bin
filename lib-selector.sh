@@ -1,8 +1,12 @@
 #!/bin/bash
 
-. lib-strings.sh
-. lib-system.sh
-. lib-docker.sh
+if [[ ${BASH_BIN} == "" ]]; then
+  export BASH_BIN=${PWD}
+fi
+
+. ${BASH_BIN}/lib-strings.sh
+. ${BASH_BIN}/lib-system.sh
+. ${BASH_BIN}/lib-docker.sh
 
 __selector_environments="testing development staging production"
 

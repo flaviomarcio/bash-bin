@@ -1,10 +1,14 @@
 #!/bin/bash
 
-. lib-git.sh
-. lib-strings.sh
-. lib-system.sh
-. lib-build.sh
-. lib-docker.sh
+if [[ ${BASH_BIN} == "" ]]; then
+  export BASH_BIN=${PWD}
+fi
+
+. ${BASH_BIN}/lib-git.sh
+. ${BASH_BIN}/lib-strings.sh
+. ${BASH_BIN}/lib-system.sh
+. ${BASH_BIN}/lib-build.sh
+. ${BASH_BIN}/lib-docker.sh
 
 function deploy()
 {
