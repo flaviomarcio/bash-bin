@@ -1,6 +1,18 @@
 #!/bin/bash
 
-. lib-bash.sh
+. lib-strings.sh
+. lib-system.sh
+. lib-docker.sh
+
+__selector_environments="testing development staging production"
+
+function __private_print_os_information()
+{
+  echG "OS informations"
+  echC "  - $(uname -a)"
+  echC "  - $(docker --version), IPv4: ${PUBLIC_HOST_IPv4}"
+  echC "  - Target:${__public_target}, Enviroment:${__public_enviroment}"
+}
 
 function __private_project_tags()
 {
@@ -10,7 +22,7 @@ function __private_project_tags()
     __private_project_tags=$(echo ${PUBLIC_SERVICES_NAME} | sed 's/_/ /g' | sort)
   fi
   GIT_TAGS="${GIT_TAGS} ${__private_project_tags}"
-  GIT_TAGS="${GIT_TAGS} testing development staging production"
+  GIT_TAGS="${GIT_TAGS} ${__selector_environments}"
   echo ${__private_project_tags}
   return 1
 }
@@ -27,8 +39,8 @@ function __private_project_names()
     __pvt_project_target=
     for __pvt_project_name in "${__pvt_project_list[@]}"
     do
-      CHECK=$(echo ${__pvt_project_name} | grep ${__pvt_project_filter});
-      if [[ ${CHECK} != "" ]]; then
+      __pvt_project_check=$(echo ${__pvt_project_name} | grep ${__pvt_project_filter});
+      if [[ ${__pvt_project_check} != "" ]]; then
         __pvt_project_target="${__pvt_project_target} ${__pvt_project_name}" 
       fi
     done
@@ -37,52 +49,6 @@ function __private_project_names()
 
   echo ${__pvt_project_target}
   return 1
-}
-
-function selectorProjectTags()
-{
-  while :
-  do
-    options=(Back $(__private_project_tags))
-    PS3="Stack project menu"$'\n'"Choose option: "
-    select opt in "${options[@]}"
-    do
-      if [[ ${opt} == "Back" ]]; then
-        return 0
-      elif [[ ${opt} != "" ]]; then
-        echo $(__private_project_names ${opt})
-        return 1
-      else
-        break
-      fi
-    done
-  done
-  return 0
-}
-
-function selectorProjects()
-{
-  while :
-  do
-    options=(Back All Tag $(__private_project_names))
-    PS3="Stack project menu"$'\n'"Choose option: "
-    select opt in "${options[@]}"
-    do
-      if [[ ${opt} == "Back" ]]; then
-        return 0;
-      elif [[ ${opt} == "All" ]]; then
-        echo $(__private_project_names)
-        return 1
-      elif [[ ${opt} != "" ]]; then
-        echo ${opt}
-        return 1
-      else
-        #echR "Invalid option ${opt}"
-        break
-      fi
-    done
-  done
-  return 0
 }
 
 # show System commands
@@ -208,15 +174,65 @@ function selectorDNS()
   echC "      cat /etc/hosts | grep mcs"
 }
 
-#check docker mode [Docker Swarm|Docker Compose]
+function selectorProjectTags()
+{
+  export __selector=
+  options=(Back $(__private_project_tags))
+  clearTerm
+  __private_print_os_information
+  echG $'\n'"Stack project tags menu"$'\n'
+  PS3=$'\n'"Choose option: "
+  select opt in "${options[@]}"
+  do
+    export __selector=${opt}
+    if [[ ${opt} == "Back" ]]; then
+      return 0
+    elif [[ ${opt} != "" ]]; then
+      echo $(__private_project_names ${opt})
+      return 1
+    else
+      break
+    fi
+  done
+  return 0
+}
+
+function selectorProjects()
+{
+  export __selector=
+  clearTerm
+  __private_print_os_information
+  options=(Back All Tag $(__private_project_names))
+  echG $'\n'"Project menu"$'\n'
+  PS3=$'\n'"Choose option: "
+  select opt in "${options[@]}"
+  do
+    export __selector=${opt}
+    if [[ ${opt} == "Back" ]]; then
+      return 0;
+    elif [[ ${opt} == "All" ]]; then
+      echo $(__private_project_names)
+      return 1
+    elif [[ ${opt} != "" ]]; then
+      echo ${opt}
+      return 1
+    else
+      break
+    fi
+  done
+  return 0
+}
+
 function selectorDockerOption()
 {
-  echo "Docker-Stack"
+  export __selector=Docker-Stack
   return 1
-  PS3="Stack build option menu"$'\n'"Choose option: "
+  echG $'\n'"Docker option menu"$'\n'
+  PS3=$'\n'"Choose option: "
   options=(Back Docker-Stack Docker-Compose)
   select opt in "${options[@]}"
   do
+    export __selector=${opt}
     if [[ ${opt} == "Back" ]]; then
       break
     elif [[ ${opt} == "Docker-Stack" ]]; then
@@ -234,49 +250,50 @@ function selectorDockerOption()
 
 function selectorBuildOption()
 {
-  while :
+  export __selector=
+  options=(Back build-and-deploy build deploy)
+  echG $'\n'"Docker build option menu"$'\n'
+  PS3=$'\n'"Choose option: "
+  select opt in "${options[@]}"
   do
-    options=(Back build-and-deploy build deploy)
-    PS3="Stack repository menu"$'\n'"Choose option: "
-    select opt in "${options[@]}"
-    do
-      if [[ ${opt} == "Back" ]]; then
-        return 0;
-      elif [[ ${opt} != "" ]]; then
-        echo ${opt}
-        return 1
-      else
-        echR "Invalid option ${opt}"
-      fi
-    done
+    export __selector=${opt}
+    if [[ ${opt} == "Back" ]]; then
+      return 0;
+    elif [[ ${opt} != "" ]]; then
+      echo ${opt}
+      return 1
+    else
+      echR "Invalid option ${opt}"
+    fi
   done
   return 0;
 }
 
-
 function selectorDNSOption()
 {
-  while :
+  export __selector=
+  clearTerm
+  options=(Back etc-hosts print)
+  echG $'\n'"DNS options"$'\n'
+  PS3=$'\n'"Choose option: "
+  select opt in "${options[@]}"
   do
-    options=(Back etc-hosts print)
-    PS3="DNS options"$'\n'"Choose option: "
-    select opt in "${options[@]}"
-    do
-      if [[ ${opt} == "Back" ]]; then
-        return 0;
-      elif [[ ${opt} != "" ]]; then
-        echo ${opt}
-        return 1
-      else
-        break
-      fi
-    done
+    export __selector=${opt}
+    if [[ ${opt} == "Back" ]]; then
+      return 0;
+    elif [[ ${opt} != "" ]]; then
+      echo ${opt}
+      return 1
+    else
+      break
+    fi
   done
   return 0
 }
 
-function selectCustomer()
+function selectorCustomer()
 {
+  export __selector=
   export PUBLIC_STACK_TARGET_FILE=${HOME}/applications/stack_targets.env
   if [[ -f ${PUBLIC_STACK_TARGET_FILE} ]]; then
     options=$(cat ${PUBLIC_STACK_TARGET_FILE})
@@ -287,10 +304,12 @@ function selectCustomer()
   options=(${options})
 
   clearTerm
+  __private_print_os_information
   echM $'\n'"Customer menu"$'\n'
-  PS3="Choose a option: "
+  PS3=$'\n'"Choose a option: "
   select opt in "${options[@]}"
   do
+    export __selector=${opt}
     if [[ ${opt} == "quit" ]]; then
       return 0
     fi
@@ -300,16 +319,19 @@ function selectCustomer()
   return 1;
 }
 
-function selectEnviroment()
+function selectorEnvironment()
 {
+  export __selector=
   clearTerm
+  __private_print_os_information
   echM $'\n'"Environment menu"$'\n'
-  PS3="Choose a option: "
+  PS3=$'\n'"Choose a option: "
   
-  options=(testing development staging production quit)
+  options=(${__selector_environments})
 
   select opt in "${options[@]}"
   do
+    export __selector=${opt}
     export STACK_ENVIRONMENT=${opt}
     case $opt in
         "development")
@@ -333,22 +355,76 @@ function selectEnviroment()
   return 1
 }
 
-function selectDeployOpt()
+function selectorDeployOption()
 {
-  export STACK_INSTALL_BUILD_ARGS=
+  export __selector=
   clearTerm
   echM $'\n'"Stack deploy mode"$'\n'
-  PS3="Choose a option: "
+  PS3=$'\n'"Choose a option: "
 
   options=(Back all build deploy)
 
   select opt in "${options[@]}"
   do
-    if [[ ${opt} == "build" ]]; then
-      export STACK_INSTALL_BUILD_ARGS=${opt}
+    export __selector=${opt}
+    if [[ ${opt} == "Back" ]]; then
+      return 0
     fi
+    echo ${opt}
     return 1;
   done
 
   return 0;
+}
+
+function selector()
+{
+  export __selector=
+  __selector_title=${1}
+  __selector_args=${2}
+  if [[ ${__selector_args} == "" ]]; then
+    return 0
+  fi
+  clearTerm
+  __private_print_os_information
+  echM $'\n'"${__selector_title}"$'\n'
+  PS3=$'\n'"Choose a option: "
+  options=(${__selector_args})
+  select opt in "${options[@]}"
+  do
+    export __selector=${opt}
+    if [[ ${opt} == "back" ]]; then
+      return 0;
+    elif [[ ${opt} == "quit" ]]; then
+      return 2;
+    elif [[ ${opt} == "all" ]]; then
+      export __selector=${__selector_args}
+    fi
+    return 1;
+  done
+  return 0;
+}
+
+function selectorBack()
+{
+  __selector_title=${1}
+  __selector_args=${2} 
+  
+  if [[ ${__selector_args} == "" ]]; then
+    return 0
+  fi
+  selector "${__selector_title}" "back ${__selector_args}"
+  return "$?"
+}
+
+function selectorQuit()
+{
+  __selector_title=${1}
+  __selector_args=${2} 
+  
+  if [[ ${__selector_args} == "" ]]; then
+    return 0
+  fi
+  selector "${__selector_title}" "quit ${__selector_args}"
+  return "$?"
 }

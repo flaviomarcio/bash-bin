@@ -1,7 +1,16 @@
 #!/bin/bash
 
-. lib-bash.sh
-. lib-selector.sh
+. lib-strings.sh
+
+function systemIPvPrepare()
+{
+  export HOST_IP="127.0.0.1"
+  if [[ -d /mnt ]]; then
+      export PUBLIC_HOST_IPv4=$(ip -4 route get 8.8.8.8 | awk {'print $7'} | tr -d '\n')
+  else
+      export PUBLIC_HOST_IPv4=$(ipconfig.exe | grep -a IPv4 | grep -a 192 | sed 's/ //g' | sed 's/Endere□oIPv4//g' | awk -F ':' '{print $2}')
+  fi
+}
 
 function systemDNSList()
 {
@@ -12,7 +21,7 @@ function systemDNSList()
     return 0
   fi
 
-  DNSList=(${PUBLIC_SERVICES_NAME}))
+  DNSList=(${PUBLIC_SERVICES_NAME})
   DNSOut=
   for DNS in "${DNSList[@]}"
   do
@@ -127,3 +136,10 @@ function systemETCHostPrint()
   echo ""
   echG
 }
+
+function main()
+{
+  systemIPvPrepare
+}
+
+main

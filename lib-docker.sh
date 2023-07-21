@@ -1,64 +1,88 @@
 #!/bin/bash
 
-. lib-bash.sh
+. lib-strings.sh
+. lib-system.sh
 
 # export DOCKER_OPTION=
 # export DOCKER_SCOPE=
 # export DOCKER_DIR=
 
-
-
-function __prepare_container_envs()
+function __private_dockerParserName()
 {
-  if [[ ${1} == "" ]]; then
-    return 0
-  fi
+  # if [[ ${1} == "" ]]; then
+  #   return 0;
+  # fi
+  echo ${1}
+}
 
-  if [[ ${2} == "" ]]; then
-    __stack_name_curent=${1}
-  else
-    __stack_name_curent="${1}_${2}"
-  fi
-  
-  if [[ ${__stack_name_last} == "${__stack_name_curent}" ]]; then
+function __private_prepareContainerEnvs()
+{
+  __prepare_container_name=${1}
+  __prepare_container_src_dir=${2}
+  __prepare_container_destine_dir=${3}
+  __prepare_container_target_jar=${4}
+ 
+  if [[ ${__prepare_container_name_last} == "${__prepare_container_name}" ]]; then
     return 1;
   fi
   
-  __stack_name_last=${__stack_name_curent}
+  __prepare_container_name_last=${__prepare_container_name}
 
-  export DOCKER_ENV_FILE_DEFAULT=${DOCKER_BIN_DIR}/default.env
-  if [[ -f ${DOCKER_JAR_NAME} ]]; then
-    export DOCKER_ENV_FILE=$(echo ${DOCKER_JAR_NAME} | sed 's/jar/env/g')
+  if [[ -f ${__prepare_container_target_jar} ]]; then
+    export __prepare_container_env_file=$(echo ${__prepare_container_target_jar} | sed 's/jar/env/g')
   else
-    export DOCKER_ENV_FILE=${DOCKER_BIN_DIR}/${__stack_name_curent}.env
+    export __prepare_container_env_file=${__prepare_container_destine_dir}/${__prepare_container_name}.env
   fi
-  rm -rf ${DOCKER_ENV_FILE}
-  TAGS=(default "${1}" "${2}")
-  for TAG in "${TAGS[@]}"
+  rm -rf ${__prepare_container_env_file}
+  __prepare_container_tags=(default "${1}" "${2}")
+  for __prepare_container_tag in "${__prepare_container_tags[@]}"
   do
-    if [[ ${TAG} == "" ]]; then
+    if [[ ${__prepare_container_tag} == "" ]]; then
       continue;
     fi
 
-    export TAG=$(echo ${TAG} | sed 's/-/_/g')   
-    TAG_FILE=${DOCKER_BIN_DIR}/envs_${TAG}.env
-    cat ${DOCKER_INIT_DIR}/env_file_default.json | jq ".${TAG}[]" | sed 's/\"//g' > ${TAG_FILE}
-    if ! [[ -f ${DOCKER_ENV_FILE} ]]; then
-      cat ${TAG_FILE} > ${DOCKER_ENV_FILE}
+    export __prepare_container_tag=$(echo ${__prepare_container_tag} | sed 's/-/_/g')   
+    __prepare_container_tag_file=${__prepare_container_destine_dir}/envs_${__prepare_container_tag}.env
+    cat ${__prepare_container_src_dir}/env_file_default.json | jq ".${__prepare_container_tag}[]" | sed 's/\"//g' > ${__prepare_container_tag_file}
+    if ! [[ -f ${__prepare_container_env_file} ]]; then
+      cat ${__prepare_container_tag_file} > ${__prepare_container_env_file}
     else
-      cat ${TAG_FILE} >> ${DOCKER_ENV_FILE}
+      cat ${__prepare_container_tag_file} >> ${__prepare_container_env_file}
     fi    
   done
+  echo ${__prepare_container_env_file}
+  return 1
+}
 
-  echo ${DOCKER_ENV_FILE}
+function __private_dockerParserServiceName()
+{
+  echo "$@"
+}
 
+function __private_dockerParserHostName()
+{
+  if [[ ${1} == "" ]]; then
+    return 0;
+  fi
+  __docker_parser_name=${1}
+  __docker_parser_tags=("_" "|" "\.")
+  for __docker_parser_tag in "${__docker_parser_tags[@]}"
+  do
+    export __docker_parser_name=$(echo ${__docker_parser_name} | sed "s/${__docker_parser_tag}/-/g")
+  done  
+  echo ${__docker_parser_name}
+}
+
+function dockerSwarmState()
+{
+  echo $(docker info --format '{{ .Swarm.LocalNodeState }}')
   return 1
 }
 
 function dockerSwarmIsActive()
 {
-  DOCKER_SWARM_STATS=$(docker info --format '{{ .Swarm.LocalNodeState }}')
-  if [[ ${DOCKER_SWARM_STATS} == "active" ]]; then
+  __docker_swarm_check=$(dockerSwarmState)
+  if [[ ${__docker_swarm_check} == "active" ]]; then
     return 1;
   fi
   return 0;
@@ -79,32 +103,38 @@ function dockerSwarmVerify()
 
 function dockerCleanup()
 {
-  TAGS=(${1})
-  TAGGO=false
-  for TAG in "${TAGS[@]}"
+  __docker_cleanup_tags=${1}
+  if [[ ${__docker_cleanup_tags} == "" ]]; then
+    return 1;    
+  fi
+
+  __docker_cleanup_tags=($(__private_dockerParserServiceName ${__docker_cleanup_tags}))
+
+  __docker_cleanup_tag_go=false
+  for __docker_cleanup_tag in "${__docker_cleanup_tags[@]}"
   do
-    CHECK=$(docker service ls | grep ${TAG} | awk '{print $1}')
-    if [[ ${CHECK} != "" ]]; then
-      TAGGO=true
+    __docker_cleanup_check=$(docker service ls | grep ${__docker_cleanup_tag} | awk '{print $1}')
+    if [[ ${__docker_cleanup_check} != "" ]]; then
+      __docker_cleanup_tag_go=true
       break
     fi
   done
 
-  if [[ ${TAGGO} == false ]]; then
+  if [[ ${__docker_cleanup_tag_go} == true ]]; then
     return 1;
   fi
 
   echM "    Docker cleanup"
-  for TAG in "${TAGS[@]}"
+  for __docker_cleanup_tag in "${__docker_cleanup_tags[@]}"
   do
-    CMD="docker --log-level ERROR service rm \$(docker service ls | grep ${TAG} | awk '{print \$1}')"
-    echR "      Removing tag[${TAG}]..."
-    echY "        - ${CMD}"  
-    CHECK=$(docker service ls | grep ${TAG} | awk '{print $1}')
-    if [[ ${CHECK} == "" ]]; then
+    __docker_cleanup_cmd="docker --log-level ERROR service rm \$(docker service ls | grep ${__docker_cleanup_tag} | awk '{print \$1}')"
+    echR "      Removing tag[${__docker_cleanup_tag}]..."
+    echY "        - ${__docker_cleanup_cmd}"  
+    __docker_cleanup_check=$(docker service ls | grep ${__docker_cleanup_tag} | awk '{print $1}')
+    if [[ ${__docker_cleanup_check} == "" ]]; then
       continue
     fi
-    echo $(docker --log-level ERROR service rm $(docker service ls | grep ${TAG} | awk '{print $1}') )&>/dev/null
+    echo $(docker --log-level ERROR service rm $(docker service ls | grep ${__docker_cleanup_tag} | awk '{print $1}') )&>/dev/null
   done
   echG "    Finished"
   return 1
@@ -112,18 +142,19 @@ function dockerCleanup()
 
 function dockerPrune()
 {
+  __docker_prune_cmd="docker --log-level ERROR system prune -a --all --force"
   echM "    Docker prune"
-  CMD="docker --log-level ERROR system prune -a --all --force"
   echR "      Removing ..."
-  echY "        - ${CMD}"
-  echo $(${CMD})&>/dev/null
+  echY "        - ${__docker_prune_cmd}"
+  echo $(${__docker_prune_cmd})&>/dev/null
   echG "    Finished"
 }
 
 function dockerReset()
 {
+  __docker_reset_tags=${1}
   echG "  Docker reset"
-  dockerCleanup "adm mcs srv"
+  dockerCleanup ${__docker_reset_tags}
   dockerPrune
   echG "  Finished"
 }
@@ -144,8 +175,9 @@ function dockerList()
 function dockerSwarmInit()
 {
   __docker_swarm_action=${1}
+  __docker_swarm_ip=${2}
 
-  CMD="docker swarm init --advertise-addr ${PUBLIC_HOST_IPv4}"
+  __docker_swarm_cmd="docker swarm init --advertise-addr ${__docker_swarm_ip}"
   if [[ ${__docker_swarm_action} == true ]]; then
     clearTerm
     echB "  Docker swarm não está instalado"
@@ -154,9 +186,9 @@ function dockerSwarmInit()
     echG ""
     read
     echB "  Action: [Swam-Init]"
-    echY "    - ${CMD}"
+    echY "    - ${__docker_swarm_cmd}"
     echB "  Executing ..."
-    echo $(${CMD})
+    echo $(${__docker_swarm_cmd})
     dockerSwarmIsActive
     if [ "$?" -eq 1 ]; then
       echG "    - Successfull"
@@ -169,194 +201,209 @@ function dockerSwarmInit()
     echG ""
     read
   else
-    echo ${CMD}
+    echo ${__docker_swarm_cmd}
   fi  
   return 1
 }
 
 function dockerSwarmLeave()
 {
-  CMD="docker swarm leave --force"
+  __docker_swarm_cmd="docker swarm leave --force"
   if [[ ${__docker_swarm_action} == true ]]; then
     echB "  Action: [Swam-Leave]"
-    echY "    - ${CMD}"
+    echY "    - ${__docker_swarm_cmd}"
     echB "  Executing ..."
-    echo $(${CMD})
+    echo $(${__docker_swarm_cmd})
     echG "  Finished"
   else
-    echo ${CMD}
+    echo ${__docker_swarm_cmd}
   fi
   return 1
 }
 
 function dockerConfigure()
 {
-  export COMPOSE_CONVERT_WINDOWS_PATHS=1
-  PS3="Docker configure"$'\n'"Choose a option "
+  clearTerm
+  echM $'\n'"Docker configure"$'\n'
+  PS3=$'\n'"Choose a option: "
   options=(Back Swarm-Init Swarm-Leave)
   select opt in "${options[@]}"
   do
+    __docker_configure_cmd=
     if [[ ${opt} == "Back" ]]; then
       return 1
     elif [[ ${opt} == "Swarm-Init" ]]; then
-      CMD=$(dockerSwarmInit)
+      __docker_configure_cmd=$(dockerSwarmInit)
     elif [[ ${opt} == "Swarm-Leave" ]]; then
-      CMD=$(dockerSwarmLeave)
+      __docker_configure_cmd=$(dockerSwarmLeave)
     fi
-    echB "    Action: [${opt}]"
-    echY "      - ${CMD}"
+    echB "    Action: [${__docker_configure_cmd}]"
+    echY "      - ${__docker_configure_cmd}"
     echB "      Executing ..."
-    echo $(${CMD})
+    echo $(${__docker_configure_cmd})
     echG "    Finished"
     break
   done
 }
 
-function dockerNetworkConfigure()
+function dockerNetworkCreate()
 {
-  if [[ ${DOCKER_NETWORK} == "" ]]; then
-    echo "Invalid \${DOCKER_NETWORK}"
+  __docker_network_name=${1}
+  if [[ ${__docker_network_name} == "" ]]; then
+    echo "Invalid \${__docker_network_name}"
     return 0
   fi
-  CHECK=$(docker network ls | grep ${DOCKER_NETWORK})
-  if [[ ${CHECK} != "" ]]; then
+  __docker_network_check=$(docker network ls | grep ${__docker_network_name})
+  if [[ ${__docker_network_check} != "" ]]; then
     return 1
   fi
-  CMD="docker --log-level ERROR network create --driver=overlay ${DOCKER_NETWORK}"
+  __docker_network_cmd="docker --log-level ERROR network create --driver=overlay ${__docker_network_name}"
   echM "    Docker network configuration"
-  echC "      - Network: ${DOCKER_NETWORK}"
-  echY "      - ${CMD}"
-  echo $(${CMD})&>/dev/null
+  echC "      - Network: ${__docker_network_name}"
+  echY "      - ${__docker_network_cmd}"
+  echo $(${__docker_network_cmd})&>/dev/null
 
-  CHECK=$(docker network ls | grep ${DOCKER_NETWORK})
-  if [[ ${CHECK} == "" ]]; then
-    echR "    [FAIL] network not found: [${DOCKER_NETWORK}]"
+  __docker_network_check=$(docker network ls | grep ${__docker_network_name})
+  if [[ ${__docker_network_check} == "" ]]; then
+    echY "      target: [${__docker_network_name}]"
+    echR "      ===============================  "
+    echR "              ***************          "
+    echR "      ********Invalid network********  "
+    echR "              ***************          "
+    echR "      ===============================  "
     return 0
   fi
   echG "    Finished"
   return 1
 }
 
-function dockerParserHostName()
+function dockerBuildDockerFile()
 {
-  if [[ ${1} == "" ]]; then
-    return 0;
-  fi
-  NAME=${1}
-  TARGETS=("_" "|" "\.")
-  for TARGET in "${TARGETS[@]}"
-  do
-    export NAME=$(echo ${NAME} | sed "s/${TARGET}/-/g")
-  done  
-  echo ${NAME}
-}
+  IMAGE_NAME=${2}
+  FILE_SRC=${3}
+  FILE_DST=${4}
 
-function dockerParserName()
-{
-  if [[ ${1} == "" ]]; then
-    return 0;
+  if [[ -d ${DOCKER_CONF_DIR} ]]; then
+    cp -r -T ${DOCKER_CONF_DIR} ${BUILD_TEMP_DIR}
   fi
-  NAME=${1}
-  NAME=$(replaceString ${NAME} insurance ins)
-  NAME=$(replaceString ${NAME} apolice apl)
-  NAME=$(replaceString ${NAME} persistence pst)
-  NAME=$(replaceString ${NAME} ingester igt)
-  NAME=$(replaceString ${NAME} sro_mcs mcs)
-  NAME=$(replaceString ${NAME} sro )
-  NAME=$(replaceString ${NAME} orch orc)
-  NAME=$(replaceString ${NAME} movimento mvt)
-  NAME=$(replaceString ${NAME} "\." "_" )
-  NAME=$(replaceString ${NAME} "-" "_" )
-  NAME=$(replaceString ${NAME} "__" "_" )
-  NAME="-H-${NAME}-H-"
-  NAME=$(replaceString ${NAME} "-H-_" )
-  NAME=$(replaceString ${NAME} "_-H-" )
-  NAME=$(replaceString ${NAME} "-H-" )
 
-  echo ${NAME}
+  log "Building docker image [${IMAGE_NAME}]"
+  if ! [[ -f ${FILE_SRC} ]]; then
+      logError ${1} "Docker file not found [${FILE_SRC}]"
+    __RETURN=1;
+  else
+    rm -rf ${FILE_DST};
+    cp -r ${FILE_SRC} ${FILE_DST}
+    cd ${BUILD_TEMP_DIR}
+    docker --log-level ERROR build --quiet --network host -t ${IMAGE_NAME} .
+
+    cd ${ROOT_DIR}
+    __RETURN=1;
+  fi
+  return ${__RETURN}
 }
 
 function dockerBuildCompose()
 {
-  export STACK_TYPE=${1}
-  export STACK_NAME=${2}  
-  
-  if [[ ${STACK_TYPE} == "mcs" ]]; then
-    if [[ ${DOCKER_JAR_NAME} == "" ]]; then
-      echR "    Invalid \${DOCKER_JAR_NAME}"
-      return 0
-    fi
+  # export APPLICATION_DEPLOY_IMAGE=
+  # export APPLICATION_NAME=
+  # export APPLICATION_DEPLOY_HOSTNAME=
+  # export APPLICATION_DEPLOY_ENV_FILE=
+  # export APPLICATION_DEPLOY_APP_DIR=
+  # export APPLICATION_DEPLOY_NETWORK_NAME=
+  # export COMPOSE_CONVERT_WINDOWS_PATHS=1  
+  # export DOCKER_JAR_NAME=
+  __docker_build_bin_jar=
+  __docker_build_compose_dir=
 
-    if ! [[ -f ${DOCKER_JAR_NAME} ]]; then
-      echR "    Invalid jar: DOCKER_JAR_NAME=${DOCKER_JAR_NAME}"
-      return 0
-    fi
-  fi
-
-  cd ${DOCKER_DIR}
-  export STACK_FILE_NAME=docker-compose-${STACK_TYPE}.yml
-
-  if ! [[ -f  ${STACK_FILE_NAME} ]]; then
-    echR "    File not found: ${STACK_FILE_NAME}"  
-    return 0;
-  fi
-
-  export STACK_SERVICE=${STACK_NAME}
-  export STACK_HOSTNAME=${STACK_NAME}
-
-  export DOCKER_ENV_FILE=$(__prepare_container_envs ${STACK_TYPE} ${STACK_NAME} ${DOCKER_JAR_NAME})
-
-  export STACK_SERVICE=$(dockerParserName ${STACK_SERVICE})
-  export STACK_HOSTNAME=$(dockerParserHostName ${STACK_HOSTNAME})
-
-  if [[ ${STACK_SERVICE} == "" ]]; then
-    export STACK_SERVICE=${STACK_TYPE}
-  else
-    export STACK_SERVICE=${STACK_TYPE}_${STACK_SERVICE}
-  fi
-  if [[ ${STACK_HOSTNAME} == "" ]]; then
-    export STACK_HOSTNAME=${STACK_TYPE}
-  else
-    export STACK_HOSTNAME=${STACK_TYPE}-${STACK_HOSTNAME}
-  fi
-  
-  
-  dockerCleanup ${STACK_SERVICE}
-
-  cd ${DOCKER_DIR}
-  export CMD=
-  if [[ ${DOCKER_OPTION} == "Docker-Stack" ]]; then
-    # ref https://docs.docker.com/compose/environment-variables/envvars/
-    CMD="docker stack deploy --compose-file ${STACK_FILE_NAME} ${STACK_SERVICE}"
-  elif [[ ${DOCKER_OPTION} == "Docker-Compose" ]]; then
-    # ref https://docs.docker.com/compose/environment-variables/envvars/
-    CMD="docker compose --file ${STACK_FILE_NAME} up --detach "
-  else
-    echR "    Invalid DOCKER_OPTION: ${DOCKER_OPTION}"
-    return 0;
-  fi
+  __docker_build_name=${1}
+  __docker_build_image=${2}
+  __docker_build_dockerfile=${3}
+  __docker_build_compose_file=${4}
+  __docker_build_env_file=${5}
+  __docker_build_builder_dir=${6}
+  __docker_build_bin_dir=${7}
+  __docker_build_bin_name=${8}
+  __docker_build_network_name=${9}
 
   echM "    Docker containers create"  
+  if ! [[ -f  ${__docker_build_compose_file} ]]; then
+    echY "  File not found: ${__docker_build_compose_file}"  
+    echR "  ===============================  "
+    echR "  *******************************  "
+    echR "  *docker compose-file not found*  "
+    echR "  *******************************  "
+    echR "  ===============================  "
+    return 0;
+  fi
+
+  __docker_build_compose_dir=$(dirname ${__docker_build_compose_file})
+
+  if [[ ${__docker_build_bin_name} != "" ]]; then
+    __docker_build_bin_jar=${__docker_build_bin_dir}/${__docker_build_bin_name}.jar
+  fi
+
+  __docker_build_service=$(__private_dockerParserServiceName ${__docker_build_name})  
+  __docker_build_hostname=$(__private_dockerParserHostName ${__docker_build_name})  
+  #__docker_build_env_file=$(__private_prepareContainerEnvs ${__docker_build_name} ${__docker_build_compose_dir} ${__docker_build_bin_dir} "${__docker_build_bin_jar}" )
+
+  cd ${__docker_build_compose_dir}
+
+  # ref https://docs.docker.com/compose/environment-variables/envvars/
+  
+  __docker_build_cmd_1="docker --log-level ERROR build --quiet --file $(basename ${__docker_build_dockerfile}) -t ${__docker_build_service} ."
+  __docker_build_cmd_2="docker --log-level ERROR image tag ${__docker_build_service} ${__docker_build_image}"
+  __docker_build_cmd_3="docker --log-level ERROR push ${__docker_build_image}"
+  __docker_build_cmd_4="docker stack deploy --compose-file $(basename ${__docker_build_compose_file}) ${__docker_build_service}"
+
+
   echB "      Information"
-  echC "        - Stack name: [${STACK_SERVICE}]"
+  echC "        - Service: [${__docker_build_service}]"
   echC "        - Path: ${PWD}"
-  echC "        - Target: ${STACK_FILE_NAME}"
-  echC "        - Network: ${DOCKER_NETWORK}"
-  echC "        - Hostname: ${STACK_HOSTNAME}.local"
+  echC "        - Target: ${__docker_build_compose_file}"
+  echC "        - Network: ${__docker_build_network_name}"
+  echC "        - Hostname: ${__docker_build_hostname}"
   echB "      Environments"
-  if [[ -f ${DOCKER_ENV_FILE} ]]; then
-  echC "        - Env file: ${DOCKER_ENV_FILE}"
+  if [[ -f ${__docker_build_env_file} ]]; then
+  echC "        - Env file: ${__docker_build_env_file}"
   fi
-  if [[ -f ${DOCKER_JAR_NAME} ]]; then
-  echC "        - JAR name: ${DOCKER_JAR_NAME}"
+  if [[ -f ${__docker_build_bin_jar} ]]; then
+  echC "        - JAR name: ${__docker_build_bin_jar}"
   fi
   
+  export APPLICATION_DEPLOY_IMAGE=${__docker_build_image}
+  export APPLICATION_NAME=${__docker_build_service}
+  export APPLICATION_DEPLOY_HOSTNAME=${__docker_build_hostname}
+  export APPLICATION_DEPLOY_ENV_FILE=${__docker_build_env_file}
+  export APPLICATION_DEPLOY_APP_DIR=${__docker_build_compose_dir}
+  export APPLICATION_DEPLOY_NETWORK_NAME=${__docker_build_network_name}
+  export APPLICATION_DEPLOY_DNS=${__docker_build_service}
+
+  export COMPOSE_CONVERT_WINDOWS_PATHS=1
+  if ! [[ -f ${__docker_build_bin_jar} ]]; then
+    export DOCKER_JAR_NAME=${__docker_build_bin_jar}
+  fi
+
+  printenv > ${PWD}/os.env
+  __deploy_tags=(HIST S_COLORS XDG printenv shell __ XCURSOR XCURSOR WINDOWID PWD PATH OLDPWD KDE LD_ LANG COLOR DESKTOP DISPLAY DBUS HOME TERM XAUTHORITY XMODIFIERS USER DOCKER_ARGS_DEFAULT)
+  for __deploy_tag in "${__deploy_tags[@]}"
+  do
+    sed -i "/${__deploy_tag}/d" ${PWD}/os.env
+  done  
+
+
   echB "      Building ..."
-  echY "        - ${CMD}"
-  echo $(${CMD})&>/dev/null
-  CHECK=$(docker service ls | grep ${STACK_SERVICE})
-  if [[ ${CHECK} == "" ]]; then
-  echR "    [FAIL]Service not found:${STACK_SERVICE}"
+  echY "        - ${__docker_build_cmd_1}"
+  echo $(${__docker_build_cmd_1})&>/dev/null
+  echY "        - ${__docker_build_cmd_2}"
+  echo $(${__docker_build_cmd_2})&>/dev/null
+  echY "        - ${__docker_build_cmd_3}"
+  echo $(${__docker_build_cmd_3})&>/dev/null
+  echY "        - ${__docker_build_cmd_4}"
+  echo $(${__docker_build_cmd_4})&>/dev/null
+  __docker_build_check=$(docker service ls | grep ${__docker_build_service})
+  if [[ ${__docker_build_check} == "" ]]; then
+  echR "    [FAIL]Service not found:${__docker_build_service}"
     return 0
   fi
   echG "    Finished"
@@ -364,168 +411,62 @@ function dockerBuildCompose()
   return 1
 }
 
-function mavenPrepare()
-{
-  export STACK_TYPE=${1}
-  export STACK_NAME=${2}
-  export DOCKER_JAR_NAME=${DOCKER_DIR_DATA}/bin/${STACK_NAME}.jar
-  export DOCKER_ENV_FILE=$(__prepare_container_envs ${STACK_TYPE} ${STACK_NAME} ${DOCKER_JAR_NAME}) 
-}
-
-function mavenBuild()
-{
-  export STACK_TYPE=${1}
-  export STACK_NAME=${2}
-  mavenPrepare ${STACK_TYPE} ${STACK_NAME}
-  echG "  Source building"
-  cd ${PUBLIC_ROOT_DIR}
-  MAVEN_CHECK=$(mvn --version)
-  MAVEN_CHECK=$(mvn --version | grep Apache)
-
-  if [[ ${MAVEN_CHECK} != *"Apache"*  ]]; then
-    echR "  ==============================  "
-    echR "  ***MAVEN não está instalado***  "
-    echR "  ***MAVEN não está instalado***  "
-    echR "  ==============================  "
-    return 0
-  fi
-
-  cd ${DOCKER_DIR_DATA}/src
-
-
-  REPOSITORY_SSH="git@bitbucket.org:XXXXXXXXXXXX/${STACK_NAME}.git"
-  SRC_DIR=${DOCKER_DIR_DATA}/src/${STACK_NAME}
-  DST_DIR=${DOCKER_DIR_DATA}/bin/${STACK_NAME}.jar
-
-  rm -rf ${DST_DIR}
-  rm -rf ${SRC_DIR};
-
-  CMD="git clone -q ${REPOSITORY_SSH}"
-  echM "    Git cloning repository"
-  echC "      - ${REPOSITORY_SSH}"
-  echC "      - Branch: ${DOCKER_GIT_BRANCH}"
-  echC "      - Source dir: ${SRC_DIR}"
-  echY "      - ${CMD}"
-  echo $(${CMD})>/dev/null 2>&1
-  if ! [[ -d ${SRC_DIR} ]]; then
-    echR "      ==============================  "
-    echR "      *****Repository not found*****  "
-    echR "      *****Repository not found*****  "
-    echR "      ==============================  "
-    
-    return 0
-  fi
-  cd ${SRC_DIR}
-  CMD="git checkout ${DOCKER_GIT_BRANCH} -q"
-  echY "      - ${CMD}"
-  echo $(${CMD})>/dev/null 2>&1
-  echG "    Finished"
-
-
-  CMD="mvn install -DskipTests"
-  echM "    Maven build"
-  echC "      - Source dir: ${SRC_DIR}"
-  echC "      - JAR file: ${DOCKER_JAR_NAME}"
-  echY "      - ${CMD}"
-  OUTPUT=$(${CMD})
-  CHECK=$(echo ${OUTPUT} | grep ERROR)
-  if [[ ${CHECK} != "" ]]; then
-    echR "    source build fail:"
-    echR "    ==============================  "
-    echR "    *******Maven build fail*******  "
-    echR "    *******Maven build fail*******  "
-    echR "    ==============================  "
-    printf "${OUTPUT}"
-    return 0;
-  fi
-  echG "    Finished"
+# function dockerPrepare()
+# { 
+#   export DOCKER_SCOPE=${1}
+#   export DOCKER_DIR=${2}
+#   export DOCKER_DIR_DATA=${3}
+#   export DOCKER_OPTION=${5}
   
-  echM "    Preparing jar for container"
-  echC "      - JAR file: ${DST_DIR}"
-  export JAR_FILE=$(find ${SRC_DIR} -name 'app*.jar')
-  cp -r ${JAR_FILE} ${DST_DIR}
+#   if [[ ${DOCKER_SCOPE} == "" ]]; then
+#     echR "    [FAIL]Invalid scope: ${DOCKER_SCOPE}"
+#     return 0;
+#   fi
 
-  if ! [[ -f ${DST_DIR} ]]; then
-    echR "      ==============================  "
-    echR "      ******JAR file not found******  "
-    echR "      ******JAR file not found******  "
-    echR "      ==============================  "
-    return 0;
-  fi
-  echG "    Finished"
-  return 1
-}
+#   if [[ ${DOCKER_DIR} == "" ]]; then
+#     echR "    [FAIL]Invalid \${DOCKER_DIR}"
+#     return 0;
+#   fi
 
-function dockerPrepare()
-{ 
-  export DOCKER_SCOPE=${1}
-  export DOCKER_DIR=${2}
-  export DOCKER_DIR_DATA=${3}
-  export DOCKER_GIT_BRANCH=${4}
-  export DOCKER_OPTION=${5}
-  
-  if [[ ${DOCKER_SCOPE} == "" ]]; then
-    echR "    [FAIL]Invalid scope: ${DOCKER_SCOPE}"
-    return 0;
-  fi
+#   if ! [[ -d ${DOCKER_DIR} ]]; then
+#     echR "    [FAIL]Invalid DOCKER_DIR: ${DOCKER_DIR}"
+#     return 0;
+#   fi
 
-  if [[ ${DOCKER_DIR} == "" ]]; then
-    echR "    [FAIL]Invalid \${DOCKER_DIR}"
-    return 0;
-  fi
+#   if [[ ${DOCKER_OPTION} == "" ]]; then
+#     echR "    [FAIL]Invalid \${DOCKER_OPTION}"
+#     return 0
+#   fi
 
-  if ! [[ -d ${DOCKER_DIR} ]]; then
-    echR "    [FAIL]Invalid DOCKER_DIR: ${DOCKER_DIR}"
-    return 0;
-  fi
-
-  if [[ ${DOCKER_GIT_BRANCH} == "" ]]; then
-    echR "    [FAIL]Invalid \${DOCKER_GIT_BRANCH}"
-    return 0;
-  fi
-
-  if [[ ${DOCKER_OPTION} == "" ]]; then
-    echR "    [FAIL]Invalid \${DOCKER_OPTION}"
-    return 0
-  fi
-
-  export DOCKER_NETWORK="${DOCKER_SCOPE}-network"
-
-  #IP'S 
-  export HOST_IP="127.0.0.1"
-  if [[ -d /mnt ]]; then
-      export PUBLIC_HOST_IPv4=$(ip -4 route get 8.8.8.8 | awk {'print $7'} | tr -d '\n')
-  else
-      export PUBLIC_HOST_IPv4=$(ipconfig.exe | grep -a IPv4 | grep -a 192 | sed 's/ //g' | sed 's/Endere□oIPv4//g' | awk -F ':' '{print $2}')
-  fi
+#   export STACK_NETWORK_NAME="${DOCKER_SCOPE}-network"
  
 
-  export DOCKER_INIT_DIR=${DOCKER_DIR}/init 
-  export DOCKER_BIN_DIR=${DOCKER_DIR_DATA}/bin
-  export DOCKER_BIN_RUN=${DOCKER_BIN_DIR}/run.sh
+#   export DOCKER_INIT_DIR=${DOCKER_DIR}/init 
+#   export DOCKER_BIN_DIR=${DOCKER_DIR_DATA}/bin
+#   export DOCKER_BIN_RUN=${DOCKER_BIN_DIR}/run.sh
 
-  mkdir -p ${DOCKER_BIN_DIR}
-  echo "#!/bin/bash">${DOCKER_BIN_RUN}
-  echo "">>${DOCKER_BIN_RUN}
-  echo "">>${DOCKER_BIN_RUN}
-  echo "#default envs">>${DOCKER_BIN_RUN}
-  echo "ENV_FILE=./default.env">>${DOCKER_BIN_RUN}
-  echo "if [[ -f \${ENV_FILE} ]]; then">>${DOCKER_BIN_RUN}
-  echo "  source \${ENV_FILE}">>${DOCKER_BIN_RUN}
-  echo "fi">>${DOCKER_BIN_RUN}
-  echo "">>${DOCKER_BIN_RUN}
-  echo "#jar envs">>${DOCKER_BIN_RUN}
-  echo "ENV_FILE=echo \$(echo \"\$@\" | sed 's/jar/env/g')">>${DOCKER_BIN_RUN}
-  echo "if [[ -f \${ENV_FILE} ]]; then">>${DOCKER_BIN_RUN}
-  echo "  source \${ENV_FILE}">>${DOCKER_BIN_RUN}
-  echo "fi">>${DOCKER_BIN_RUN}
-  echo "">>${DOCKER_BIN_RUN}
-  echo "java -jar \"\$@\"">>${DOCKER_BIN_RUN}
+#   mkdir -p ${DOCKER_BIN_DIR}
+#   echo "#!/bin/bash">${DOCKER_BIN_RUN}
+#   echo "">>${DOCKER_BIN_RUN}
+#   echo "">>${DOCKER_BIN_RUN}
+#   echo "#default envs">>${DOCKER_BIN_RUN}
+#   echo "ENV_FILE=./default.env">>${DOCKER_BIN_RUN}
+#   echo "if [[ -f \${ENV_FILE} ]]; then">>${DOCKER_BIN_RUN}
+#   echo "  source \${ENV_FILE}">>${DOCKER_BIN_RUN}
+#   echo "fi">>${DOCKER_BIN_RUN}
+#   echo "">>${DOCKER_BIN_RUN}
+#   echo "#jar envs">>${DOCKER_BIN_RUN}
+#   echo "ENV_FILE=echo \$(echo \"\$@\" | sed 's/jar/env/g')">>${DOCKER_BIN_RUN}
+#   echo "if [[ -f \${ENV_FILE} ]]; then">>${DOCKER_BIN_RUN}
+#   echo "  source \${ENV_FILE}">>${DOCKER_BIN_RUN}
+#   echo "fi">>${DOCKER_BIN_RUN}
+#   echo "">>${DOCKER_BIN_RUN}
+#   echo "java -jar \"\$@\"">>${DOCKER_BIN_RUN}
 
-  echo "">>${DOCKER_BIN_RUN}
-  chmod +x ${DOCKER_BIN_RUN}
-  return 1
-}
+#   echo "">>${DOCKER_BIN_RUN}
+#   chmod +x ${DOCKER_BIN_RUN}
+#   return 1
+# }
 
 function dockerRegistryImageCheck()
 {
