@@ -384,12 +384,13 @@ function copyFileIfNotExists()
 
 function utilInitialize()
 {
-  idt="$(toInt ${1})"
-  logStart ${idt} "utilInitialize"
   export PUBLIC_LOG_LEVEL=false
   export STACK_LOG=0            
   export STACK_LOG_VERBOSE=0            
   export STACK_LOG_VERBOSE_SUPER=0
+  export PUBLIC_RUNNER_MODE=runner
+  export PUBLIC_RUNNER_TEST=false
+
   for PARAM in "$@"
   do
     if [[ ${PARAM} == "-d" || ${PARAM} == "--debug" ]]; then
@@ -397,6 +398,10 @@ function utilInitialize()
       export STACK_LOG=1            
       export STACK_LOG_VERBOSE=1    
       export STACK_LOG_VERBOSE_SUPER=1
+    elif [[ ${PARAM} == "-t" || ${PARAM} == "--test" ]]; then
+
+      export PUBLIC_RUNNER_MODE=test
+      export PUBLIC_RUNNER_TEST=true
     elif [[ ${PARAM} == "-l" ]]; then
       export STACK_LOG=1            
     elif [[ ${PARAM} == "-lv" ]]; then
@@ -409,26 +414,48 @@ function utilInitialize()
     fi
   done
 
+  __utilInitialize_envs=()
+  __utilInitialize_envs+=("..information")
+  if [[ ${PUBLIC_LOG_LEVEL} == true ]]; then
+    __utilInitialize_envs+=("....Debug mode is enabled")
+  fi
+  if [[ ${STACK_LOG_VERBOSE} == 1 ]]; then
+    __utilInitialize_envs+=("....Log verbose is enabled")
+  fi
+  if [[ ${STACK_LOG} == 1 ]]; then
+    __utilInitialize_envs+=("....-Log is enabled")
+  fi
+  if [[ ${PUBLIC_RUNNER_TEST} == true ]]; then
+    __utilInitialize_envs+=("....-Runner mode: ${PUBLIC_RUNNER_MODE}")
+  fi
+  __utilInitialize_envs+=("..args:")
   export DOCKER_ARGS_DEFAULT="--quiet --log-level ERROR"
+  __utilInitialize_envs+=("....-docker: ${DOCKER_ARGS_DEFAULT}")
   export MAVEN_ARGS_DEFAULT="--quiet"
+  __utilInitialize_envs+=("....-maven: ${MAVEN_ARGS_DEFAULT}")
   if [[ ${STACK_LOG} == 0 ]]; then    
     export GIT_ARGS_DEFAULT="--quiet"
+    __utilInitialize_envs+=("....-git: ${GIT_ARGS_DEFAULT}")
   fi
 
-  if [[ ${PUBLIC_LOG_LEVEL} == true ]]; then
-    echo ""
-    echY "DEBUG MODE"
-  elif [[ ${STACK_LOG_VERBOSE} == 1 ]]; then
-    echo ""
-    echY "Log verbose enabled"
-  elif [[ ${STACK_LOG} == 1 ]]; then
-    echo ""
-    echY "Log enabled"
+  if [[ ${__utilInitialize_envs} != "" ]]; then
+    echG "Initialization"
+    for __utilInitialize_env in "${__utilInitialize_envs[@]}"
+    do
+      __utilInitialize_msg=$(echo ${__utilInitialize_env} | sed 's/\./ /g')
+      if [[ ${__utilInitialize_env} == "......"*  ]]; then
+        echY "${__utilInitialize_msg}"
+      elif [[ ${__utilInitialize_env} == "...."*  ]]; then
+        echC "${__utilInitialize_msg}"
+      elif [[ ${__utilInitialize_env} == ".."*  ]]; then
+        echM "${__utilInitialize_msg}"
+      else
+        echR "${__utilInitialize_msg}"
+      fi
+    done
+    sleep 1
   fi
 
-  #export BASH_BIN=${PWD}/installer/bash-bin
-
-  logFinished ${idt} "utilInitialize"
 }
 
 function envsParserFile()
@@ -551,6 +578,79 @@ function clearTerm()
   if [[ ${PUBLIC_LOG_LEVEL} != true ]]; then
     clear
   fi
+}
+
+function strExtractFilePath()
+{
+  __str_file="${1}"
+  __func_return=
+  if [[ ${__str_file} == "" ]]; then
+    return 0
+  fi
+  __func_return=$(dirname ${__str_file})
+  echo ${__func_return}
+  return 1;  
+}
+
+function strExtractFileName()
+{
+  __str_file="${1}"
+  __func_return=
+  if [[ ${__str_file} == "" ]]; then
+    return 0
+  fi
+  __func_return=$(basename ${__str_file})
+  echo ${__func_return}
+  return 1;
+}
+
+function strExtractFileExtension()
+{
+  __str_file="${1}"
+  __func_return=
+  if [[ ${__str_file} == "" ]]; then
+    return 0
+  fi
+  __str_file_splitted=$(strSplit ${__str_file} ".")
+  if [[ ${__str_file_splitted} == "" ]]; then
+    return 0
+  fi
+  __str_file_splitted=(${__str_file_splitted})
+  __str_file_last_index=$((${#__str_file_splitted[@]} - 1))
+  __func_return=${__str_file_splitted[$__str_file_last_index]}
+  echo ${__func_return}
+  return 1;
+}
+
+function strSplit()
+{
+  __strSplitText="${1}"
+  __strSplitSepatator="${2}"
+  __func_return=
+
+  if [[ ${__strSplitText} == ""  ]]; then
+    return 0
+  fi
+
+  # Defina o IFS para o caractere de espaço em branco
+  if [[ "${__strSplitSepatator}" == ""  ]]; then
+    __strSplitSepatator=' '
+  fi
+
+  #cache old IFS
+  OLD_IFS=${IFS}
+  #new char split
+  IFS=${__strSplitSepatator}
+  __strSplitArray=($__strSplitText)
+
+  # restore IFS
+  IFS=${OLD_IFS}
+  for env in "${__strSplitArray[@]}"; do
+      echo "${env}"
+      __func_return="${__func_return} ${env}"
+  done
+  echo "${__func_return}"
+  
 }
 
 function strAlign()
@@ -916,3 +1016,5 @@ function echFail()
   export __e_f_out=  
   return 1
 }
+
+

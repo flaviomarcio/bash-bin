@@ -37,6 +37,9 @@ function systemDNSList()
 
 function systemETCHostApply()
 {
+  if [[ ${PUBLIC_DIR_DATA} == "" ]]; then
+    return 1;
+  fi
   DNSList=( $(systemDNSList) )
   export ETC_HOST=/etc/hosts
   export ETC_HOST_BKP=${PUBLIC_DIR_DATA}/hosts.backup
