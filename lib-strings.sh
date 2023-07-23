@@ -520,6 +520,7 @@ function envsPrepareFile()
   sed -i '/^$/d' ${__envsPrepareFile_target_tmp}  
   #remove startWith #
   sed -i '/^#/d' ${__envsPrepareFile_target_tmp}
+  sed -i '$!N; /^\(.*\)\n\1$/!P; D' ${__envsPrepareFile_target_tmp}
   #sorte lines
   sort -f ${__envsPrepareFile_target_tmp} > ${__envsPrepareFile_target}
   rm -rf ${__envsPrepareFile_target_tmp}
@@ -622,6 +623,7 @@ function envsParserFile()
 
   envsPrepareFile ${__envsParserFile_file}
   envsReplaceFile ${__envsParserFile_file}
+  sed -i '$!N; /^\(.*\)\n\1$/!P; D' ${__envsParserFile_file}
 
   #echo $(sed -i s/$REPLACE_SEPARADOR_250/\//g ${__envsParserFile_file})&>/dev/null
   return 1;

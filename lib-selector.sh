@@ -319,7 +319,6 @@ function selectorCustomer()
     if [[ ${opt} == "quit" ]]; then
       return 0
     fi
-    export STACK_TARGET=${opt}
     break;
   done
   return 1;
@@ -338,7 +337,6 @@ function selectorEnvironment()
   select opt in "${options[@]}"
   do
     export __selector=${opt}
-    export STACK_ENVIRONMENT=${opt}
     case $opt in
         "development")
           break
