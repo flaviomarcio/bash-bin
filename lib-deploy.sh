@@ -95,6 +95,11 @@ function deployPrepareEnvFile()
   #final parser
   envsParserFile ${__deploy_prepare_env_file}
   envsParserFile ${__deploy_prepare_env_docker}
+
+  #format file
+  envsPrepareFile ${__deploy_prepare_env_file_static}
+  envsPrepareFile ${__deploy_prepare_env_file}
+  envsPrepareFile ${__deploy_prepare_env_docker}
   
   #clean dir
   rm -rf *.bak
