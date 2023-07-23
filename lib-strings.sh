@@ -11,7 +11,6 @@ if [[ ${ROOT_DIR} == "" ]]; then
   export ROOT_DIR=${PWD}
 fi
 
-export REPLACE_SEPARADOR_250="%REPLACE-250"
 export STACK_RUN_BIN=${ROOT_DIR}/bin
 export STACK_RUN_ACTIONS=${STACK_RUN_BIN}/actions
 
@@ -166,29 +165,6 @@ function logFinished()
   logOut "${1}" "${2}: finished"
 }
 
-function runSource()
-{
-  RUN_FILE="${2}"
-  RUN_PARAMS="${3}"
-  idt="$(toInt ${1})"
-  logStart ${idt} "runSource"
-  logTarget ${idt} "${RUN_FILE}"
-
-  if [[ ${RUN_FILE} == "" ]]; then
-    logError ${idt} "run file is empty"
-  elif ! [[ -f ${RUN_FILE} ]]; then
-    logError ${idt} "run file not found"
-  else
-    echo $(chmod +x ${RUN_FILE})&>/dev/null
-    source ${RUN_FILE} ${RUN_PARAMS}
-    logSuccess ${idt}
-    logFinished ${idt} "runSource"
-    return 1
-  fi
-  logFinished ${idt} "runSource" ${RUN_FILE}
-  return 0
-}
-
 function cdDir()
 {
   idt="$(toInt ${1})"
@@ -307,6 +283,8 @@ function fileDedupliceLines()
   logStart ${idt} "fileDedupliceLines"
   idt="$(toInt ${1})"
   DEDUP_FILENAME="${2}"
+
+  REPLACE_SEPARADOR_250="%REPLACE-250"
 
   if [[ ${DEDUP_FILENAME} == "" ]]; then
     return 1;
@@ -458,40 +436,161 @@ function utilInitialize()
 
 }
 
+function envsOS()
+{
+  export __func_return=
+  __envsOS_destine=${1}
+  __envsOS="/tmp/${RANDOM}.env"
+  printenv | sort > ${__envsOS}
+  __envsOS_Remove=(_ __ CLUTTER_IM_MODULE KUBE LOGNAME KONSOLE GPG SHELL SHLVL GTK HIST S_COLORS XDG printenv shell XCURSOR XCURSOR WINDOWID PWD PATH OLDPWD KDE LD_ LANG COLOR DESKTOP DISPLAY DBUS HOME TERM XAUTHORITY XMODIFIERS USER DOCKER_ARGS_DEFAULT)
+  for __envsOS_env in "${__envsOS_Remove[@]}"
+  do
+    sed -i "/^${__envsOS_env}/d" ${__envsOS}
+  done
+  if [[ ${__envsOS_destine} != "" ]]; then
+    cat ${__envsOS}>${__envsOS_destine}
+  else
+    export __func_return=$(cat ${__envsOS})
+    echo ${__func_return}
+  fi
+  rm -rf ${__envsOS}
+  return 1
+}
+
+function envsExtractStatic()
+{
+  export __func_return=
+  __runSourceOnlyStatic_file=${1}
+  __runSourceOnlyStatic_file_out=${2}
+  if [[ ${__runSourceOnlyStatic_file} == "" ]]; then
+    return 0
+  fi
+  if ! [[ -f ${__runSourceOnlyStatic_file} ]]; then
+    return 0
+  fi
+  if [[ ${__runSourceOnlyStatic_file_out} == "" ]]; then
+    __runSourceOnlyStatic_file_out=${__runSourceOnlyStatic_file}
+  fi
+  __runSourceOnlyStatic_tmp_env="/tmp/${RANDOM}.env"
+  cat ${__runSourceOnlyStatic_file}>>${__runSourceOnlyStatic_tmp_env}
+  #replace " ${"
+  sed -i 's/ \${/\${/g' ${__runSourceOnlyStatic_tmp_env}
+  #remove "=${"
+  sed -i '/=\${/d' ${__runSourceOnlyStatic_tmp_env}
+  envsFileConvertToExport ${__runSourceOnlyStatic_tmp_env}
+  cat ${__runSourceOnlyStatic_tmp_env}>${__runSourceOnlyStatic_file_out}
+  rm -rf ${__runSourceOnlyStatic_tmp_env}
+  export __func_return=${__runSourceOnlyStatic_file_out}
+  return 1
+}
+
+function runSource()
+{
+  RUN_FILE="${2}"
+  RUN_PARAMS="${3}"
+  idt="$(toInt ${1})"
+  logStart ${idt} "runSource"
+  logTarget ${idt} "${RUN_FILE}"
+
+  if [[ ${RUN_FILE} == "" ]]; then
+    logError ${idt} "run file is empty"
+  elif ! [[ -f ${RUN_FILE} ]]; then
+    logError ${idt} "run file not found"
+  else
+    echo $(chmod +x ${RUN_FILE})&>/dev/null
+    source ${RUN_FILE} ${RUN_PARAMS}
+    logSuccess ${idt}
+    logFinished ${idt} "runSource"
+    return 1
+  fi
+  logFinished ${idt} "runSource" ${RUN_FILE}
+  return 0
+}
+
+function envsPrepareFile()
+{
+  __envsPrepareFile_target=${1}  
+  if ! [[ -f ${__envsPrepareFile_target} ]]; then
+    return 0
+  fi
+  __envsPrepareFile_target_tmp="/tmp/${RANDOM}.env"
+  cat ${__envsPrepareFile_target}>${__envsPrepareFile_target_tmp}
+  #trim lines
+  sed -i 's/^[[:space:]]*//; s/[[:space:]]*$//' ${__envsPrepareFile_target_tmp}
+  #remove empty lines
+  sed -i '/^$/d' ${__envsPrepareFile_target_tmp}  
+  #remove startWith #
+  sed -i '/^#/d' ${__envsPrepareFile_target_tmp}
+  #sorte lines
+  sort -f ${__envsPrepareFile_target_tmp} > ${__envsPrepareFile_target}
+  rm -rf ${__envsPrepareFile_target_tmp}
+  return 1
+}
+
+function envsFileConvertToExport()
+{
+  export __func_return=
+  __envsFileConvertToExport_file=${1}
+  if [[ ${__envsFileConvertToExport_file} == "" ]]; then
+    return 0
+  fi
+
+  if ! [[ -f ${__envsFileConvertToExport_file} ]]; then
+    return 0
+  fi
+  envsPrepareFile ${__envsFileConvertToExport_file}
+
+  __envsFileConvertToExport_file_tmp="/tmp/${RANDOM}.env"
+  cat ${__envsFileConvertToExport_file}>${__envsFileConvertToExport_file_tmp}
+  echo "#!/bin/bash">${__envsFileConvertToExport_file}
+  while IFS= read -r line
+  do
+    line=$(echo ${line} | grep =)
+    if [[ ${line} != "" ]]; then
+      __args=($(strSplit "${line}" "="))
+      __args_key=${__args[0]}
+      __args_value=${__args[1]}
+      echo "export ${__args_key}=\"${__args_value}\"">>${__envsFileConvertToExport_file}
+    fi
+  done < "${__envsFileConvertToExport_file_tmp}"
+  export __func_return=${__envsFileConvertToExport_file} 
+  return 1
+}
+
 function envsParserFile()
 {
-  idt="$(toInt ${1})"
-  FILE=$2
-  logStart ${idt} "envsParserFile"
-  logTarget ${idt} "${FILE}"
-  if [[ -f ${FILE} ]]; then
-    ENVSLIST=($(printenv))
-  
-    FILE_BACK=${FILE}-sed.bak
-    rm -rf ${FILE_BACK}
-    cp -rf ${FILE} ${FILE_BACK}
-
-    for ENV in "${ENVSLIST[@]}"
-    do
-      ENV=(${ENV//=/ })
-      replace="\${${ENV[0]}}"
-      replacewith=$(sed "s/\//$REPLACE_SEPARADOR_250/g" <<< "${ENV[1]}")
-
-      if [[ "$replacewith" == *"/"* ]]; then
-        continue;
-      else
-        echo $(sed -i s/${replace}/${replacewith}/g ${FILE})&>/dev/null
-      fi
-    done
-
-    echo $(sed -i s/$REPLACE_SEPARADOR_250/\//g ${FILE})&>/dev/null
-
-    logSuccess ${idt}
-    logFinished ${idt} "envsParserFile"
-    return 1;
+  __envsParserFile_file=${1}  
+  if ! [[ -f ${__envsParserFile_file} ]]; then
+    return 0
   fi
-  logFinished ${idt} "envsParserFile"
-  return 0;
+
+  envsPrepareFile ${__envsParserFile_file}
+
+  REPLACE_SEPARADOR_250="%REPLACE-250"
+  __envsParserFile_envs="/tmp/${RANDOM}.env"
+  printenv | sort > ${__envsParserFile_envs}
+
+  __envsParserFile_envs=($(envsOS))
+
+  sed -i 's/\${/\[\#\#\]{/g' ${__envsParserFile_file}
+  
+  for __envsParserFile_env in "${__envsParserFile_envs[@]}"
+  do
+    __envsParserFile_env=(${__envsParserFile_env//=/ })
+    replace="\[\#\#\]{${__envsParserFile_env[0]}}"
+    replacewith=$(sed "s/\//$REPLACE_SEPARADOR_250/g" <<< "${__envsParserFile_env[1]}")
+
+    if [[ ${replace} == "_" ]]; then
+      continue;
+    fi
+    if [[ "$replacewith" == *"/"* ]]; then
+      continue;
+    fi
+    sed -i "s/${replace}/${replacewith}/g" ${__envsParserFile_file}
+  done
+  sed -i 's/\[\#\#\]{/\${/g' ${__envsParserFile_file}
+  #echo $(sed -i s/$REPLACE_SEPARADOR_250/\//g ${__envsParserFile_file})&>/dev/null
+  return 1;
 }
 
 function envsToSimpleEnvs()
@@ -622,6 +721,32 @@ function strExtractFileExtension()
   return 1;
 }
 
+function strArg()
+{
+  export __func_return=
+  __strArg_index="${1}"
+  __strArg_args="${2}"
+  __strArg_ifs="${3}"
+  if [[ ${__strArg_index} == "" ]]; then
+    export __func_return="$@"
+    echo "$@"
+    return 0
+  fi
+  if [[ ${__strArg_args} == "" ]]; then
+    return 0
+  fi
+  __strArg_ifs_old=${IFS}
+  if [[ ${__strArg_ifs} == "" ]]; then
+    __strArg_ifs=' '
+  fi
+  IFS=${__strArg_ifs}
+  __strArg_args=(${__strArg_args})
+  export __func_return=${__strArg_args[${__strArg_index}]}
+  echo "${__func_return}"
+  IFS=${__strArg_ifs_old}
+  return 1
+}
+
 function strSplit()
 {
   __strSplitText="${1}"
@@ -645,12 +770,11 @@ function strSplit()
 
   # restore IFS
   IFS=${OLD_IFS}
-  for env in "${__strSplitArray[@]}"; do
-      echo "${env}"
-      __func_return="${__func_return} ${env}"
+  for env in "${__strSplitArray[@]}";
+  do
+    __func_return="${__func_return} ${env}"
   done
-  echo "${__func_return}"
-  
+  echo ${__func_return}
 }
 
 function strAlign()
@@ -1017,4 +1141,37 @@ function echFail()
   return 1
 }
 
+
+function jsonGet()
+{
+  export __func_return=
+  __json_get_body=${1}
+  __json_get_tags=${2}
+
+  if [[ ${__json_get_body} == "" ]]; then
+    return 0
+  fi
+  if [[ -f ${__json_get_body} ]]; then
+    __json_get_body=$(cat ${__json_get_body})
+  fi
+
+  __json_get_tag_names=$(strSplit "${__json_get_tags}" ".")
+  if [[ ${__json_get_tag_names} == "" ]]; then
+    return 0
+  fi
+
+  __json_get_tag_names=(${__json_get_tag_names})
+  __json_get_tag_name=
+  for __json_get_tag in "${__json_get_tag_names[@]}"
+  do
+    __json_get_tag_name="${__json_get_tag_name}.${__json_get_tag}"
+    __json_get_check=$(echo ${__json_get_body} | jq "${__json_get_tag_name}")
+    if [[ ${__json_get_check} == "" || ${__json_get_check} == "null" ]]; then
+      return 0
+    fi
+  done
+  __func_return=$(echo ${__json_get_body} | jq "${__json_get_tag_name}" | jq '.[]')
+  echo ${__func_return}
+  return 1
+}
 

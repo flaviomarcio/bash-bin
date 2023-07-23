@@ -21,10 +21,10 @@ function __private_dockerParserName()
 
 function __private_prepareContainerEnvs()
 {
-  __prepare_container_name=${1}
-  __prepare_container_src_dir=${2}
-  __prepare_container_destine_dir=${3}
-  __prepare_container_target_jar=${4}
+  __prepare_container_src_json_file=${1}
+  __prepare_container_name=${2}
+  __prepare_container_tag_envs=${3}
+  __prepare_container_dst_dir=${4}
  
   if [[ ${__prepare_container_name_last} == "${__prepare_container_name}" ]]; then
     return 1;
@@ -32,29 +32,90 @@ function __private_prepareContainerEnvs()
   
   __prepare_container_name_last=${__prepare_container_name}
 
-  if [[ -f ${__prepare_container_target_jar} ]]; then
-    export __prepare_container_env_file=$(echo ${__prepare_container_target_jar} | sed 's/jar/env/g')
-  else
-    export __prepare_container_env_file=${__prepare_container_destine_dir}/${__prepare_container_name}.env
+  if ! [[ -f ${__prepare_container_src_json_file} ]]; then
+    return 1
   fi
-  rm -rf ${__prepare_container_env_file}
-  __prepare_container_tags=(default "${1}" "${2}")
-  for __prepare_container_tag in "${__prepare_container_tags[@]}"
+
+  mkdir -p ${__prepare_container_dst_dir}
+
+  if ! [[ -d ${__prepare_container_dst_dir} ]]; then
+    ls -l 
+    return 0
+  fi
+  cd ${__prepare_container_dst_dir}
+  if [[ ${PWD} != ${__prepare_container_dst_dir} ]]; then
+    return 0
+  fi
+
+  rm -rf *.*env
+  rm -rf *.*json
+  rm -rf *.*bak
+
+  __prepare_container_dst_json_file="${__prepare_container_dst_dir}/env.json"
+  cat ${__prepare_container_src_json_file}>${__prepare_container_dst_json_file}
+
+  __prepare_container_tag_envs=($(echo ${__prepare_container_tag_envs} | sed 's/-/_/g'))
+
+  __prepare_container_party_tag_files=()
+  for __prepare_container_tag in "${__prepare_container_tag_envs[@]}"
   do
-    if [[ ${__prepare_container_tag} == "" ]]; then
+    __prepare_container_tag_ext=$(strArg 0 "$(strSplit ${__prepare_container_tag})" '.')
+    if [[ ${__prepare_container_tag_ext} == "" ]]; then
       continue;
     fi
 
-    export __prepare_container_tag=$(echo ${__prepare_container_tag} | sed 's/-/_/g')   
-    __prepare_container_tag_file=${__prepare_container_destine_dir}/envs_${__prepare_container_tag}.env
-    cat ${__prepare_container_src_dir}/env_file_default.json | jq ".${__prepare_container_tag}[]" | sed 's/\"//g' > ${__prepare_container_tag_file}
-    if ! [[ -f ${__prepare_container_env_file} ]]; then
-      cat ${__prepare_container_tag_file} > ${__prepare_container_env_file}
-    else
-      cat ${__prepare_container_tag_file} >> ${__prepare_container_env_file}
-    fi    
+    #Env file
+    __prepare_container_tag_envs=$(jsonGet "${__prepare_container_src_json_file}" "${__prepare_container_tag}" )
+    if [[ ${__prepare_container_tag_envs} == "" ]]; then
+      continue;
+    fi
+
+    __prepare_container_party_tag_file=${__prepare_container_dst_dir}/tag-${__prepare_container_tag}.${__prepare_container_tag_ext}
+    __prepare_container_party_tag_files+=(${__prepare_container_party_tag_file})
+    echo "">${__prepare_container_party_tag_file}
+    __prepare_container_tag_envs=(${__prepare_container_tag_envs})
+    for __prepare_container_tag_env in "${__prepare_container_tag_envs[@]}"
+    do
+      __prepare_container_tag_env=$(echo ${__prepare_container_tag_env} | sed 's/\"//g')
+      echo ${__prepare_container_tag_env}>>${__prepare_container_party_tag_file}
+    done
   done
-  echo ${__prepare_container_env_file}
+
+  __prepare_container_env_file_static=${__prepare_container_dst_dir}/env_file_static.env
+  __prepare_container_env_file=${__prepare_container_dst_dir}/env_file.env
+  __prepare_container_env_docker=${__prepare_container_dst_dir}/env_docker.env
+  echo "">${__prepare_container_env_file}
+  echo "">${__prepare_container_env_docker}
+  for __prepare_container_party_tag_file in "${__prepare_container_party_tag_files[@]}"
+  do
+    __prepare_container_party_ext=$(strExtractFileExtension ${__prepare_container_party_tag_file})
+    if [[ ${__prepare_container_party_ext} == "env" ]]; then
+      cat ${__prepare_container_party_tag_file}>>${__prepare_container_env_file}
+    fi    
+    
+    cat ${__prepare_container_party_tag_file}>>${__prepare_container_env_docker}
+  done
+
+  #load os envs
+  envsOS ${__prepare_container_env_file_static}
+  #parser base envs
+  envsParserFile ${__prepare_container_env_file}
+  #export base envs to static
+  cat ${__prepare_container_env_file}>>${__prepare_container_env_file_static}
+  #extract only static envs
+  envsExtractStatic ${__prepare_container_env_file_static}
+  #load static envs
+  source ${__prepare_container_env_file_static}
+
+
+  #final parser
+  envsParserFile ${__prepare_container_env_file}
+  envsParserFile ${__prepare_container_env_docker}
+  
+  #clean dir
+  rm -rf *.bak
+  
+  echo ${__prepare_container_env_docker}
   return 1
 }
 
@@ -357,7 +418,7 @@ function dockerBuildCompose()
 
   __docker_build_service=$(__private_dockerParserServiceName ${__docker_build_name})  
   __docker_build_hostname=$(__private_dockerParserHostName ${__docker_build_name})  
-  #__docker_build_env_file=$(__private_prepareContainerEnvs ${__docker_build_name} ${__docker_build_compose_dir} ${__docker_build_bin_dir} "${__docker_build_bin_jar}" )
+  __docker_build_env_file=$(__private_prepareContainerEnvs ${__docker_build_name} ${__docker_build_compose_dir} ${__docker_build_bin_dir} "${__docker_build_bin_jar}" )
 
   cd ${__docker_build_compose_dir}
 
@@ -396,13 +457,7 @@ function dockerBuildCompose()
     export DOCKER_JAR_NAME=${__docker_build_bin_jar}
   fi
 
-  printenv > ${PWD}/os.env
-  __deploy_tags=(HIST S_COLORS XDG printenv shell __ XCURSOR XCURSOR WINDOWID PWD PATH OLDPWD KDE LD_ LANG COLOR DESKTOP DISPLAY DBUS HOME TERM XAUTHORITY XMODIFIERS USER DOCKER_ARGS_DEFAULT)
-  for __deploy_tag in "${__deploy_tags[@]}"
-  do
-    sed -i "/${__deploy_tag}/d" ${PWD}/os.env
-  done  
-
+  echo $(envsOS)>${PWD}/os.env
 
   echB "      Building ..."
   echY "        - ${__docker_build_cmd_1}"

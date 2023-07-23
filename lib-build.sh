@@ -78,7 +78,7 @@ function mavenBuild()
   fi
 
   cd ${__mvn_build_src_dir}
-
+  __mvn_build_base_dir=$(dirname ${__mvn_build_src_dir});
   __mvn_build_src_bin_dir=${__mvn_build_src_dir}/target
 
   __mvn_cmd="mvn install -DskipTests"
@@ -94,18 +94,32 @@ function mavenBuild()
     echR "    *******Maven build fail*******  "
     echR "    ==============================  "
     printf "${__mvn_output}"
-    return 0;
+  else
+    export __mvn_jar_source_files=$(find ${__mvn_build_src_bin_dir} -name ${__mvn_jar_filter})
+  
+    if [[ ${__mvn_jar_source_files} == "" ]]; then
+      echR "      ==============================  "
+      echR "      ******JAR file not found******  "
+      echR "      ******JAR file not found******  "
+      echR "      ==============================  "
+    else
+      __mvn_jar_source_files=(${__mvn_jar_source_files})
+      for __mvn_jar_source_file in "${__mvn_jar_source_files[@]}"
+      do
+        __mvn_jar_source_file_new=${__mvn_build_base_dir}/$(basename ${__mvn_jar_source_file})
+        mv ${__mvn_jar_source_file} ${__mvn_jar_source_file_new}
+        export __func_return="${__func_return} ${__mvn_jar_source_file_new}"
+        echC "      - JAR file: ${__mvn_jar_source_file_new}"
+      done
+    fi
   fi
-  export __mvn_jar_source_file=$(find ${__mvn_build_src_bin_dir} -name ${__mvn_jar_filter})
-  echC "      - JAR file: ${__mvn_jar_source_file}"
-  if [[ ${__mvn_jar_source_file} == "" ]]; then
-    echR "      ==============================  "
-    echR "      ******JAR file not found******  "
-    echR "      ******JAR file not found******  "
-    echR "      ==============================  "
-    return 0;
+  cd ${__mvn_build_base_dir}
+  rm -rf ${__mvn_build_src_dir}
+
+  if [[ ${__func_return} == "" ]]; then
+    return 0
+  else
+    return 1
   fi
   echG "    Finished"
-  export __func_return=${__mvn_jar_source_file}
-  return 1
 }
