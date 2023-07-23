@@ -96,9 +96,6 @@ function deployPrepareEnvFile()
   envsParserFile ${__deploy_prepare_env_file}
   envsParserFile ${__deploy_prepare_env_docker}
   
-  echo "read"
-  read
-
   #clean dir
   rm -rf *.bak
   rm -rf tag*.*
