@@ -15,26 +15,32 @@ function __private_db_envs_clear()
 
 function __private_db_envs_check()
 {
+  if [[ ${DATABASE_ENVIRONMENT} == "" ]]; then
+    echR "Invalid \${DATABASE_ENVIRONMENT}"
+    return 0
+  fi
+
   if [[ ${DATABASE_DIR} == "" ]]; then
-      echR "Invalid \${DATABASE_DIR}"
-      return 0
+    echR "Invalid \${DATABASE_DIR}"
+    return 0
   fi
   if ! [[ -d ${DATABASE_DIR} ]]; then
-      echR "Invalid database dir: ${DATABASE_DIR}"
-      return 0
+    echR "Invalid database dir: ${DATABASE_DIR}"
+    return 0
   fi
   return 1
 }
 
 function __private_db_cleanup_sql()
 {
-  CLEANUP_FILE=${1}
-  if ! [[ -f ${CLEANUP_FILE} ]]; then
+  __private_db_cleanup_sql_file=${1}
+  if ! [[ -f ${__private_db_cleanup_sql_file} ]]; then
     return 0;
   fi
-  RESERVED_LIST=(DROP drop TRUNCATE truncate DELETE delete CASCADE cascade)
-  for RESERVED in ${RESERVED_LIST[*]}; do 
-    sed -i "/${RESERVED}/d" ${CLEANUP_FILE}
+  sed -i '/^$/d' ${__private_db_cleanup_sql_file}
+  __private_db_cleanup_sql_envs=(DROP drop TRUNCATE truncate DELETE delete CASCADE cascade)
+  for __private_db_cleanup_sql_env in ${__private_db_cleanup_sql_envs[*]}; do 
+    sed -i "/${__private_db_cleanup_sql_env}/d" ${__private_db_cleanup_sql_file}
   done
   return 1;
 }
@@ -43,12 +49,21 @@ function __private_db_scan_files()
 {
   DB_SCAN_RETURN=
   DB_SCAN_DIR=${1}
-  DB_SCAN_FILTERS=(${2})
+  __private_db_scan_files_filters="${2}"
 
   if ! [[ -d ${DB_SCAN_DIR} ]]; then
     return 0;
   fi
- 
+
+  if [[ ${DATABASE_ENVIRONMENT} == "production" ]]; then
+    DB_SCAN_FILTERS=$(echo ${__private_db_scan_files_filters} | sed 's/drops//g' | sed 's/drop//g' sed 's/fakedata//g')
+  elif [[ ${DATABASE_ENVIRONMENT} == "testing" || ${DATABASE_ENVIRONMENT} == "development"  || ${DATABASE_ENVIRONMENT} == "stating" ]]; then
+    DB_SCAN_FILTERS=${__private_db_scan_files_filters}
+  else
+    DB_SCAN_FILTERS=
+  fi 
+
+  DB_SCAN_FILTERS=(${DB_SCAN_FILTERS})
   DB_SCAN_STEP_DIRS=($(ls ${DB_SCAN_DIR}))
   for DB_SCAN_STEP_DIR in ${DB_SCAN_STEP_DIRS[*]}; 
   do
@@ -76,13 +91,31 @@ function __private_db_scan_files()
 
 function __private_db_scan_files_filters()
 {
-  echo "drops tables constraints-pk constraints.sql constraints-fk constraints-check indexes initdata view fakedata"
+  if [[ ${DATABASE_ENVIRONMENT} == "production" ]]; then
+    echo "tables constraints-pk constraints.sql constraints-fk constraints-check indexes initdata view"
+  elif [[ ${DATABASE_ENVIRONMENT} == "testing" || ${DATABASE_ENVIRONMENT} == "development"  || ${DATABASE_ENVIRONMENT} == "stating" ]]; then
+    echo "drops tables constraints-pk constraints.sql constraints-fk constraints-check indexes initdata view fakedata"
+  fi  
   return 1
 }
 
 function __private_db_scan_files_for_local()
 {
-  __private_db_scan_files "${1}" "drops tables constraints.sql constraints-pk constraints-fk constraints-check indexes initdata view fakedata"
+  __private_db_envs_check
+  if ! [ "$?" -eq 1 ]; then
+    return 0;       
+  fi
+  if [[ ${DATABASE_ENVIRONMENT} == "production" ]]; then
+    __private_db_scan_files_for_local_filter="tables constraints.sql constraints-pk constraints-fk constraints-check indexes initdata view"
+  elif [[ ${DATABASE_ENVIRONMENT} == "testing" || ${DATABASE_ENVIRONMENT} == "development"  || ${DATABASE_ENVIRONMENT} == "stating" ]]; then
+    __private_db_scan_files_for_local_filter="drops tables constraints.sql constraints-pk constraints-fk constraints-check indexes initdata view fakedata"
+  else
+    __private_db_scan_files_for_local_filter=
+  fi  
+  if [[ ${__private_db_scan_files_for_local_filter} == "" ]]; then
+    return 0;
+  fi
+  __private_db_scan_files "${1}" "${__private_db_scan_files_for_local_filter}"
   if ! [ "$?" -eq 1 ]; then
     return 0;       
   fi
@@ -91,7 +124,22 @@ function __private_db_scan_files_for_local()
 
 function __private_db_scan_files_for_ddl()
 {
-  __private_db_scan_files "${1}" "tables constraints.sql constraints-pk constraints-fk constraints-check indexes initdata view fakedata"
+  __private_db_envs_check
+  if ! [ "$?" -eq 1 ]; then
+    return 0;       
+  fi
+  if [[ ${DATABASE_ENVIRONMENT} == "production" ]]; then
+    __private_db_scan_files_for_ddl_filter="tables constraints.sql constraints-pk constraints-fk constraints-check indexes initdata view"
+  elif [[ ${DATABASE_ENVIRONMENT} == "testing" || ${DATABASE_ENVIRONMENT} == "development"  || ${DATABASE_ENVIRONMENT} == "stating" ]]; then
+    __private_db_scan_files_for_ddl_filter="tables constraints.sql constraints-pk constraints-fk constraints-check indexes initdata view fakedata"
+  else
+    __private_db_scan_files_for_ddl_filter=
+  fi  
+  if [[ ${__private_db_scan_files_for_ddl_filter} == "" ]]; then
+    return 0;
+  fi
+
+  __private_db_scan_files "${1}" "${__private_db_scan_files_for_ddl_filter}"
   if ! [ "$?" -eq 1 ]; then
     return 0;       
   fi
@@ -160,8 +208,21 @@ function __private_pg_envs_check()
 
 function __private_pg_script_exec()
 {
-  FILE=${1}
-  echo $(psql -q -h ${POSTGRES_HOST} -U ${POSTGRES_USER} -p ${POSTGRES_PORT} -d ${POSTGRES_DB} -a -f ${FILE})&>/dev/null
+  __private_pg_script_exec_file=${1}
+  if ! [[ -f ${__private_pg_script_exec_file} ]]; then
+    return 0;
+  fi
+
+  if [[ ${DATABASE_ENVIRONMENT} == "production" ]]; then
+    __private_db_cleanup_sql ${__private_pg_script_exec_file}
+  elif [[ ${DATABASE_ENVIRONMENT} == "testing" || ${DATABASE_ENVIRONMENT} == "development"  || ${DATABASE_ENVIRONMENT} == "stating" ]]; then
+    #remove empty lines
+    sed -i '/^$/d' ${__private_pg_script_exec_file}
+  else
+    return 0;
+  fi 
+
+  echo $(psql -q -h ${POSTGRES_HOST} -U ${POSTGRES_USER} -p ${POSTGRES_PORT} -d ${POSTGRES_DB} -a -f ${__private_pg_script_exec_file})&>/dev/null
   return 1
 }
 
@@ -296,7 +357,8 @@ function databaseDDLMakerExec()
 
 function databasePrepare()
 {
-  export DATABASE_DIR=${1}
+  export DATABASE_ENVIRONMENT=${1}
+  export DATABASE_DIR=${2}
   export DATABASE_DDL_FILE="${DATABASE_DIR}/initdb.sql"
   __private_db_envs_check
   if ! [ "$?" -eq 1 ]; then
