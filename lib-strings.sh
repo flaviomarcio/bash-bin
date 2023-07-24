@@ -212,47 +212,47 @@ function fileExists()
 }
 
 
-function makeDir()
-{
-  idt="$(toInt ${1})"
-  logStart ${idt} "makeDir"
-  MAKE_DIR="${2}"
-  MAKE_PERMISSION="${3}"
+# function makeDir()
+# {
+#   idt="$(toInt ${1})"
+#   logStart ${idt} "makeDir"
+#   MAKE_DIR="${2}"
+#   MAKE_PERMISSION="${3}"
 
-  logTarget ${idt} ${MAKE_DIR}
-  logInfo ${idt} "permission" ${MAKE_PERMISSION}
+#   logTarget ${idt} ${MAKE_DIR}
+#   logInfo ${idt} "permission" ${MAKE_PERMISSION}
 
-  if [[ ${MAKE_DIR} == "" || ${MAKE_PERMISSION} == "" ]]; then
-    logError ${idt} "Invalid-parameters:MAKE_DIR==${MAKE_DIR},MAKE_PERMISSION==${MAKE_PERMISSION}"
-    return 0;
-  fi
+#   if [[ ${MAKE_DIR} == "" || ${MAKE_PERMISSION} == "" ]]; then
+#     logError ${idt} "Invalid-parameters:MAKE_DIR==${MAKE_DIR},MAKE_PERMISSION==${MAKE_PERMISSION}"
+#     return 0;
+#   fi
 
-  if [[ ${MAKE_DIR} == "" ]]; then
-    MSG="dir-is-empty"
-    logError ${idt} "${MSG}"
-    return 0;
-  fi
+#   if [[ ${MAKE_DIR} == "" ]]; then
+#     MSG="dir-is-empty"
+#     logError ${idt} "${MSG}"
+#     return 0;
+#   fi
 
-  if ! [[ -d ${MAKE_DIR}  ]]; then
-    mkdir -p ${MAKE_DIR}
-    if ! [[ -d ${MAKE_DIR}  ]]; then
-      logError ${idt} "no-create-dir:${MSG}"
-      return 0
-    fi
-  fi  
+#   if ! [[ -d ${MAKE_DIR}  ]]; then
+#     mkdir -p ${MAKE_DIR}
+#     if ! [[ -d ${MAKE_DIR}  ]]; then
+#       logError ${idt} "no-create-dir:${MSG}"
+#       return 0
+#     fi
+#   fi  
 
-  if [[ ${MAKE_PERMISSION} != "" ]]; then
-    #echo "chmod ${MAKE_PERMISSION} ${MAKE_DIR})>/dev/null 2>&1"
-    __makeDirUser=$(echo $(ls -l ${MAKE_DIR}) | awk '{print $5}')
-    if [[ ${__makeDirUser} == ${USER} ]]; then
-      echo $(chmod ${MAKE_PERMISSION} ${MAKE_DIR})>/dev/null 2>&1
-    fi
-  fi
+#   if [[ ${MAKE_PERMISSION} != "" ]]; then
+#     #echo "chmod ${MAKE_PERMISSION} ${MAKE_DIR})>/dev/null 2>&1"
+#     __makeDirUser=$(echo $(ls -l ${MAKE_DIR}) | awk '{print $5}')
+#     if [[ ${__makeDirUser} == ${USER} ]]; then
+#       echo $(chmod ${MAKE_PERMISSION} ${MAKE_DIR})>/dev/null 2>&1
+#     fi
+#   fi
 
-  logSuccess ${idt}
-  logFinished ${idt} "makeDir"
-  return 1;
-}
+#   logSuccess ${idt}
+#   logFinished ${idt} "makeDir"
+#   return 1;
+# }
 
 function copyFile()
 {
