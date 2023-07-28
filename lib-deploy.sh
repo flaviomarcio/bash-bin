@@ -145,8 +145,6 @@ function deployPrepareEnvFile()
   rm -rf env_file.*.env
   rm -rf env.json
 
-  echo "read-final-999"
-  read
   export __func_return=${__deploy_prepare_env_file_deploy}
   return 1
 }
