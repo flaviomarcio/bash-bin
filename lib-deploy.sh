@@ -231,8 +231,14 @@ function deploy()
     __deploy_dck_compose=${__deploy_builder_dir}/$(basename ${__deploy_dck_compose})
   fi
 
-    #format config files 
-  __private_deploy_envsubst "$(find ${__deploy_builder_dir} -name '*.conf')"
+  #format config files 
+  # -embora legal ele gera problemas pois os arquivos conf tem as proprias envs 
+  #  com $ e o env simplesmente faz replace delas gerando assim problemas
+  # 
+  # -alternativa é utilizar o metodo fileEnvreplace que apenas dará replace 
+  #  nas envs carregadas no ambiente
+  #
+  #__private_deploy_envsubst "$(find ${__deploy_builder_dir} -name '*.conf')"
 
   if [[ ${__deploy_check_build} == true ]]; then
     if [[ ${__deploy_git_repository} != "" ]]; then
