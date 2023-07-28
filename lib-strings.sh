@@ -280,59 +280,22 @@ function copyFile()
 
 function fileDedupliceLines()
 {
-  logStart ${idt} "fileDedupliceLines"
-  idt="$(toInt ${1})"
-  DEDUP_FILENAME="${2}"
-
-  REPLACE_SEPARADOR_250="%REPLACE-250"
-
-  if [[ ${DEDUP_FILENAME} == "" ]]; then
-    return 1;
-  fi
-
-  logTarget ${idt} "${DEDUP_FILENAME}"
-
-  if ! [[ -f ${DEDUP_FILENAME} ]]; then
-    return 1;
-  fi
-
-  TMP_DEDUP_FILENAME="/tmp/fileDedupliceLines-${RANDOM}.tmp"
-  if [[ -f ${TMP_DEDUP_FILENAME}  ]]; then
-    rm -rf ${TMP_DEDUP_FILENAME}
-  fi
-  
-  while IFS= read -r line
-  do
-    if [[ "${line}" == *'/'* ]]; then
-      line=$(sed "s/\//$REPLACE_SEPARADOR_250/g" <<< "${line}")
-    fi
-
-    if [[ ${line} == "" ]]; then
-      echo ${line} > ${TMP_DEDUP_FILENAME} 
-    elif ! [[ -f ${TMP_DEDUP_FILENAME} ]]; then
-      echo ${line} > ${TMP_DEDUP_FILENAME} 
-    elif [[ "${line}" == *'/'* ]]; then
-      echo ${line} >> ${TMP_DEDUP_FILENAME}
-    else
-      #remove existing lines
-      echo $(sed -i "/$line/d" ${TMP_DEDUP_FILENAME})&>/dev/null
-      echo ${line} >> ${TMP_DEDUP_FILENAME} 
-    fi    
-  done < "${DEDUP_FILENAME}"
-
-  echo $(sed -i "s/${REPLACE_SEPARADOR_250}/\//g" ${TMP_DEDUP_FILENAME})&>/dev/null
-
-
-  sort ${TMP_DEDUP_FILENAME} > ${DEDUP_FILENAME}
-  rm -rf ${TMP_DEDUP_FILENAME}
- 
-
-  logFinished ${idt} "fileDedupliceLines"
-  if [[ -f ${DEDUP_FILENAME} ]]; then
-    return 1
-  else
+  if [[ ${1} == "" ]]; then
     return 0
   fi
+  
+  __file_deduplice_lines_files=(${1})
+  for __file_deduplice_lines_file in "${__file_deduplice_lines_files[@]}"
+  do
+    if [[ -f ${__file_deduplice_lines_file} ]]; then
+      #sort lines
+      sort -u ${__file_deduplice_lines_file} -o ${__file_deduplice_lines_file}
+      #remove duplicate lines
+      sed -i '$!N; /^\(.*\)\n\1$/!P; D' ${__file_deduplice_lines_file}
+    fi
+  done  
+
+  return 1;
 }
 
 
@@ -439,7 +402,7 @@ function envsOS()
 {
   export __func_return=
   __envsOS_destine=${1}
-  __envsOS="/tmp/env_file_${RANDOM}.env"
+  __envsOS="/tmp/env_file_envsOS_${RANDOM}.env"
   printenv | sort > ${__envsOS}
   __envsOS_Remove=(_ __ CLUTTER_IM_MODULE KUBE LOGNAME KONSOLE GPG SHELL SHLVL GTK HIST S_COLORS XDG printenv shell XCURSOR XCURSOR WINDOWID PWD PATH OLDPWD KDE LD_ LANG COLOR DESKTOP DISPLAY DBUS HOME TERM XAUTHORITY XMODIFIERS USER DOCKER_ARGS_DEFAULT)
   for __envsOS_env in "${__envsOS_Remove[@]}"
@@ -470,7 +433,7 @@ function envsExtractStatic()
   if [[ ${__runSourceOnlyStatic_file_out} == "" ]]; then
     __runSourceOnlyStatic_file_out=${__runSourceOnlyStatic_file}
   fi
-  __runSourceOnlyStatic_tmp_env="/tmp/env_file_${RANDOM}.env"
+  __runSourceOnlyStatic_tmp_env="/tmp/env_file_envsExtractStatic_${RANDOM}.env"
   cat ${__runSourceOnlyStatic_file}>>${__runSourceOnlyStatic_tmp_env}
   #replace " ${"
   sed -i 's/ \${/\${/g' ${__runSourceOnlyStatic_tmp_env}
@@ -512,7 +475,8 @@ function envsPrepareFile()
   if ! [[ -f ${__envsPrepareFile_target} ]]; then
     return 0
   fi
-  __envsPrepareFile_target_tmp="/tmp/env_file_${RANDOM}.env"
+
+  __envsPrepareFile_target_tmp="/tmp/env__envsPrepareFile_target_${RANDOM}.env"
   cat ${__envsPrepareFile_target}>${__envsPrepareFile_target_tmp}
   #trim lines
   sed -i 's/^[[:space:]]*//; s/[[:space:]]*$//' ${__envsPrepareFile_target_tmp}
@@ -520,9 +484,10 @@ function envsPrepareFile()
   sed -i '/^$/d' ${__envsPrepareFile_target_tmp}  
   #remove startWith #
   sed -i '/^#/d' ${__envsPrepareFile_target_tmp}
-  sed -i '$!N; /^\(.*\)\n\1$/!P; D' ${__envsPrepareFile_target_tmp}
-  #sorte lines
-  sort -f ${__envsPrepareFile_target_tmp} > ${__envsPrepareFile_target}
+  #sort lines
+  sort -u ${__envsPrepareFile_target_tmp} -o ${__envsPrepareFile_target}
+  #remove duplicate lines
+  sed -i '$!N; /^\(.*\)\n\1$/!P; D' ${__envsPrepareFile_target}
   rm -rf ${__envsPrepareFile_target_tmp}
   return 1
 }
@@ -538,11 +503,13 @@ function envsFileConvertToExport()
   if ! [[ -f ${__envsFileConvertToExport_file} ]]; then
     return 0
   fi
-  envsPrepareFile ${__envsFileConvertToExport_file}
 
-  __envsFileConvertToExport_file_tmp="/tmp/env_file_${RANDOM}.env"
+  __envsFileConvertToExport_file_tmp="/tmp/env_file_envsFileConvertToExport_${RANDOM}.env"
   cat ${__envsFileConvertToExport_file}>${__envsFileConvertToExport_file_tmp}
-  echo "#!/bin/bash">${__envsFileConvertToExport_file}
+  echo "">${__envsFileConvertToExport_file}
+  envsPrepareFile ${__envsFileConvertToExport_file_tmp}
+  sed -i 's/export;//g' ${__envsFileConvertToExport_file_tmp}
+  sed -i 's/export //g' ${__envsFileConvertToExport_file_tmp}
   while IFS= read -r line
   do
     line=$(echo ${line} | grep =)
@@ -550,9 +517,10 @@ function envsFileConvertToExport()
       __args=($(strSplit "${line}" "="))
       __args_key=${__args[0]}
       __args_value=${__args[1]}
-      echo "export ${__args_key}=\"${__args_value}\"">>${__envsFileConvertToExport_file}
+      echo "export ${__args_key}=${__args_value}">>${__envsFileConvertToExport_file}
     fi
   done < "${__envsFileConvertToExport_file_tmp}"
+  rm -rf ${__envsFileConvertToExport_file_tmp}
   export __func_return=${__envsFileConvertToExport_file} 
   return 1
 }
@@ -572,7 +540,7 @@ function envsFileConvertToSimpleFile()
     __envsFileConvertToSimpleFile_file_out=${__envsFileConvertToSimpleFile_file}
   fi
 
-  __envsFileConvertToSimpleFile_file_tmp="/tmp/env_file_${RANDOM}.env"
+  __envsFileConvertToSimpleFile_file_tmp="/tmp/env_file_envsFileConvertToSimpleFile_${RANDOM}.env"
   cat ${__envsFileConvertToExport_file}>${__envsFileConvertToSimpleFile_file_tmp}
   sed -i '/export ;/d' ${__envsFileConvertToSimpleFile_file}
   sed -i '/export;/d' ${__envsFileConvertToSimpleFile_file}
@@ -591,7 +559,7 @@ function envsReplaceFile()
   fi
 
   REPLACE_SEPARADOR_250="%REPLACE-250"
-  __envsReplaceFile_envs="/tmp/env_file_${RANDOM}.env"
+  __envsReplaceFile_envs="/tmp/env_file_envsReplaceFile_${RANDOM}.env"
 
   __envsReplaceFile_envs=($(envsOS))
   sed -i 's/\${/\[\#\#\]{/g' ${__envsReplaceFile_file}  
@@ -621,11 +589,16 @@ function envsParserFile()
     return 0
   fi
 
-  envsPrepareFile ${__envsParserFile_file}
-  envsReplaceFile ${__envsParserFile_file}
-  sed -i '$!N; /^\(.*\)\n\1$/!P; D' ${__envsParserFile_file}
+  __envsParserFile_file_tmp="/tmp/env_file___envsParserFile_file_tmp_${RANDOM}.env"
 
-  #echo $(sed -i s/$REPLACE_SEPARADOR_250/\//g ${__envsParserFile_file})&>/dev/null
+  cat ${__envsParserFile_file}>${__envsParserFile_file_tmp}
+
+  envsPrepareFile ${__envsParserFile_file_tmp}
+  envsReplaceFile ${__envsParserFile_file_tmp}
+  #sort lines
+  sort -u ${__envsParserFile_file_tmp} -o ${__envsParserFile_file}
+  sed -i '$!N; /^\(.*\)\n\1$/!P; D' ${__envsParserFile_file}
+  rm -rf ${__envsParserFile_file_tmp}
   return 1;
 }
 

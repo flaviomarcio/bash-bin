@@ -11,6 +11,24 @@ fi
 # export DOCKER_SCOPE=
 # export DOCKER_DIR=
 
+function __private_docker_envsubst()
+{
+  if [[ ${1} == "" ]]; then
+    return 0
+  fi
+  __private_docker_envsubst_files=(${1})
+  for __private_docker_envsubst_file_src in "${__private_docker_envsubst_files[@]}"
+  do
+    if [[ -f ${__private_docker_envsubst_file_src} ]]; then
+      __private_docker_envsubst_file_ori=${__private_docker_envsubst_file_src}.ori
+      cat ${__private_docker_envsubst_file_src}>${__private_docker_envsubst_file_ori}
+      envsubst < ${__private_docker_envsubst_file_ori} > ${__private_docker_envsubst_file_src}
+    fi
+  done  
+
+  return 1;
+}
+
 function __private_dockerParserName()
 {
   # if [[ ${1} == "" ]]; then
@@ -373,7 +391,8 @@ function dockerBuildCompose()
   export APPLICATION_DEPLOY_APP_DIR=${__docker_build_compose_dir}
   export APPLICATION_DEPLOY_NETWORK_NAME=${__docker_build_network_name}
   export APPLICATION_DEPLOY_DNS=${__docker_build_service}
-  envsReplaceFile ${__docker_build_compose_file}
+
+
 
   echo "#!/bin/bash"                                                                 >${__docker_build_compose_sh_file}
   echo ""                                                                           >>${__docker_build_compose_sh_file}
@@ -410,6 +429,10 @@ function dockerBuildCompose()
   if ! [[ -f ${__docker_build_bin_jar} ]]; then
     export DOCKER_JAR_NAME=${__docker_build_bin_jar}
   fi
+
+    #format config files 
+  __private_docker_envsubst ${__docker_build_dockerfile}
+  __private_docker_envsubst ${__docker_build_compose_file}
 
   echB "      Building ..."
   echY "        - ${__docker_build_cmd_1}"
