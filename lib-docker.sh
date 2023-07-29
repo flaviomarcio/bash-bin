@@ -296,18 +296,14 @@ function dockerBuildDockerFile()
 
 function dockerBuildCompose()
 {
-  __docker_build_bin_jar=
-  __docker_build_compose_dir=
-
   __docker_build_name=${1}
   __docker_build_image=${2}
   __docker_build_dockerfile=${3}
   __docker_build_compose_file=${4}
   __docker_build_env_file=${5}
   __docker_build_builder_dir=${6}
-  __docker_build_bin_dir=${7}
-  __docker_build_bin_name=${8}
-  __docker_build_network_name=${9}
+  __docker_build_binary_name=${7}
+  __docker_build_network_name=${8}
 
   echM "    Docker containers create"  
   if ! [[ -f  ${__docker_build_compose_file} ]]; then
@@ -321,19 +317,24 @@ function dockerBuildCompose()
   fi
 
   __docker_build_compose_dir=$(dirname ${__docker_build_compose_file})
-
-  if [[ ${__docker_build_bin_name} != "" ]]; then
-    __docker_build_bin_jar=${__docker_build_bin_dir}/${__docker_build_bin_name}.jar
-  fi
-
   __docker_build_service=$(__private_dockerParserServiceName ${__docker_build_name})  
   __docker_build_hostname=$(__private_dockerParserHostName ${__docker_build_name})  
   __docker_build_env_file_static=${__docker_build_builder_dir}/${__docker_build_service}-static.env
-  __docker_build_env_file_stack=${__docker_build_builder_dir}/${__docker_build_service}-stack.env
+  __docker_build_env_file_export=${__docker_build_builder_dir}/${__docker_build_service}-run.env
   __docker_build_env_file_docker=${__docker_build_builder_dir}/${__docker_build_service}.env
   __docker_build_compose_sh_file=${__docker_build_builder_dir}/${__docker_build_service}.sh
+  __docker_build_binary_file=${__docker_build_builder_dir}/${__docker_build_binary_name}
 
   cd ${__docker_build_compose_dir}
+
+  export APPLICATION_NAME=${__docker_build_service}
+  export APPLICATION_SERVICE=$(echo ${__docker_build_service} | sed 's/-/_/g')
+  export APPLICATION_DEPLOY_BINARY_DIR=${__docker_build_builder_dir}
+  export APPLICATION_DEPLOY_IMAGE=${__docker_build_image}
+  export APPLICATION_DEPLOY_HOSTNAME=${__docker_build_hostname}
+  export APPLICATION_DEPLOY_APP_DIR=${__docker_build_compose_dir}
+  export APPLICATION_DEPLOY_NETWORK_NAME=${__docker_build_network_name}
+  export APPLICATION_DEPLOY_DNS=${__docker_build_service}
 
   # ref https://docs.docker.com/compose/environment-variables/envvars/
 
@@ -349,20 +350,37 @@ function dockerBuildCompose()
     mv ${__docker_build_old_file} ${__docker_build_compose_file}
   fi
 
-  __docker_build_old_file=${__docker_build_builder_dir}/env_file_static.env
+  __docker_build_old_file=${__docker_build_builder_dir}/env_file-static.env
   if [[ -f ${__docker_build_old_file} ]]; then    
     mv ${__docker_build_old_file} ${__docker_build_env_file_static}
-  fi
-
-  __docker_build_old_file=${__docker_build_builder_dir}/env_file_stack.env
-  if [[ -f ${__docker_build_old_file} ]]; then    
-    mv ${__docker_build_old_file} ${__docker_build_env_file_stack}
   fi
 
   __docker_build_old_file=${__docker_build_env_file}
   if [[ -f ${__docker_build_old_file} ]]; then    
     mv ${__docker_build_old_file} ${__docker_build_env_file_docker}
+    envsFileConvertToExport ${__docker_build_env_file_docker} ${__docker_build_env_file_export}
   fi
+
+  echo "__docker_build_binary_file==${__docker_build_binary_file}"
+  echo "__docker_build_binary_file==${__docker_build_binary_file}"
+  echo "__docker_build_binary_file==${__docker_build_binary_file}"
+
+  if ! [[ -f ${__docker_build_env_file_export} ]]; then
+    echo "#!/bin/bash">${__docker_build_env_file_export}
+  fi
+  echo "export COMPOSE_CONVERT_WINDOWS_PATHS=${COMPOSE_CONVERT_WINDOWS_PATHS}"      >>${__docker_build_env_file_export}
+  echo "export APPLICATION_NAME=${APPLICATION_NAME}"                                >>${__docker_build_env_file_export}
+  echo "export APPLICATION_SERVICE=${APPLICATION_SERVICE}"                          >>${__docker_build_env_file_export}
+  echo "export APPLICATION_DEPLOY_APP_DIR=${APPLICATION_DEPLOY_APP_DIR}"            >>${__docker_build_env_file_export}
+  echo "export APPLICATION_DEPLOY_BINARY_DIR=${APPLICATION_DEPLOY_BINARY_DIR}"      >>${__docker_build_env_file_export}
+  echo "export APPLICATION_DEPLOY_DNS=${APPLICATION_DEPLOY_DNS}"                    >>${__docker_build_env_file_export}
+  echo "export APPLICATION_DEPLOY_IMAGE=${APPLICATION_DEPLOY_IMAGE}"                >>${__docker_build_env_file_export}
+  echo "export APPLICATION_DEPLOY_HOSTNAME=${APPLICATION_DEPLOY_HOSTNAME}"          >>${__docker_build_env_file_export}
+  echo "export APPLICATION_DEPLOY_NETWORK_NAME=${APPLICATION_DEPLOY_NETWORK_NAME}"  >>${__docker_build_env_file_export}
+  if [[ -f ${__docker_build_binary_file} ]]; then
+  echo "export APPLICATION_BINARY_FILE=${__docker_build_binary_file}"        >>${__docker_build_env_file_export}
+  fi
+  
 
   __docker_build_cmd_1="docker --log-level ERROR build --quiet --file $(basename ${__docker_build_dockerfile}) -t ${__docker_build_service} ."
   __docker_build_cmd_2="docker --log-level ERROR image tag ${__docker_build_service} ${__docker_build_image}"
@@ -376,21 +394,14 @@ function dockerBuildCompose()
   echC "        - Network: ${__docker_build_network_name}"
   echC "        - Hostname: ${__docker_build_hostname}"
   echB "      Environment files"
-  echC "        - $(basename ${__docker_build_env_file_static})"
-  echC "        - $(basename ${__docker_build_env_file_stack})"
-  echC "        - $(basename ${__docker_build_env_file_docker})"
-  if [[ -f ${__docker_build_bin_jar} ]]; then
-  echC "        - JAR name: ${__docker_build_bin_jar}"
+  echC "        - static envs: $(basename ${__docker_build_env_file_static})"
+  echC "        - runner envs $(basename ${__docker_build_env_file_export})"
+  echC "        - docker envs: $(basename ${__docker_build_env_file_docker})"
+  if [[ -f ${__docker_build_binary_file} ]]; then
+  echC "        - application file: ${__docker_build_binary_file}"
   fi
   
-  export APPLICATION_NAME=${__docker_build_service}
-  export APPLICATION_SERVICE=$(echo ${__docker_build_service} | sed 's/-/_/g')
-  export APPLICATION_DEPLOY_BINARY_DIR=${__docker_build_builder_dir}
-  export APPLICATION_DEPLOY_IMAGE=${__docker_build_image}
-  export APPLICATION_DEPLOY_HOSTNAME=${__docker_build_hostname}
-  export APPLICATION_DEPLOY_APP_DIR=${__docker_build_compose_dir}
-  export APPLICATION_DEPLOY_NETWORK_NAME=${__docker_build_network_name}
-  export APPLICATION_DEPLOY_DNS=${__docker_build_service}
+
 
 
 
@@ -399,18 +410,9 @@ function dockerBuildCompose()
   if [[ -f ${__docker_build_env_file_static} ]]; then
   echo "source ./$(basename ${__docker_build_env_file_static})"                     >>${__docker_build_compose_sh_file}
   fi
-  if [[ -f ${__docker_build_env_file_stack} ]]; then
-  echo "source ./$(basename ${__docker_build_env_file_stack})"                      >>${__docker_build_compose_sh_file}
+  if [[ -f ${__docker_build_env_file_export} ]]; then
+  echo "source ./$(basename ${__docker_build_env_file_export})"                      >>${__docker_build_compose_sh_file}
   fi
-  echo ""                                                                           >>${__docker_build_compose_sh_file}
-  echo "export APPLICATION_NAME=${APPLICATION_NAME}"                                >>${__docker_build_compose_sh_file}
-  echo "export APPLICATION_SERVICE=${APPLICATION_SERVICE}"                          >>${__docker_build_compose_sh_file}
-  echo "export APPLICATION_DEPLOY_APP_DIR=${APPLICATION_DEPLOY_APP_DIR}"            >>${__docker_build_compose_sh_file}
-  echo "export APPLICATION_DEPLOY_BINARY_DIR=${APPLICATION_DEPLOY_BINARY_DIR}"      >>${__docker_build_compose_sh_file}
-  echo "export APPLICATION_DEPLOY_DNS=${APPLICATION_DEPLOY_DNS}"                    >>${__docker_build_compose_sh_file}
-  echo "export APPLICATION_DEPLOY_IMAGE=${APPLICATION_DEPLOY_IMAGE}"                >>${__docker_build_compose_sh_file}
-  echo "export APPLICATION_DEPLOY_HOSTNAME=${APPLICATION_DEPLOY_HOSTNAME}"          >>${__docker_build_compose_sh_file}
-  echo "export APPLICATION_DEPLOY_NETWORK_NAME=${APPLICATION_DEPLOY_NETWORK_NAME}"  >>${__docker_build_compose_sh_file}
   echo ""                                                                           >>${__docker_build_compose_sh_file}
   echo "echo \"${__docker_build_cmd_1}\""                                           >>${__docker_build_compose_sh_file}
   echo ${__docker_build_cmd_1}                                                      >>${__docker_build_compose_sh_file}
@@ -423,12 +425,17 @@ function dockerBuildCompose()
   echo ""                                                                           >>${__docker_build_compose_sh_file}
   echo "echo \"${__docker_build_cmd_4}\""                                           >>${__docker_build_compose_sh_file}
   echo ${__docker_build_cmd_4}                                                      >>${__docker_build_compose_sh_file}
+  echo ""                                                                           >>${__docker_build_compose_sh_file}
+  if [[ -f ${__docker_build_binary_file} ]]; then
+    if [[ $(echo ${__docker_build_binary_file} | grep '.jar') != "" ]]; then
+    echo "java -jar $(basename ${__docker_build_binary_file})"                 >>${__docker_build_compose_sh_file}
+    else
+    echo "./$(basename ${__docker_build_binary_file})"                         >>${__docker_build_compose_sh_file}
+    fi
+  fi
+
   chmod +x ${__docker_build_compose_sh_file}  
 
-  export COMPOSE_CONVERT_WINDOWS_PATHS=1
-  if ! [[ -f ${__docker_build_bin_jar} ]]; then
-    export DOCKER_JAR_NAME=${__docker_build_bin_jar}
-  fi
 
     #format config files 
   __private_docker_envsubst ${__docker_build_dockerfile}

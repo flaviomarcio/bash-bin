@@ -340,7 +340,6 @@ function utilInitialize()
       export STACK_LOG_VERBOSE=1    
       export STACK_LOG_VERBOSE_SUPER=1
     elif [[ ${PARAM} == "-t" || ${PARAM} == "--test" ]]; then
-
       export PUBLIC_RUNNER_MODE=test
       export PUBLIC_RUNNER_TEST=true
     elif [[ ${PARAM} == "-l" ]]; then
@@ -471,31 +470,74 @@ function runSource()
 
 function envsPrepareFile()
 {
-  __envsPrepareFile_target=${1}  
+  __envsPrepareFile_target=${1}
+  __envsPrepareFile_target_output=${2}
   if ! [[ -f ${__envsPrepareFile_target} ]]; then
     return 0
   fi
 
-  __envsPrepareFile_target_tmp="/tmp/env__envsPrepareFile_target_${RANDOM}.env"
-  cat ${__envsPrepareFile_target}>${__envsPrepareFile_target_tmp}
+  __envsPrepareFile_target_tmp_1="/tmp/env__envsPrepareFile_target_${RANDOM}.env"
+  __envsPrepareFile_target_tmp_2="/tmp/env__envsPrepareFile_target_${RANDOM}.env"
+  cat ${__envsPrepareFile_target}>${__envsPrepareFile_target_tmp_1}
   #trim lines
-  sed -i 's/^[[:space:]]*//; s/[[:space:]]*$//' ${__envsPrepareFile_target_tmp}
+  sed -i 's/^[[:space:]]*//; s/[[:space:]]*$//' ${__envsPrepareFile_target_tmp_1}
   #remove empty lines
-  sed -i '/^$/d' ${__envsPrepareFile_target_tmp}  
+  sed -i '/^$/d' ${__envsPrepareFile_target_tmp_1}  
   #remove startWith #
-  sed -i '/^#/d' ${__envsPrepareFile_target_tmp}
+  sed -i '/^#/d' ${__envsPrepareFile_target_tmp_1}
+  #remove exports
+  sed -i 's/export;//g' ${__envsPrepareFile_target_tmp_1}
+  sed -i 's/export //g' ${__envsPrepareFile_target_tmp_1}
   #sort lines
-  sort -u ${__envsPrepareFile_target_tmp} -o ${__envsPrepareFile_target}
-  #remove duplicate lines
-  sed -i '$!N; /^\(.*\)\n\1$/!P; D' ${__envsPrepareFile_target}
-  rm -rf ${__envsPrepareFile_target_tmp}
+  sort -u ${__envsPrepareFile_target_tmp_1} -o ${__envsPrepareFile_target_tmp_2}
+  #after sort remove duplicate lines
+  sed -i '$!N; /^\(.*\)\n\1$/!P; D' ${__envsPrepareFile_target_tmp_2}
+
+
+  rm -rf ${__envsPrepareFile_target_tmp_1}
+
+  #tratando nomes das variaveis
+  while IFS= read -r line
+  do
+    line=$(echo ${line} | grep =)
+    if [[ ${line} != "" ]]; then
+      line=$(echo ${line} | sed 's/ /__xSPC__/g')
+      #separando nome da env e dos valores
+      __args=($(strSplit "${line}" "="))
+      #nome da env
+      __args_key="${__args[0]}"
+      #extracao do nome da env
+      __args_value=$(echo ${line} | sed "s/${__args_key}=//")
+      #trocar caractores que não sejam numeros letras e o [_] por _
+      __args_key=$(echo ${__args_key} | sed 's/[^[:alnum:]_]/_/g' | sed 's/__xSPC__/_/g')
+      line="${__args_key}=${__args_value}"
+      line=$(echo ${line} | sed 's/__xSPC__/ /g')
+      
+      #exportando para arquivo final
+      if [[ -f ${__envsPrepareFile_target_tmp_1} ]]; then
+        echo "${line}">>${__envsPrepareFile_target_tmp_1}
+      else
+        echo "${line}">${__envsPrepareFile_target_tmp_1}
+      fi
+    fi
+  done < "${__envsPrepareFile_target_tmp_2}"
+
+  if [[ ${__envsPrepareFile_target_output} == "" ]]; then
+    __envsPrepareFile_target_output=${__envsPrepareFile_target}
+  fi
+  cat ${__envsPrepareFile_target_tmp_1}>${__envsPrepareFile_target_output}
+  rm -rf ${__envsPrepareFile_target_tmp_1}
+  rm -rf ${__envsPrepareFile_target_tmp_2}
+  __func_return=${__envsPrepareFile_target_output}
   return 1
 }
 
 function envsFileConvertToExport()
 {
   export __func_return=
-  __envsFileConvertToExport_file=${1}
+  __envsFileConvertToExport_file="${1}"
+  __envsFileConvertToExport_output="${2}"
+
   if [[ ${__envsFileConvertToExport_file} == "" ]]; then
     return 0
   fi
@@ -504,50 +546,17 @@ function envsFileConvertToExport()
     return 0
   fi
 
-  __envsFileConvertToExport_file_tmp="/tmp/env_file_envsFileConvertToExport_${RANDOM}.env"
-  cat ${__envsFileConvertToExport_file}>${__envsFileConvertToExport_file_tmp}
-  echo "">${__envsFileConvertToExport_file}
-  envsPrepareFile ${__envsFileConvertToExport_file_tmp}
-  sed -i 's/export;//g' ${__envsFileConvertToExport_file_tmp}
-  sed -i 's/export //g' ${__envsFileConvertToExport_file_tmp}
-  while IFS= read -r line
-  do
-    line=$(echo ${line} | grep =)
-    if [[ ${line} != "" ]]; then
-      __args=($(strSplit "${line}" "="))
-      __args_key=${__args[0]}
-      __args_value=${__args[1]}
-      echo "export ${__args_key}=${__args_value}">>${__envsFileConvertToExport_file}
-    fi
-  done < "${__envsFileConvertToExport_file_tmp}"
-  rm -rf ${__envsFileConvertToExport_file_tmp}
-  export __func_return=${__envsFileConvertToExport_file} 
-  return 1
-}
+  if [[ ${__envsFileConvertToExport_output} == "" ]]; then
+    __envsFileConvertToExport_output=${__envsFileConvertToExport_file}
+  fi
 
-function envsFileConvertToSimpleFile()
-{
+  cat ${__envsFileConvertToExport_file}>${__envsFileConvertToExport_output}
+  envsPrepareFile ${__envsFileConvertToExport_output}
+
   export __func_return=
-  __envsFileConvertToSimpleFile_file=${1}
-  __envsFileConvertToSimpleFile_file_out=${2}
-  if [[ ${__envsFileConvertToSimpleFile_file} == "" ]]; then
-    return 0
-  fi
-  if ! [[ -f ${__envsFileConvertToSimpleFile_file} ]]; then
-    return 0
-  fi
-  if [[ ${__envsFileConvertToSimpleFile_file_out} == "" ]]; then
-    __envsFileConvertToSimpleFile_file_out=${__envsFileConvertToSimpleFile_file}
-  fi
-
-  __envsFileConvertToSimpleFile_file_tmp="/tmp/env_file_envsFileConvertToSimpleFile_${RANDOM}.env"
-  cat ${__envsFileConvertToExport_file}>${__envsFileConvertToSimpleFile_file_tmp}
-  sed -i '/export ;/d' ${__envsFileConvertToSimpleFile_file}
-  sed -i '/export;/d' ${__envsFileConvertToSimpleFile_file}
-  sed -i 's/export//g' ${__envsFileConvertToSimpleFile_file}
-  envsPrepareFile ${__envsFileConvertToSimpleFile_file}
-  cat ${__envsFileConvertToSimpleFile_file_tmp}>${__envsFileConvertToSimpleFile_file_out}
-  export __func_return=${__envsFileConvertToSimpleFile_file_out}
+  #incluindo prefixo no artquivo
+  sed -i 's/^/export /' ${__envsFileConvertToExport_output}
+  export __func_return=${__envsFileConvertToExport_output} 
   return 1
 }
 

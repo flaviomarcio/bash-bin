@@ -152,8 +152,6 @@ function deployPrepareEnvFile()
 
 function deploy()
 {
-  __deploy_binary_file=
-
   clearTerm
   __private_print_os_information
   echM "  Deploy"
@@ -170,7 +168,8 @@ function deploy()
   __deploy_dck_compose=${11}
   __deploy_dck_env_file=${12}
   __deploy_bin_dir=${13}
-  __deploy_dependency_dir=(${14})
+  __deploy_binary_application=${14}
+  __deploy_dependency_dir=(${15})
 
   __deploy_dck_env_tags=
   __deploy_check_build=false
@@ -264,15 +263,15 @@ function deploy()
         if ! [ "$?" -eq 1 ]; then
           return 0
         fi
-        __deploy_binary_file=${__deploy_builder_dir}/app.jar
-        cp -rf ${__func_return} ${__deploy_binary_file}        
+        __deploy_binary_application=${__deploy_builder_dir}/$(basename ${__func_return})
+        cp -rf ${__func_return} ${__deploy_binary_application}
       elif [[ ${__func_return} == "qmake"  ]]; then
         qtBuild ${__deploy_git_dir} ${__deploy_git_project_file}
         if ! [ "$?" -eq 1 ]; then
           return 0
         fi
-        __deploy_binary_file=${__deploy_builder_dir}/app
-        cp -rf ${__func_return} ${__deploy_binary_file}
+        __deploy_binary_application=${__deploy_builder_dir}/$(basename ${__func_return})
+        cp -rf ${__func_return} ${__deploy_binary_application}
       fi
     fi
   fi
@@ -310,8 +309,7 @@ function deploy()
         "${__deploy_dck_compose}" \
         "${__deploy_dck_env_file}" \
         "${__deploy_builder_dir}" \
-        "${__deploy_bin_dir}" \
-        "${__deploy_binary_file}" \
+        "${__deploy_binary_application}" \
         "${__deploy_network_name}"
 
     if ! [ "$?" -eq 1 ]; then

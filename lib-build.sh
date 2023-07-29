@@ -122,10 +122,11 @@ function qtBuild()
     if [[ ${__func_return} != "" ]]; then
       echM "    UPX steps"
       echC "      - target: ${__func_return}"
+      echC "      - upx version: $(${__upx_binary} --version | sed -n '1p')"
       echY "        strip (basename ${__func_return})"
       echo $(strip ${__func_return})&>/dev/null
       echY "        upx --best --lzma (basename ${__func_return})"
-      echo $(upx --best --lzma ${__func_return})&>/dev/null
+      echo $(${__upx_binary} --best --lzma ${__func_return})&>/dev/null
       echG "    Finished"
     fi    
   fi
