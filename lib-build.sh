@@ -7,6 +7,10 @@ fi
 . ${BASH_BIN}/lib-strings.sh
 . ${BASH_BIN}/lib-system.sh
 
+
+export __upx_binary=${BASH_BIN}/bin/upx
+
+
 function buildCompilerCheck()
 {
   __private_build_compiler_dir=${1}
@@ -50,7 +54,8 @@ function qtBuild()
   fi
 
   #base envs
-  __qtBuild_project_file=$(realpath $(find -name ${__qtBuild_project_filter}))
+  __qtBuild_base_dir=$(dirname ${__qtBuild_src_dir})
+  __qtBuild_project_file=$(realpath $(find ${__qtBuild_src_dir} -name ${__qtBuild_project_filter}))
   __qtBuild_build_dir="${HOME}/build/qt-$(basename ${PWD})-$(basename ${__qtBuild_project_file})"
   __qtBuild_build_dir=$(echo ${__qtBuild_build_dir} | sed 's/.pro//g')
   __qtBuild_target_name=app
@@ -63,24 +68,24 @@ function qtBuild()
 
 
   echG "  Source building with Qt/QMake"
-  if [[ ${__qtBuild_qt_version} == "" ]]; then
-    echR "      - Invalid __Invalid qt version: ${__qtBuild_qt_version}"
-  elif [[ ${__qtBuild_src_dir} == "" ]]; then
-    echR "      - Invalid __Invalid source dir: ${__qtBuild_src_dir}"
-  elif ! [[ -d ${__qtBuild_qt_root_dir} ]]; then
-    echR "      - Invalid __qtBuild_qt_root_dir: ${__qtBuild_qt_root_dir}"
+  if ! [[ -d ${__qtBuild_qt_root_dir} ]]; then
+    echR "      - Invalid qt root dir: ${__qtBuild_qt_root_dir}"
+  elif [[ ${__qtBuild_qt_version} == "" ]]; then
+    echR "      - Invalid qt version: ${__qtBuild_qt_version}"
   elif ! [[ -d ${__qtBuild_qt_library_path} ]]; then
-    echR "      - Invalid __qtBuild_qt_library_path: ${__qtBuild_qt_library_path}"
+    echR "      - Invalid qt library path: ${__qtBuild_qt_library_path}"
   elif ! [[ -d ${__qtBuild_qt_bin_dir} ]]; then
-    echR "      - Invalid __qtBuild_qt_bin_dir: ${__qtBuild_qt_bin_dir}"
+    echR "      - Invalid qt bin dir: ${__qtBuild_qt_bin_dir}"
   elif ! [[ -d ${__qtBuild_qt_lib_dir} ]]; then
-    echR "      - Invalid __qtBuild_qt_lib_dir: ${__qtBuild_qt_lib_dir}"
+    echR "      - Invalid qt lib dir: ${__qtBuild_qt_lib_dir}"
   elif ! [[ -d ${__qtBuild_qt_plugin_dir} ]]; then
-    echR "      - Invalid __qtBuild_qt_plugin_dir: ${__qtBuild_qt_plugin_dir}"
+    echR "      - Invalid qt plugin dir: ${__qtBuild_qt_plugin_dir}"
   elif ! [[ -f ${__qtBuild_qmake} ]]; then
-    echR "      - Invalid __qtBuild_qmake: ${__qtBuild_qmake}"
+    echR "      - Invalid qmake application: ${__qtBuild_qmake}"
+  elif [[ ${__qtBuild_src_dir} == "" ]]; then
+    echR "      - Invalid source dir: ${__qtBuild_src_dir}"
   elif ! [[ -f ${__qtBuild_project_file} ]]; then
-    echR "      - Invalid __qtBuild_project_file: ${__qtBuild_project_file}"
+    echR "      - Invalid project file: ${__qtBuild_project_file}"
   else
     #build
     QT_PLUGIN_PATH=${__qtBuild_qt_plugin_dir}
@@ -105,12 +110,26 @@ function qtBuild()
     echY "      - make --silent --quiet -j12"
     echo $(make --silent --quiet -j12)&>/dev/null
     if ! [[ -f ${__qtBuild_target_file} ]]; then
-      echR "      - Invalid__target file: ${__qtBuild_target_file}"
+      echR "      - Invalid target file: ${__qtBuild_target_file}"
     else
-      export __func_return=${__qtBuild_target_file}
+      __qtBuild_target_file_final=${__qtBuild_base_dir}/${__qtBuild_target_name}
+      cp -rf ${__qtBuild_target_file} ${__qtBuild_target_file_final}
+      cd ${__qtBuild_base_dir};
+      rm -rf ${__qtBuild_src_dir}
+      export __func_return=${__qtBuild_target_file_final}
     fi
+    echG "    Finished"
+    if [[ ${__func_return} != "" ]]; then
+      echM "    UPX steps"
+      echC "      - target: ${__func_return}"
+      echY "        strip (basename ${__func_return})"
+      echo $(strip ${__func_return})&>/dev/null
+      echY "        upx --best --lzma (basename ${__func_return})"
+      echo $(upx --best --lzma ${__func_return})&>/dev/null
+      echG "    Finished"
+    fi    
   fi
-  echG "    Finished"
+  echG "  Finished"
   if [[ ${__func_return} == "" ]]; then
     return 0
   fi
