@@ -152,7 +152,7 @@ function deployPrepareEnvFile()
 
 function deploy()
 {
-  __deploy_jar_file=
+  __deploy_binary_file=
 
   clearTerm
   __private_print_os_information
@@ -164,13 +164,13 @@ function deploy()
   __deploy_build_option=${5}
   __deploy_git_repository=${6}
   __deploy_git_branch=${7}
-  __deploy_dck_image=${8}
-  __deploy_dck_file=${9}
-  __deploy_dck_compose=${10}
-  __deploy_dck_env_file=${11}
-  __deploy_bin_dir=${12}
-  __deploy_dependency_dir=(${13})
-
+  __deploy_git_project_file=${8}
+  __deploy_dck_image=${9}
+  __deploy_dck_file=${10}
+  __deploy_dck_compose=${11}
+  __deploy_dck_env_file=${12}
+  __deploy_bin_dir=${13}
+  __deploy_dependency_dir=(${14})
 
   __deploy_dck_env_tags=
   __deploy_check_build=false
@@ -185,7 +185,6 @@ function deploy()
     __deploy_check_build=true
     __deploy_check_deploy=true
   fi
-
 
   if [[ ${__deploy_environment} == "" || ${__deploy_target} == "" || ${__deploy_name} == "" || ${__deploy_builder_dir} == "" ]]; then
     echB "  target: $@"
@@ -260,12 +259,20 @@ function deploy()
       fi
 
       if [[ ${__func_return} == "maven"  ]]; then
-        mavenBuild ${__deploy_git_dir} ${__deploy_git_repository} "app*.jar"
+        __deploy_git_project_file="app*.jar"
+        mavenBuild ${__deploy_git_dir} ${__deploy_git_project_file}
         if ! [ "$?" -eq 1 ]; then
           return 0
         fi
-        __deploy_jar_file=${__deploy_builder_dir}/app.jar
-        cp -rf ${__func_return} ${__deploy_jar_file}
+        __deploy_binary_file=${__deploy_builder_dir}/app.jar
+        cp -rf ${__func_return} ${__deploy_binary_file}        
+      elif [[ ${__func_return} == "qmake"  ]]; then
+        qtBuild ${__deploy_git_dir} ${__deploy_git_project_file}
+        if ! [ "$?" -eq 1 ]; then
+          return 0
+        fi
+        __deploy_binary_file=${__deploy_builder_dir}/app
+        cp -rf ${__func_return} ${__deploy_binary_file}
       fi
     fi
   fi
@@ -304,7 +311,7 @@ function deploy()
         "${__deploy_dck_env_file}" \
         "${__deploy_builder_dir}" \
         "${__deploy_bin_dir}" \
-        "${__deploy_jar_file}" \
+        "${__deploy_binary_file}" \
         "${__deploy_network_name}"
 
     if ! [ "$?" -eq 1 ]; then
