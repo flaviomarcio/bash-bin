@@ -361,10 +361,6 @@ function dockerBuildCompose()
     envsFileConvertToExport ${__docker_build_env_file_docker} ${__docker_build_env_file_export}
   fi
 
-  echo "__docker_build_binary_file==${__docker_build_binary_file}"
-  echo "__docker_build_binary_file==${__docker_build_binary_file}"
-  echo "__docker_build_binary_file==${__docker_build_binary_file}"
-
   if ! [[ -f ${__docker_build_env_file_export} ]]; then
     echo "#!/bin/bash">${__docker_build_env_file_export}
   fi

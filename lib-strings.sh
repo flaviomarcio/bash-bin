@@ -476,8 +476,8 @@ function envsPrepareFile()
     return 0
   fi
 
-  __envsPrepareFile_target_tmp_1="/tmp/env__envsPrepareFile_target_${RANDOM}.env"
-  __envsPrepareFile_target_tmp_2="/tmp/env__envsPrepareFile_target_${RANDOM}.env"
+  __envsPrepareFile_target_tmp_1="/tmp/env__envsPrepareFile_target_1_${RANDOM}.env"
+  __envsPrepareFile_target_tmp_2="/tmp/env__envsPrepareFile_target_2_${RANDOM}.env"
   cat ${__envsPrepareFile_target}>${__envsPrepareFile_target_tmp_1}
   #trim lines
   sed -i 's/^[[:space:]]*//; s/[[:space:]]*$//' ${__envsPrepareFile_target_tmp_1}
