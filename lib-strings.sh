@@ -576,26 +576,18 @@ function envsParserFile()
 
 function envsParserDir()
 {
-  idt="$(toInt ${1})"
-  logStart ${idt} "envsParserDir"
   export DIR="${2}"
   export EXT="${3}"
 
   if [[ ${DIR} == "" || ${EXT} == "" ]]; then
     if [[ -d ${DIR} ]]; then
-      logInfo ${idt} "parser-dir" ${DIR}
       FILELIST=($(find ${DIR} -name ${EXT}))
       for FILE in "${FILELIST[@]}"
       do
-        if [[ ${STACK_LOG_VERBOSE} == 1 ]]; then
-          logInfo ${idt} "parser-file" ${FILE}
-        fi
         envsParserFile "$(incInt ${1})" ${FILE}
       done
     fi
   fi
-
-  logFinished ${idt} "envsParserDir"
   return 1;
 }
 
