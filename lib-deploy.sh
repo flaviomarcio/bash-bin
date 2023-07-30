@@ -10,10 +10,148 @@ fi
 . ${BASH_BIN}/lib-build.sh
 . ${BASH_BIN}/lib-docker.sh
 
+function __private_deploy_envsubst()
+{
+  if [[ ${1} == "" ]]; then
+    return 0
+  fi
+  __private_deploy_envsubst_files=(${1})
+  for __private_deploy_envsubst_file_src in "${__private_deploy_envsubst_files[@]}"
+  do
+    if [[ -f ${__private_deploy_envsubst_file_src} ]]; then
+      __private_deploy_envsubst_file_ori=${__private_deploy_envsubst_file_src}.ori
+      cat ${__private_deploy_envsubst_file_src}>${__private_deploy_envsubst_file_ori}
+      envsubst < ${__private_deploy_envsubst_file_ori} > ${__private_deploy_envsubst_file_src}
+    fi
+  done  
+
+  return 1;
+}
+
+function deployPrepareEnvFile()
+{
+  export __func_return=
+  __deploy_prepare_env_src_json_file=${1}
+  __deploy_prepare_env_dst_dir=${2} 
+  __deploy_prepare_env_tag_envs=${3}
+
+  if ! [[ -f ${__deploy_prepare_env_src_json_file} ]]; then
+    return 1
+  fi
+
+  mkdir -p ${__deploy_prepare_env_dst_dir}
+
+  if ! [[ -d ${__deploy_prepare_env_dst_dir} ]]; then
+    ls -l 
+    return 0
+  fi
+  cd ${__deploy_prepare_env_dst_dir}
+  if [[ ${PWD} != ${__deploy_prepare_env_dst_dir} ]]; then
+    return 0
+  fi
+
+  __deploy_prepare_env_dst_json_file="${__deploy_prepare_env_dst_dir}/env.json"
+  cat ${__deploy_prepare_env_src_json_file}>${__deploy_prepare_env_dst_json_file}
+
+  __deploy_prepare_env_tag_envs=($(echo ${__deploy_prepare_env_tag_envs} | sed 's/-/_/g'))
+
+  __deploy_prepare_env_party_tag_files=()
+  for __deploy_prepare_env_tag in "${__deploy_prepare_env_tag_envs[@]}"
+  do
+    #echo "__deploy_prepare_env_tag==${__deploy_prepare_env_tag}"
+    __deploy_prepare_env_tag_ext=$(strArg 0 "$(strSplit ${__deploy_prepare_env_tag})" '.')
+    if [[ ${__deploy_prepare_env_tag_ext} == "" ]]; then
+      continue;
+    fi
+
+    #Env file
+    __deploy_prepare_env_tag_envs=$(jsonGet "${__deploy_prepare_env_src_json_file}" "${__deploy_prepare_env_tag}" )
+    if [[ ${__deploy_prepare_env_tag_envs} == "" ]]; then
+      continue;
+    fi
+
+    __deploy_prepare_env_party_tag_file=${__deploy_prepare_env_dst_dir}/tag.${__deploy_prepare_env_tag}.env
+    echo "">${__deploy_prepare_env_party_tag_file}
+    __deploy_prepare_env_tag_envs=(${__deploy_prepare_env_tag_envs})
+    for __deploy_prepare_env_tag_env in "${__deploy_prepare_env_tag_envs[@]}"
+    do
+      __deploy_prepare_env_tag_env=$(echo ${__deploy_prepare_env_tag_env} | sed 's/\"//g')
+      echo ${__deploy_prepare_env_tag_env}>>${__deploy_prepare_env_party_tag_file}
+    done
+    fileDedupliceLines ${__deploy_prepare_env_party_tag_file}
+    __deploy_prepare_env_party_tag_files+=(${__deploy_prepare_env_party_tag_file})
+  done
+
+
+  __deploy_prepare_env_files=()
+  for __deploy_prepare_env_party_tag_file in "${__deploy_prepare_env_party_tag_files[@]}"
+  do
+    __deploy_prepare_env_tag_ext=$(basename ${__deploy_prepare_env_party_tag_file})
+    __deploy_prepare_env_tag_ext=$(strArg 1 "$(strSplit ${__deploy_prepare_env_tag_ext})" '.')
+    __deploy_prepare_env_tag_file_ext=${__deploy_prepare_env_dst_dir}/env_file.${__deploy_prepare_env_tag_ext}.env
+
+    if ! [[ -f ${__deploy_prepare_env_tag_file_ext} ]]; then
+      cat ${__deploy_prepare_env_party_tag_file}>${__deploy_prepare_env_tag_file_ext}
+      __deploy_prepare_env_files+=(${__deploy_prepare_env_tag_file_ext})
+    else
+      cat ${__deploy_prepare_env_party_tag_file}>>${__deploy_prepare_env_tag_file_ext}
+    fi    
+  done
+
+  __deploy_prepare_env_file_static=${__deploy_prepare_env_dst_dir}/env_file-static.env
+  echo "">${__deploy_prepare_env_file_static}
+
+  for __deploy_prepare_env_file in "${__deploy_prepare_env_files[@]}"
+  do
+    __deploy_prepare_env_file_ext=$(basename ${__deploy_prepare_env_file})
+    __deploy_prepare_env_file_ext=$(strArg 1 "$(strSplit ${__deploy_prepare_env_file_ext})" '.')
+    if [[ ${__deploy_prepare_env_file_ext} == "env" ]]; then
+      envsFileConvertToExport ${__deploy_prepare_env_file}
+      cat ${__func_return}>>${__deploy_prepare_env_file_static}
+      source ${__func_return}
+    fi
+  done
+
+  for __deploy_prepare_env_file in "${__deploy_prepare_env_files[@]}"
+  do
+    __deploy_prepare_env_file_ext=$(basename ${__deploy_prepare_env_file})
+    __deploy_prepare_env_file_ext=$(strArg 1 "$(strSplit ${__deploy_prepare_env_file_ext})" '.')
+    if [[ ${__deploy_prepare_env_file_ext} == "env" ]]; then      
+      __private_deploy_envsubst ${__deploy_prepare_env_file}
+    fi
+  done
+
+  __deploy_prepare_env_file_deploy=${__deploy_prepare_env_dst_dir}/env_file-deploy.env
+  echo "">${__deploy_prepare_env_file_deploy}
+  for __deploy_prepare_env_file in "${__deploy_prepare_env_files[@]}"
+  do
+    __deploy_prepare_env_file_ext=$(basename ${__deploy_prepare_env_file})
+    __deploy_prepare_env_file_ext=$(strArg 1 "$(strSplit ${__deploy_prepare_env_file_ext})" '.')
+    if [[ ${__deploy_prepare_env_file_ext} != "env" ]]; then
+      cat ${__deploy_prepare_env_file}>>${__deploy_prepare_env_file_deploy}
+    fi
+  done
+
+  __private_deploy_envsubst ${__deploy_prepare_env_file_static}
+  fileDedupliceLines ${__deploy_prepare_env_file_static}
+  source ${__deploy_prepare_env_file_static}
+
+  __private_deploy_envsubst ${__deploy_prepare_env_file_deploy}
+  fileDedupliceLines ${__deploy_prepare_env_file_deploy}
+
+  clean dir
+  rm -rf *.env.ori
+  rm -rf tag*.env
+  rm -rf env_file.*.env
+  rm -rf env.json
+
+  export __func_return=${__deploy_prepare_env_file_deploy}
+  return 1
+}
+
+
 function deploy()
 {
-  __deploy_jar_file=
-
   clearTerm
   __private_print_os_information
   echM "  Deploy"
@@ -24,15 +162,16 @@ function deploy()
   __deploy_build_option=${5}
   __deploy_git_repository=${6}
   __deploy_git_branch=${7}
-  __deploy_dck_image=${8}
-  __deploy_dck_file=${9}
-  __deploy_dck_compose=${10}
-  __deploy_dck_env_file=${1110}
-  __deploy_bin_dir=${12}
-  __deploy_dependency_dir=(${13})
+  __deploy_git_project_file=${8}
+  __deploy_dck_image=${9}
+  __deploy_dck_file=${10}
+  __deploy_dck_compose=${11}
+  __deploy_dck_env_file=${12}
+  __deploy_bin_dir=${13}
+  __deploy_binary_application=${14}
+  __deploy_dependency_dir=(${15})
 
-
-  
+  __deploy_dck_env_tags=
   __deploy_check_build=false
   __deploy_check_deploy=false
   if [[ ${__deploy_build_option} == "build" ]]; then
@@ -45,7 +184,6 @@ function deploy()
     __deploy_check_build=true
     __deploy_check_deploy=true
   fi
-
 
   if [[ ${__deploy_environment} == "" || ${__deploy_target} == "" || ${__deploy_name} == "" || ${__deploy_builder_dir} == "" ]]; then
     echB "  target: $@"
@@ -71,20 +209,13 @@ function deploy()
 
   __deploy_service_name=${__deploy_environment}-${__deploy_target}-${__deploy_name}
 
-  __deploy_builder_dir=${__deploy_builder_dir}/${__deploy_service_name}
-  if [[ ${__deploy_builder_dir} != "" ]]; then
-    if [[ -d ${__deploy_builder_dir} ]]; then
-      rm -rf ${__deploy_builder_dir}
-    fi    
-  fi
-
   mkdir -p ${__deploy_builder_dir}
   for __deploy_dependency in "${__deploy_dependency_dir[@]}"
   do
     if [[ -d ${__deploy_dependency} ]]; then
       cp -rf ${__deploy_dependency}/* ${__deploy_builder_dir}
     fi
-  done  
+  done
 
   if [[ -f ${__deploy_dck_file} ]]; then
     __deploy_dck_file_src=$(echo ${__deploy_dck_file} | sed 's/\.yml/\.*/g')
@@ -97,31 +228,15 @@ function deploy()
     cp -rf ${__deploy_dck_compose_src} ${__deploy_builder_dir}
     __deploy_dck_compose=${__deploy_builder_dir}/$(basename ${__deploy_dck_compose})
   fi
-  
 
-  if [[ ${__deploy_dck_env_file} != "" ]]; then
-    __deploy_dck_env_tmp=$(echo ${__deploy_dck_compose} | sed 's/\.yml/\.env/g')
-    __deploy_dck_env_tmp="/tmp/$(basename ${__deploy_dck_env_tmp})"
-    __deploy_dck_file_env=$(echo ${__deploy_dck_compose} | sed 's/\.yml/\.env/g')
-    __deploy_dck_compose_env=$(echo ${__deploy_dck_compose} | sed 's/\.yml/\.env/g')
-    __deploy_dck_env_files=(${APPLICATION_DEPLOY_ENV_FILE} ${__deploy_dck_file_env} ${__deploy_dck_compose_env} ${__deploy_dck_env_file})
-    echo " " >${__deploy_dck_env_tmp}
-    for __deploy_tmp_file in "${__deploy_dck_env_files[@]}"
-    do
-      cat ${__deploy_tmp_file}>>${__deploy_dck_env_tmp}
-      echo " ">>${__deploy_dck_env_tmp}
-    done
-    cat ${__deploy_dck_env_tmp}>${__deploy_dck_env_file}
-
-    __deploy_dck_env_file_src=${__deploy_dck_env_file}
-    __deploy_dck_env_file=$(echo ${__deploy_dck_compose} | sed 's/\.yml/\.env/g')
-    if [[ -f ${__deploy_dck_env_file_src} ]]; then
-      cp -rf ${__deploy_dck_env_file_src} ${__deploy_dck_env_file}
-    else
-      echo " ">${__deploy_dck_env_file}
-    fi
-  fi
-  
+  #format config files 
+  # -embora legal ele gera problemas pois os arquivos conf tem as proprias envs 
+  #  com $ e o env simplesmente faz replace delas gerando assim problemas
+  # 
+  # -alternativa é utilizar o metodo fileEnvreplace que apenas dará replace 
+  #  nas envs carregadas no ambiente
+  #
+  #__private_deploy_envsubst "$(find ${__deploy_builder_dir} -name '*.conf')"
 
   if [[ ${__deploy_check_build} == true ]]; then
     if [[ ${__deploy_git_repository} != "" ]]; then
@@ -143,12 +258,20 @@ function deploy()
       fi
 
       if [[ ${__func_return} == "maven"  ]]; then
-        mavenBuild ${__deploy_git_dir} ${__deploy_git_repository} "app*.jar"
+        __deploy_git_project_file="app*.jar"
+        mavenBuild ${__deploy_git_dir} ${__deploy_git_project_file}
         if ! [ "$?" -eq 1 ]; then
           return 0
         fi
-        __deploy_jar_file=${__deploy_builder_dir}/app.jar
-        cp -rf ${__func_return} ${__deploy_jar_file}
+        __deploy_binary_application=${__deploy_builder_dir}/$(basename ${__func_return})
+        cp -rf ${__func_return} ${__deploy_binary_application}
+      elif [[ ${__func_return} == "qmake"  ]]; then
+        qtBuild ${__deploy_git_dir} ${__deploy_git_project_file}
+        if ! [ "$?" -eq 1 ]; then
+          return 0
+        fi
+        __deploy_binary_application=${__deploy_builder_dir}/$(basename ${__func_return})
+        cp -rf ${__func_return} ${__deploy_binary_application}
       fi
     fi
   fi
@@ -186,8 +309,7 @@ function deploy()
         "${__deploy_dck_compose}" \
         "${__deploy_dck_env_file}" \
         "${__deploy_builder_dir}" \
-        "${__deploy_bin_dir}" \
-        "${__deploy_jar_file}" \
+        "${__deploy_binary_application}" \
         "${__deploy_network_name}"
 
     if ! [ "$?" -eq 1 ]; then

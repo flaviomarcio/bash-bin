@@ -6,8 +6,81 @@ fi
 
 . ${BASH_BIN}/lib-strings.sh
 
+function gitIsValid()
+{
+  export __func_return=
+  __gitIsValidPWD=${PWD}
+  __gitIsValid=${1}
+  if [[ ${__gitIsValid} != "" ]]; then
+    if ! [[ -d ${__gitIsValid} ]]; then
+      return 0;
+    fi
+    cd ${__gitIsValid}
+  fi
+  if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
+    cd ${__gitIsValidPWD}
+    return 1;
+  fi
+  cd ${__gitIsValidPWD}
+  return 0;
+}
+
+function gitBranch()
+{
+  export __func_return=
+  gitIsValid
+  if ! [ "$?" -eq 1 ]; then
+    return 0
+  fi
+  __func_return=$(git rev-parse --abbrev-ref HEAD)
+  echo ${__func_return}
+  return 1
+}
+
+function gitBranchList()
+{
+  export __func_return=
+  gitIsValid
+  if ! [ "$?" -eq 1 ]; then
+    return 0
+  fi
+  __func_return=$(echo "$(git branch --list)" | sed 's/*//g' | sed 's/ //g' | sort)
+  echo ${__func_return}
+  return 1
+}
+
+function gitBranchExists()
+{
+  gitIsValid
+  if ! [ "$?" -eq 1 ]; then
+    return 0
+  fi
+  __git_branch_exists_name=${1}
+  if [[ ${__git_branch_exists_name} == "" ]]; then
+    return 0
+  fi
+  
+  __git_branch_exists_name=$( echo "$(git branch -a --list)" | sed 's/remotes\/origin\///g' | sed 's/*//g' | sed 's/ //g' | grep ${__git_branch_exists_name})
+  if [[ ${__git_branch_exists_name} == "" ]]; then
+    return 0
+  fi
+  return 1
+}
+
+function gitCheckOut()
+{
+  __git_check_branch=${1}
+  gitBranchExists ${__git_check_branch}
+  if ! [ "$?" -eq 1 ]; then
+    return 0
+  fi
+  git checkout ${__git_check_branch} --quiet
+  return 1
+}
+
 function gitClone()
 {
+  export __func_return=
   echM "  Git cloning repository"
 
   __git_clone_repository=${1}
@@ -46,7 +119,6 @@ function gitClone()
   __git_clone_src_cmd="git clone -q ${__git_clone_repository} ${__git_clone_name}"
   echC "    - ${__git_clone_repository}"
   echC "    - Branch: ${__git_clone_branch}"
-  echC "    - Source dir: ${__git_clone_src_dir}"
   echY "    - ${__git_clone_src_cmd}"
   echo $(${__git_clone_src_cmd})>/dev/null 2>&1
   if ! [[ -d ${__git_clone_src_dir} ]]; then
@@ -59,9 +131,20 @@ function gitClone()
     return 0
   fi
   cd ${__git_clone_src_dir}
-  __git_clone_src_cmd="git checkout ${__git_clone_branch} -q"
-  echY "    - ${__git_clone_src_cmd}"
-  echo $(${__git_clone_src_cmd})>/dev/null 2>&1
+  echB "    - Source dir: ${__git_clone_src_dir}"
+  gitBranchExists ${__git_clone_branch}
+  if ! [ "$?" -eq 1 ]; then
+    echR "      branch not found"
+  else
+    echG "      - branch"  
+    echC "          requested: ${__git_clone_branch}"  
+    echC "          current: $(gitBranch)"
+    gitCheckOut ${__git_clone_branch}
+    if ! [ "$?" -eq 1 ]; then
+    echR "          branch not found"
+    fi
+    echY "          now: $(gitBranch)"
+  fi
   echG "  Finished"
   __func_return=${__git_clone_src_dir}
   return 1
