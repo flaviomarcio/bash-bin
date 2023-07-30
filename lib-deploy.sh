@@ -107,8 +107,8 @@ function deployPrepareEnvFile()
     __deploy_prepare_env_file_ext=$(strArg 1 "$(strSplit ${__deploy_prepare_env_file_ext})" '.')
     if [[ ${__deploy_prepare_env_file_ext} == "env" ]]; then
       envsFileConvertToExport ${__deploy_prepare_env_file}
-      cat ${__deploy_prepare_env_file}>>${__deploy_prepare_env_file_static}
-      source ${__deploy_prepare_env_file}
+      cat ${__func_return}>>${__deploy_prepare_env_file_static}
+      source ${__func_return}
     fi
   done
 
@@ -139,7 +139,7 @@ function deployPrepareEnvFile()
   __private_deploy_envsubst ${__deploy_prepare_env_file_deploy}
   fileDedupliceLines ${__deploy_prepare_env_file_deploy}
 
-  #clean dir
+  clean dir
   rm -rf *.env.ori
   rm -rf tag*.env
   rm -rf env_file.*.env

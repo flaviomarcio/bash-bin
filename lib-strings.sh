@@ -522,6 +522,10 @@ function envsPrepareFile()
     fi
   done < "${__envsPrepareFile_target_tmp_2}"
 
+  if ! [[ -f ${__envsPrepareFile_target_tmp_1} ]]; then
+    return 0
+  fi
+
   if [[ ${__envsPrepareFile_target_output} == "" ]]; then
     __envsPrepareFile_target_output=${__envsPrepareFile_target}
   fi
@@ -538,6 +542,7 @@ function envsFileConvertToExport()
   __envsFileConvertToExport_file="${1}"
   __envsFileConvertToExport_output="${2}"
 
+
   if [[ ${__envsFileConvertToExport_file} == "" ]]; then
     return 0
   fi
@@ -548,9 +553,10 @@ function envsFileConvertToExport()
 
   if [[ ${__envsFileConvertToExport_output} == "" ]]; then
     __envsFileConvertToExport_output=${__envsFileConvertToExport_file}
+  else
+    cat ${__envsFileConvertToExport_file}>${__envsFileConvertToExport_output}
   fi
 
-  cat ${__envsFileConvertToExport_file}>${__envsFileConvertToExport_output}
   envsPrepareFile ${__envsFileConvertToExport_output}
 
   export __func_return=

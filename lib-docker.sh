@@ -327,6 +327,7 @@ function dockerBuildCompose()
 
   cd ${__docker_build_compose_dir}
 
+  export APPLICATION_ENV_FILE=${__docker_build_env_file_export}
   export APPLICATION_NAME=${__docker_build_service}
   export APPLICATION_SERVICE=$(echo ${__docker_build_service} | sed 's/-/_/g')
   export APPLICATION_DEPLOY_BINARY_DIR=${__docker_build_builder_dir}
@@ -365,6 +366,7 @@ function dockerBuildCompose()
     echo "#!/bin/bash">${__docker_build_env_file_export}
   fi
   echo "export COMPOSE_CONVERT_WINDOWS_PATHS=${COMPOSE_CONVERT_WINDOWS_PATHS}"      >>${__docker_build_env_file_export}
+  echo "export APPLICATION_ENV_FILE=${APPLICATION_ENV_FILE}"                        >>${__docker_build_env_file_export}
   echo "export APPLICATION_NAME=${APPLICATION_NAME}"                                >>${__docker_build_env_file_export}
   echo "export APPLICATION_SERVICE=${APPLICATION_SERVICE}"                          >>${__docker_build_env_file_export}
   echo "export APPLICATION_DEPLOY_APP_DIR=${APPLICATION_DEPLOY_APP_DIR}"            >>${__docker_build_env_file_export}
@@ -374,14 +376,16 @@ function dockerBuildCompose()
   echo "export APPLICATION_DEPLOY_HOSTNAME=${APPLICATION_DEPLOY_HOSTNAME}"          >>${__docker_build_env_file_export}
   echo "export APPLICATION_DEPLOY_NETWORK_NAME=${APPLICATION_DEPLOY_NETWORK_NAME}"  >>${__docker_build_env_file_export}
   if [[ -f ${__docker_build_binary_file} ]]; then
-  echo "export APPLICATION_BINARY_FILE=${__docker_build_binary_file}"        >>${__docker_build_env_file_export}
+  echo "export APPLICATION_FILE=${__docker_build_binary_file}"        >>${__docker_build_env_file_export}
   fi
   
 
   __docker_build_cmd_1="docker --log-level ERROR build --quiet --file $(basename ${__docker_build_dockerfile}) -t ${__docker_build_service} ."
   __docker_build_cmd_2="docker --log-level ERROR image tag ${__docker_build_service} ${__docker_build_image}"
   __docker_build_cmd_3="docker --log-level ERROR push ${__docker_build_image}"
-  __docker_build_cmd_4="docker --log-level ERROR stack deploy --compose-file $(basename ${__docker_build_compose_file}) ${__docker_build_service}"
+  __docker_build_cmd_4="docker --log-level ERROR stack rm ${__docker_build_service}"
+  __docker_build_cmd_5="docker --log-level ERROR stack deploy --compose-file $(basename ${__docker_build_compose_file}) ${__docker_build_service}"
+  __docker_build_cmd_6="docker service logs -f ${__docker_build_service}"
   
   echB "      Information"
   echC "        - Path: ${PWD}"
@@ -407,8 +411,18 @@ function dockerBuildCompose()
   echo "source ./$(basename ${__docker_build_env_file_static})"                     >>${__docker_build_compose_sh_file}
   fi
   if [[ -f ${__docker_build_env_file_export} ]]; then
-  echo "source ./$(basename ${__docker_build_env_file_export})"                      >>${__docker_build_compose_sh_file}
+  echo "source ./$(basename ${__docker_build_env_file_export})"                     >>${__docker_build_compose_sh_file}
   fi
+  echo ""                                                                           >>${__docker_build_compose_sh_file}
+  echo "export APPLICATION_FILE=$(basename ${__docker_build_binary_file})"          >>${__docker_build_compose_sh_file}
+  echo "if [[ \${1} == \"--run\" ]]; then"                                          >>${__docker_build_compose_sh_file}
+  echo "    if [[ \$(echo \${APPLICATION_FILE} | grep '.jar') != \"\" ]]; then"     >>${__docker_build_compose_sh_file}
+  echo "        java -jar ./\${APPLICATION_FILE}"                                   >>${__docker_build_compose_sh_file}
+  echo "    else"                                                                   >>${__docker_build_compose_sh_file}
+  echo "        ./\${APPLICATION_FILE}"                                             >>${__docker_build_compose_sh_file}
+  echo "    fi"                                                                     >>${__docker_build_compose_sh_file}
+  echo "    exit 0"                                                                 >>${__docker_build_compose_sh_file}
+  echo "fi"                                                                         >>${__docker_build_compose_sh_file}
   echo ""                                                                           >>${__docker_build_compose_sh_file}
   echo "echo \"${__docker_build_cmd_1}\""                                           >>${__docker_build_compose_sh_file}
   echo ${__docker_build_cmd_1}                                                      >>${__docker_build_compose_sh_file}
@@ -422,13 +436,12 @@ function dockerBuildCompose()
   echo "echo \"${__docker_build_cmd_4}\""                                           >>${__docker_build_compose_sh_file}
   echo ${__docker_build_cmd_4}                                                      >>${__docker_build_compose_sh_file}
   echo ""                                                                           >>${__docker_build_compose_sh_file}
-  if [[ -f ${__docker_build_binary_file} ]]; then
-    if [[ $(echo ${__docker_build_binary_file} | grep '.jar') != "" ]]; then
-    echo "java -jar $(basename ${__docker_build_binary_file})"                 >>${__docker_build_compose_sh_file}
-    else
-    echo "./$(basename ${__docker_build_binary_file})"                         >>${__docker_build_compose_sh_file}
-    fi
-  fi
+  echo "echo \"${__docker_build_cmd_5}\""                                           >>${__docker_build_compose_sh_file}
+  echo ${__docker_build_cmd_5}                                                      >>${__docker_build_compose_sh_file}
+  echo ""                                                                           >>${__docker_build_compose_sh_file}
+  echo "echo \"${__docker_build_cmd_6}\""                                           >>${__docker_build_compose_sh_file}
+  echo ${__docker_build_cmd_6}                                                      >>${__docker_build_compose_sh_file}
+  echo ""                                                                           >>${__docker_build_compose_sh_file}
 
   chmod +x ${__docker_build_compose_sh_file}  
 
@@ -444,8 +457,8 @@ function dockerBuildCompose()
   echo $(${__docker_build_cmd_2})&>/dev/null
   echY "        - ${__docker_build_cmd_3}"
   echo $(${__docker_build_cmd_3})&>/dev/null
-  echY "        - ${__docker_build_cmd_4}"
-  echo $(${__docker_build_cmd_4})&>/dev/null
+  echY "        - ${__docker_build_cmd_5}"
+  echo $(${__docker_build_cmd_5})&>/dev/null
   __docker_build_check=$(docker service ls | grep ${__docker_build_service})
   if [[ ${__docker_build_check} == "" ]]; then
   echR "    [FAIL]Service not found:${__docker_build_service}"
@@ -455,63 +468,6 @@ function dockerBuildCompose()
 
   return 1
 }
-
-# function dockerPrepare()
-# { 
-#   export DOCKER_SCOPE=${1}
-#   export DOCKER_DIR=${2}
-#   export DOCKER_DIR_DATA=${3}
-#   export DOCKER_OPTION=${5}
-  
-#   if [[ ${DOCKER_SCOPE} == "" ]]; then
-#     echR "    [FAIL]Invalid scope: ${DOCKER_SCOPE}"
-#     return 0;
-#   fi
-
-#   if [[ ${DOCKER_DIR} == "" ]]; then
-#     echR "    [FAIL]Invalid \${DOCKER_DIR}"
-#     return 0;
-#   fi
-
-#   if ! [[ -d ${DOCKER_DIR} ]]; then
-#     echR "    [FAIL]Invalid DOCKER_DIR: ${DOCKER_DIR}"
-#     return 0;
-#   fi
-
-#   if [[ ${DOCKER_OPTION} == "" ]]; then
-#     echR "    [FAIL]Invalid \${DOCKER_OPTION}"
-#     return 0
-#   fi
-
-#   export STACK_NETWORK_NAME="${DOCKER_SCOPE}-network"
- 
-
-#   export DOCKER_INIT_DIR=${DOCKER_DIR}/init 
-#   export DOCKER_BIN_DIR=${DOCKER_DIR_DATA}/bin
-#   export DOCKER_BIN_RUN=${DOCKER_BIN_DIR}/run.sh
-
-#   mkdir -p ${DOCKER_BIN_DIR}
-#   echo "#!/bin/bash">${DOCKER_BIN_RUN}
-#   echo "">>${DOCKER_BIN_RUN}
-#   echo "">>${DOCKER_BIN_RUN}
-#   echo "#default envs">>${DOCKER_BIN_RUN}
-#   echo "ENV_FILE=./default.env">>${DOCKER_BIN_RUN}
-#   echo "if [[ -f \${ENV_FILE} ]]; then">>${DOCKER_BIN_RUN}
-#   echo "  source \${ENV_FILE}">>${DOCKER_BIN_RUN}
-#   echo "fi">>${DOCKER_BIN_RUN}
-#   echo "">>${DOCKER_BIN_RUN}
-#   echo "#jar envs">>${DOCKER_BIN_RUN}
-#   echo "ENV_FILE=echo \$(echo \"\$@\" | sed 's/jar/env/g')">>${DOCKER_BIN_RUN}
-#   echo "if [[ -f \${ENV_FILE} ]]; then">>${DOCKER_BIN_RUN}
-#   echo "  source \${ENV_FILE}">>${DOCKER_BIN_RUN}
-#   echo "fi">>${DOCKER_BIN_RUN}
-#   echo "">>${DOCKER_BIN_RUN}
-#   echo "java -jar \"\$@\"">>${DOCKER_BIN_RUN}
-
-#   echo "">>${DOCKER_BIN_RUN}
-#   chmod +x ${DOCKER_BIN_RUN}
-#   return 1
-# }
 
 function dockerRegistryImageCheck()
 {
