@@ -335,7 +335,11 @@ function dockerBuildCompose()
   export APPLICATION_DEPLOY_HOSTNAME=${__docker_build_hostname}
   export APPLICATION_DEPLOY_APP_DIR=${__docker_build_compose_dir}
   export APPLICATION_DEPLOY_NETWORK_NAME=${__docker_build_network_name}
+
   export APPLICATION_DEPLOY_DNS=${__docker_build_service}
+  if [[ ${APPLICATION_DEPLOY_DNS_PUBLIC} == "" ]]; then
+    export APPLICATION_DEPLOY_DNS_PUBLIC=${__docker_build_service}
+  fi
 
   # ref https://docs.docker.com/compose/environment-variables/envvars/
 
