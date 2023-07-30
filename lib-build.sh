@@ -10,7 +10,7 @@ fi
 function buildCompilerCheck()
 {
   __private_build_compiler_dir=${1}
-  __func_return=
+  export __func_return=
   if [[ -d ${__private_build_compiler_dir}  ]]; then
     if [[ -f ${__private_build_compiler_dir}/pom.xml ]]; then
       __func_return="maven"
