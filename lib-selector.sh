@@ -16,7 +16,7 @@ function __private_print_os_information()
   echC "  - $(uname -a)"
   echC "  - $(docker --version), IPv4: ${PUBLIC_HOST_IPv4}"
   if [[ ${__public_target} != "" ]]; then
-    echC "  - Target:${__public_target}, Environment:${__public_environment}"
+    echC "  - Target: ${__public_target}, Environment: ${__public_environment}"
   fi
 }
 
