@@ -173,8 +173,8 @@ function __private_pg_envs_check()
   if [[ ${POSTGRES_USER} == "" ]]; then
     export POSTGRES_USER=services
   fi
-  if [[ ${POSTGRES_PASS} == "" ]]; then
-    export POSTGRES_PASS=services
+  if [[ ${POSTGRES_PASSWORD} == "" ]]; then
+    export POSTGRES_PASSWORD=services
   fi
   if [[ ${POSTGRES_DB} == "" ]]; then
     export POSTGRES_DB=services
@@ -191,8 +191,8 @@ function __private_pg_envs_check()
     echR "Invalid env: POSTGRES_USER=${POSTGRES_USER}"
     return 0
   fi
-  if [[ ${POSTGRES_PASS} == "" ]]; then 
-    echR "Invalid env: POSTGRES_PASS=${POSTGRES_PASS}"
+  if [[ ${POSTGRES_PASSWORD} == "" ]]; then 
+    echR "Invalid env: POSTGRES_PASSWORD=${POSTGRES_PASSWORD}"
     return 0
   fi
   if [[ ${POSTGRES_DB} == "" ]]; then 
@@ -230,7 +230,7 @@ function __private_pg_pass_apply()
 {
   #postgres
   export POSTGRES_PGPASS=${HOME}/.pgpass
-  AUTH="${POSTGRES_HOST}:${POSTGRES_PORT}:${POSTGRES_DB}:${POSTGRES_USER}:${POSTGRES_PASS}">${POSTGRES_PGPASS}
+  AUTH="${POSTGRES_HOST}:${POSTGRES_PORT}:${POSTGRES_DB}:${POSTGRES_USER}:${POSTGRES_PASSWORD}">${POSTGRES_PGPASS}
   if [[ -f ${POSTGRES_PGPASS} ]];then
       echo ${AUTH} >> ${POSTGRES_PGPASS}
   else
@@ -253,7 +253,7 @@ function databaseUpdateExec()
   echC "        - export POSTGRES_HOST=${POSTGRES_HOST}"
   echC "        - export POSTGRES_DB=${POSTGRES_DB}"
   echC "        - export POSTGRES_USER=${POSTGRES_USER}"
-  echC "        - export POSTGRES_PASS=${POSTGRES_PASS}"
+  echC "        - export POSTGRES_PASSWORD=${POSTGRES_PASSWORD}"
   echC "        - export POSTGRES_PORT=${POSTGRES_PORT}"
   echY "        - psql -q -h \${POSTGRES_HOST} -U \${POSTGRES_USER} -p \${POSTGRES_PORT} -d \${POSTGRES_DB} -a -f \${FILE}\""
   echB "      -Executing"
