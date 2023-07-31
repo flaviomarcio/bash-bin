@@ -56,7 +56,7 @@ function __private_db_scan_files()
   fi
 
   if [[ ${DATABASE_ENVIRONMENT} == "production" ]]; then
-    DB_SCAN_FILTERS=$(echo ${__private_db_scan_files_filters} | sed 's/drops//g' | sed 's/drop//g' sed 's/fakedata//g')
+    DB_SCAN_FILTERS=$(echo ${__private_db_scan_files_filters} | sed 's/drops//g' | sed 's/drop//g' | sed 's/fakedata//g')
   elif [[ ${DATABASE_ENVIRONMENT} == "testing" || ${DATABASE_ENVIRONMENT} == "development"  || ${DATABASE_ENVIRONMENT} == "stating" ]]; then
     DB_SCAN_FILTERS=${__private_db_scan_files_filters}
   else
