@@ -300,9 +300,14 @@ function selectorDNSOption()
 function selectorCustomer()
 {
   export __selector=
-  export PUBLIC_STACK_TARGET_FILE=${HOME}/applications/stack_targets.env
-  if [[ -f ${PUBLIC_STACK_TARGET_FILE} ]]; then
-    options=$(cat ${PUBLIC_STACK_TARGET_FILE})
+  if [[ ${STACK_ROOT_DIR} == "" ]]; then
+    export __selector_dir=${HOME}
+  else
+    export __selector_dir=${STACK_ROOT_DIR}
+  fi
+  export __selector_file=${__selector_dir}/applications/stack_targets.env
+  if [[ -f ${__selector_file} ]]; then
+    options=$(cat ${__selector_file})
     options="quit ${options}"
   else
     options="quit"
