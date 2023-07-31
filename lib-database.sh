@@ -213,14 +213,14 @@ function __private_pg_script_exec()
     return 0;
   fi
 
-  if [[ ${DATABASE_ENVIRONMENT} == "production" ]]; then
-    __private_db_cleanup_sql ${__private_pg_script_exec_file}
-  elif [[ ${DATABASE_ENVIRONMENT} == "testing" || ${DATABASE_ENVIRONMENT} == "development"  || ${DATABASE_ENVIRONMENT} == "stating" ]]; then
+  # if [[ ${DATABASE_ENVIRONMENT} == "production" ]]; then
+  #   __private_db_cleanup_sql ${__private_pg_script_exec_file}
+  # elif [[ ${DATABASE_ENVIRONMENT} == "testing" || ${DATABASE_ENVIRONMENT} == "development"  || ${DATABASE_ENVIRONMENT} == "stating" ]]; then
     #remove empty lines
     sed -i '/^$/d' ${__private_pg_script_exec_file}
-  else
-    return 0;
-  fi 
+  # else
+  #   return 0;
+  # fi 
 
   echo $(psql -q -h ${POSTGRES_HOST} -U ${POSTGRES_USER} -p ${POSTGRES_PORT} -d ${POSTGRES_DB} -a -f ${__private_pg_script_exec_file})&>/dev/null
   return 1
