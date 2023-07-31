@@ -303,9 +303,9 @@ function selectorCustomer()
   export PUBLIC_STACK_TARGET_FILE=${HOME}/applications/stack_targets.env
   if [[ -f ${PUBLIC_STACK_TARGET_FILE} ]]; then
     options=$(cat ${PUBLIC_STACK_TARGET_FILE})
-    options="quit company ${options}"
+    options="quit ${options}"
   else
-    options="quit company"
+    options="quit"
   fi
   options=(${options})
 
