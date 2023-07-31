@@ -264,14 +264,18 @@ function deploy()
           return 0
         fi
         __deploy_binary_application=${__deploy_builder_dir}/$(basename ${__func_return})
-        cp -rf ${__func_return} ${__deploy_binary_application}
+        if [[ ${__func_return} != ${__deploy_binary_application} ]]; then
+          cp -rf ${__func_return} ${__deploy_binary_application}
+        fi
       elif [[ ${__func_return} == "qmake"  ]]; then
         qtBuild ${__deploy_git_dir} ${__deploy_git_project_file}
         if ! [ "$?" -eq 1 ]; then
           return 0
         fi
         __deploy_binary_application=${__deploy_builder_dir}/$(basename ${__func_return})
-        cp -rf ${__func_return} ${__deploy_binary_application}
+        if [[ ${__func_return} != ${__deploy_binary_application} ]]; then
+          cp -rf ${__func_return} ${__deploy_binary_application}
+        fi
       fi
     fi
   fi
