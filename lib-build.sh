@@ -66,7 +66,6 @@ function qtBuild()
   __qtBuild_qt_plugin_dir=${__qtBuild_qt_library_path}/plugins
   __qtBuild_qmake=${__qtBuild_qt_bin_dir}/qmake
 
-
   echG "  Source building with Qt/QMake"
   if ! [[ -d ${__qtBuild_qt_root_dir} ]]; then
     echR "      - Invalid qt root dir: ${__qtBuild_qt_root_dir}"
