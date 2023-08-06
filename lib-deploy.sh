@@ -139,11 +139,11 @@ function deployPrepareEnvFile()
   __private_deploy_envsubst ${__deploy_prepare_env_file_deploy}
   fileDedupliceLines ${__deploy_prepare_env_file_deploy}
 
-  #clean dir
-  rm -rf *.env.ori
-  rm -rf tag*.env
-  rm -rf env_file.*.env
-  rm -rf env.json
+  # #clean dir
+  # rm -rf *.env.ori
+  # rm -rf tag*.env
+  # rm -rf env_file.*.env
+  # rm -rf env.json
 
   export __func_return=${__deploy_prepare_env_file_deploy}
   return 1
