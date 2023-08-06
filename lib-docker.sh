@@ -333,7 +333,6 @@ function dockerBuildCompose()
   export APPLICATION_DEPLOY_BINARY_DIR=${__docker_build_builder_dir}
   export APPLICATION_DEPLOY_IMAGE=${__docker_build_image}
   export APPLICATION_DEPLOY_HOSTNAME=${__docker_build_hostname}
-  export APPLICATION_DEPLOY_APP_DIR=${__docker_build_compose_dir}
   export APPLICATION_DEPLOY_NETWORK_NAME=${__docker_build_network_name}
 
   export APPLICATION_DEPLOY_DNS=${__docker_build_service}
@@ -373,7 +372,6 @@ function dockerBuildCompose()
   echo "export APPLICATION_ENV_FILE=${APPLICATION_ENV_FILE}"                        >>${__docker_build_env_file_export}
   echo "export APPLICATION_NAME=${APPLICATION_NAME}"                                >>${__docker_build_env_file_export}
   echo "export APPLICATION_SERVICE=${APPLICATION_SERVICE}"                          >>${__docker_build_env_file_export}
-  echo "export APPLICATION_DEPLOY_APP_DIR=${APPLICATION_DEPLOY_APP_DIR}"            >>${__docker_build_env_file_export}
   echo "export APPLICATION_DEPLOY_BINARY_DIR=${APPLICATION_DEPLOY_BINARY_DIR}"      >>${__docker_build_env_file_export}
   echo "export APPLICATION_DEPLOY_DNS=${APPLICATION_DEPLOY_DNS}"                    >>${__docker_build_env_file_export}
   echo "export APPLICATION_DEPLOY_IMAGE=${APPLICATION_DEPLOY_IMAGE}"                >>${__docker_build_env_file_export}

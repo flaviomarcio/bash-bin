@@ -110,7 +110,7 @@ function qtBuild()
     echY "      - make --silent --quiet -j12"
     echo $(make --silent --quiet -j12)&>/dev/null
     if ! [[ -f ${__qtBuild_target_file} ]]; then
-      echR "      - Invalid target file: ${__qtBuild_target_file}"
+      echR "      - Invalid qt target file: ${__qtBuild_target_file}"
     else
       __qtBuild_target_file_final=${__qtBuild_base_dir}/${__qtBuild_target_name}
       cp -rf ${__qtBuild_target_file} ${__qtBuild_target_file_final}
