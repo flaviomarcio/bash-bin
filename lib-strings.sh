@@ -325,7 +325,12 @@ function envsSetIfIsEmpty()
   __envsSetIfIsEmpty_default_value=${2}
   __envsSetIfIsEmpty_check=${!__envsSetIfIsEmpty_name}
   if [[ ${__envsSetIfIsEmpty_check} == "" ]]; then
-    export ${__envsSetIfIsEmpty_name}=${__envsSetIfIsEmpty_default_value}
+    __envsSetIfIsEmpty_check=$(echo ${__envsSetIfIsEmpty_default_value} | grep ' ')
+    if [[ ${__envsSetIfIsEmpty_check} != "" ]]; then
+      export ${__envsSetIfIsEmpty_name}="\"${__envsSetIfIsEmpty_default_value}\""
+    else
+      export ${__envsSetIfIsEmpty_name}=${__envsSetIfIsEmpty_default_value}
+    fi    
   fi
   return 1;  
 }
