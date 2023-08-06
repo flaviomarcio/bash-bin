@@ -319,6 +319,17 @@ function envsOS()
   return 1
 }
 
+function envsSetIfIsEmpty()
+{
+  __envsSetIfIsEmpty_name=${1}
+  __envsSetIfIsEmpty_default_value=${2}
+  __envsSetIfIsEmpty_check=${!__envsSetIfIsEmpty_name}
+  if [[ ${__envsSetIfIsEmpty_check} == "" ]]; then
+    export ${__envsSetIfIsEmpty_name}=${__envsSetIfIsEmpty_default_value}
+  fi
+  return 1;  
+}
+
 function envsFileAddIfNotExists()
 {
   __envsFileAddIfNotExists_file=${1}
