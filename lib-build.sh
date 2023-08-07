@@ -188,9 +188,12 @@ function mavenBuild()
     echR "    ==============================  "
     printf "${__mvn_output}"
   else
-
+    __mvn_cmd="mvn help:evaluate -Dexpression=project.build.finalName -q -DforceStdout"
+    echY "      - ${__mvn_cmd}"
+    __mvn_jar_filter="$(${__mvn_cmd}).jar"
+    echY "      - ${__mvn_cmd}"
+    echG "      - filter: __mvn_jar_filter"
     #binary jar file name
-    __mvn_jar_filter="$(mvn help:evaluate -Dexpression=project.build.finalName -q -DforceStdout).jar"
     __mvn_jar_source_file=$(find ${__mvn_build_src_bin_dir} -name ${__mvn_jar_filter})  
     if ! [[ -f ${__mvn_jar_source_file} ]]; then
       echY "      jar file: ${__mvn_jar_source_file}"
