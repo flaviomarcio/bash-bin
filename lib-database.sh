@@ -251,11 +251,11 @@ function databaseUpdateExec()
   echM "    Executing"
   echB "      -Environments"
   echC "        - export POSTGRES_HOST=${POSTGRES_HOST}"
-  echC "        - export POSTGRES_DB=${POSTGRES_DB}"
+  echC "        - export POSTGRES_DATABASE=${POSTGRES_DATABASE}"
   echC "        - export POSTGRES_USER=${POSTGRES_USER}"
   echC "        - export POSTGRES_PASSWORD=${POSTGRES_PASSWORD}"
   echC "        - export POSTGRES_PORT=${POSTGRES_PORT}"
-  echY "        - psql -q -h \${POSTGRES_HOST} -U \${POSTGRES_USER} -p \${POSTGRES_PORT} -d \${POSTGRES_DB} -a -f \${FILE}\""
+  echY "        - psql -q -h \${POSTGRES_HOST} -U \${POSTGRES_USER} -p \${POSTGRES_PORT} -d \${POSTGRES_DATABASE} -a -f \${POSTGRES_SCRIPT_FILE}\""
   echB "      -Executing"
   DB_DDL_FILE_TMP="/tmp/ddl_file.sql"
   EXEC_FILES=$(__private_db_ddl_apply_scan ${DATABASE_DIR})
