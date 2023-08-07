@@ -84,7 +84,7 @@ function gitClone()
   echM "  Git cloning repository"
 
   __git_check=$(which git)
-  if [[ ${__git_check} == ""*  ]]; then
+  if [[ ${__git_check} == ""  ]]; then
     echR "  ==============================  "
     echR "      **********************      "
     echR "  ****GIT não está instalado****  "
