@@ -632,7 +632,6 @@ function envsParserDir()
 function clearTerm()
 {
   export __selector=
-  echo "${COLOR_OFF}"
   if [[ ${PUBLIC_LOG_LEVEL} != true ]]; then
     clear
   fi
