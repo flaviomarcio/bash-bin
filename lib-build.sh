@@ -144,7 +144,7 @@ function mavenBuild()
 
   echG "  Source building with Maven"
   __mvn_check=$(which mvn)
-  if [[ ${__mvn_check} == ""*  ]]; then
+  if [[ ${__mvn_check} == ""  ]]; then
     echR "  ==============================  "
     echR "     ************************     "
     echR "  ***MAVEN não está instalado***  "

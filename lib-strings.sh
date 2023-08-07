@@ -263,7 +263,8 @@ function utilInitialize()
   export PUBLIC_RUNNER_TEST=false
 
   if [[ -f ./gitGo ]];then
-    if [[ $(which u-env) != "" ]]; then
+    __utilInitialize_check=$(which u-env)
+    if [[ ${__utilInitialize_check} != "" ]]; then
       source ./gitGo
     fi
   fi
