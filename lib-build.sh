@@ -195,7 +195,6 @@ function mavenBuild()
     #binary jar file name
     __mvn_jar_source_file=${__mvn_build_src_bin_dir}/${__mvn_jar_filter}
     echG "      - jar file: ${__mvn_jar_source_file}"
-    read
     if ! [[ -f ${__mvn_jar_source_file} ]]; then
       echY "      jar file: ${__mvn_jar_source_file}"
       echR "      ==============================  "
