@@ -356,6 +356,7 @@ function envsSetIfIsEmpty()
   if [[ ${__envsSetIfIsEmpty_check} == "" ]]; then
     __envsSetIfIsEmpty_check=$(echo ${__envsSetIfIsEmpty_default_value} | grep ' ')
     if [[ ${__envsSetIfIsEmpty_check} != "" ]]; then
+      __envsSetIfIsEmpty_default_value=$(echo "${__envsSetIfIsEmpty_default_value}" | sed 's/"//g' )
       export ${__envsSetIfIsEmpty_name}="\"${__envsSetIfIsEmpty_default_value}\""
     else
       export ${__envsSetIfIsEmpty_name}=${__envsSetIfIsEmpty_default_value}
@@ -404,6 +405,7 @@ function envsFileAddIfNotExists()
   if [[ ${__envsFileAddIfNotExists_check} == "" ]]; then
     echo "export ${__envsFileAddIfNotExists_name}=${__envsFileAddIfNotExists_value}">>${__envsFileAddIfNotExists_file_temp}
   else
+    __envsFileAddIfNotExists_value=$(echo "${__envsFileAddIfNotExists_value}" | sed 's/"//g' )
     echo "export ${__envsFileAddIfNotExists_name}=\"${__envsFileAddIfNotExists_value}\"">>${__envsFileAddIfNotExists_file_temp}
   fi
 
