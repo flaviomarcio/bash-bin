@@ -296,21 +296,53 @@ function selectorDNSOption()
   return 0
 }
 
+function __private_selectorInitTargets()
+{
+  export __func_return=
+  clearTerm
+  export __selector_dir=/data/applications
+  mkdir -p ${__selector_dir}
+  if [[ -f ${__selector_dir} ]]; then
+    echR "No create root dir ${__selector_dir}"
+    read
+    return 0
+  fi
+
+  export __selector_file=${__selector_dir}/stack_targets.env
+  while :
+  do
+    __selector_values=
+    echY "Uninitialized targets"
+    echG    "   Target file: ${__selector_values}"
+    echG    "   Set target names: ex: name1 name2 name3"
+    echo -n "   names: "
+    read __selector_values
+    if [[ ${__selector_values} == "" ]]; then
+      echR "Invalid target names"
+    else
+      echo ${__selector_values}>${__selector_file}
+      export __func_return=${__selector_file}  
+      return 1
+    fi
+  done
+  return 0
+}
+
 function selectorCustomer()
 {
   export __selector=
-  if [[ ${STACK_ROOT_DIR} == "" ]]; then
-    export __selector_dir=${HOME}
-  else
-    export __selector_dir=${STACK_ROOT_DIR}
+  __private_selectorInitTargets
+  if ! [ "$?" -eq 1 ]; then
+    return 0;       
   fi
-  export __selector_file=${__selector_dir}/applications/stack_targets.env
-  if [[ -f ${__selector_file} ]]; then
-    options=$(cat ${__selector_file})
-    options="quit ${options}"
-  else
-    options="quit"
+  export __selector_file=${__func_return}
+  if ! [[ -f ${__selector_file} ]]; then
+    echR "No create root dir ${__selector_dir}"
+    read
+    return 0;
   fi
+  options=$(cat ${__selector_file})
+  options="quit ${options}"
   options=(${options})
 
   clearTerm
