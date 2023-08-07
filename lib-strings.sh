@@ -262,6 +262,12 @@ function utilInitialize()
   export PUBLIC_RUNNER_MODE=runner
   export PUBLIC_RUNNER_TEST=false
 
+  if [[ -f ./gitGo ]];then
+    if [[ $(which u-env) != "" ]]; then
+      source ./gitGo
+    fi
+  fi
+
   for PARAM in "$@"
   do
     if [[ ${PARAM} == "-d" || ${PARAM} == "--debug" ]]; then

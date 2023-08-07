@@ -143,9 +143,8 @@ function mavenBuild()
   __mvn_jar_filter=${2}
 
   echG "  Source building with Maven"
-  __mvn_check=$(mvn --version)
-  __mvn_check=$(mvn --version | grep Apache)
-  if [[ ${__mvn_check} != *"Apache"*  ]]; then
+  __mvn_check=$(which mvn)
+  if [[ ${__mvn_check} == ""*  ]]; then
     echR "  ==============================  "
     echR "     ************************     "
     echR "  ***MAVEN não está instalado***  "
