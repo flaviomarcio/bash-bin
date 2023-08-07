@@ -309,6 +309,12 @@ function __private_selectorInitTargets()
   fi
 
   export __selector_file=${__selector_dir}/stack_targets.env
+  if [[ -f ${__selector_file} ]]; then
+    export __func_return=${__selector_file}
+    return 1
+  fi
+
+
   while :
   do
     __selector_values=
