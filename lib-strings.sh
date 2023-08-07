@@ -833,7 +833,7 @@ function replaceString()
 
 function echoColor()
 {
-  echo -e "${1}${2}${COLOR_OFF}"
+  echo -e "${1}${2}\e[0m"
 }
 
 function echR()
