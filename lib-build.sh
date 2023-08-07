@@ -190,6 +190,7 @@ function mavenBuild()
   else
     __mvn_cmd="mvn help:evaluate -Dexpression=project.build.finalName -q -DforceStdout"
     echY "      - ${__mvn_cmd}"
+    echo -e "${COLOR_RED}${COLOR_OFF}"
     __mvn_jar_filter=$(mvn help:evaluate -Dexpression=project.build.finalName -q -DforceStdout)
     #binary jar file name
     __mvn_jar_source_file=${__mvn_build_src_bin_dir}/${__mvn_jar_filter}.jar
