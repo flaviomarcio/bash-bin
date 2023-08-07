@@ -193,15 +193,7 @@ function mavenBuild()
     __mvn_jar_filter="$(${__mvn_cmd}).jar"
     echG "      - filter: [${__mvn_jar_filter}]"
     #binary jar file name
-    find ${__mvn_build_src_bin_dir} -name ${__mvn_jar_filter}
-    __mvn_jar_source_file=$(find ${__mvn_build_src_bin_dir} -name ${__mvn_jar_filter})  
-    if [[ ${__mvn_jar_source_file} == "" ]]; then
-        __mvn_jar_source_file="${__mvn_build_src_bin_dir}/app-0.0.1-SNAPSHOT.jar"
-    fi
-    pwd
-    echo "__mvn_jar_source_file=${__mvn_jar_source_file}"
-    echo "find ${__mvn_build_src_bin_dir} -name ${__mvn_jar_filter}"
-    read
+    __mvn_jar_source_file="${__mvn_build_src_bin_dir}/${__mvn_jar_filter}"
     if ! [[ -f ${__mvn_jar_source_file} ]]; then
       echY "      jar file: ${__mvn_jar_source_file}"
       echR "      ==============================  "
