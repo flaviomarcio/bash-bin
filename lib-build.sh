@@ -194,6 +194,8 @@ function mavenBuild()
     __mvn_jar_filter=$(mvn help:evaluate -Dexpression=project.build.finalName -q -DforceStdout)
     echo "__mvn_jar_filter==${__mvn_jar_filter}"
     #binary jar file name
+    echo "${COLOR_OFF}"
+    PS3=
     __mvn_jar_source_file=${__mvn_build_src_bin_dir}/${__mvn_jar_filter}.jar
     echo "__mvn_jar_source_file==${__mvn_jar_source_file}"
     ls -l ${__mvn_jar_source_file}

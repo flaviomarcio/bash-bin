@@ -321,7 +321,7 @@ function __private_selectorInitTargets()
     echY "Uninitialized targets"
     echG    "   Target file: ${__selector_values}"
     echG    "   Set target names: ex: name1 name2 name3"
-    echo -n "   names: "
+    echo -n "   names: ${COLOR_OFF}"
     read __selector_values
     if [[ ${__selector_values} == "" ]]; then
       echR "Invalid target names"
