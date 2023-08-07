@@ -195,6 +195,7 @@ function mavenBuild()
     echo "__mvn_jar_filter==${__mvn_jar_filter}"
     #binary jar file name
     __mvn_jar_source_file=${__mvn_build_src_bin_dir}/${__mvn_jar_filter}.jar
+    echo "__mvn_jar_source_file==${__mvn_jar_source_file}"
     echo "__mvn_jar_filter==${__mvn_jar_filter}"
     echG "      - jar file: ${__mvn_jar_source_file}"
     ls -l ${__mvn_jar_source_file}
