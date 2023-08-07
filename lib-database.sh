@@ -167,11 +167,13 @@ function __private_pg_envs_check()
   if ! [ "$?" -eq 1 ]; then
     return 0;       
   fi
+
   envsSetIfIsEmpty POSTGRES_HOST localhost
   envsSetIfIsEmpty POSTGRES_USER services
   envsSetIfIsEmpty POSTGRES_PASSWORD services
   envsSetIfIsEmpty POSTGRES_DB services
   envsSetIfIsEmpty POSTGRES_PORT 5432
+
   return 1
 }
 
