@@ -347,6 +347,15 @@ function envsFileAddIfNotExists()
   fi
 
   if ! [[ -f ${__envsFileAddIfNotExists_file} ]]; then
+    __envsFileAddIfNotExists_file_dir=$(dirname ${__envsFileAddIfNotExists_file})
+    if ! [[ -d ${__envsFileAddIfNotExists_file_dir} ]];then
+      mkdir -p ${__envsFileAddIfNotExists_file_dir}
+    fi
+    if ! [[ -d ${__envsFileAddIfNotExists_file_dir} ]];then
+      echR "No create env dir: ${__envsFileAddIfNotExists_file_dir}"
+      echR "No create env file: ${__envsFileAddIfNotExists_file}"
+      return 0
+    fi
     echo "#!/bin/bash">${__envsFileAddIfNotExists_file}
   fi
 
