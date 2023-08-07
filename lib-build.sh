@@ -192,7 +192,7 @@ function mavenBuild()
     echY "      - ${__mvn_cmd}"
     __mvn_jar_filter=$(mvn help:evaluate -Dexpression=project.build.finalName -q -DforceStdout)
     #binary jar file name
-    __mvn_jar_source_file="${__mvn_build_src_bin_dir}/${__mvn_jar_filter}.jar"
+    __mvn_jar_source_file=${__mvn_build_src_bin_dir}/${__mvn_jar_filter}.jar
     echG "      - jar file: ${__mvn_jar_source_file}"
     ls -l ${__mvn_jar_source_file}
     read
