@@ -268,31 +268,33 @@ function dockerNetworkCreate()
   return 1
 }
 
-function dockerBuildDockerFile()
-{
-  IMAGE_NAME=${2}
-  FILE_SRC=${3}
-  FILE_DST=${4}
+# function dockerBuildDockerFile()
+# {
+#   dockerBuildDockerFile_app_name=${2}
+#   dockerBuildDockerFile_image_name=${3}
+#   dockerBuildDockerFile_FILE_SRC=${4}
+#   dockerBuildDockerFile_FILE_SRC=${5}
 
-  if [[ -d ${DOCKER_CONF_DIR} ]]; then
-    cp -r -T ${DOCKER_CONF_DIR} ${BUILD_TEMP_DIR}
-  fi
+#   export __dockerBuildDockerFile_docker_file=${STACK_INSTALLER___dockerBuildDockerFile_docker_file}/${APPLICATION_STACK}
+#   export __dockerBuildDockerFile_tmp_dir=${HOME}/build/${dockerBuildDockerFile_app_name}
 
-  log "Building docker image [${IMAGE_NAME}]"
-  if ! [[ -f ${FILE_SRC} ]]; then
-      logError ${1} "Docker file not found [${FILE_SRC}]"
-    __RETURN=1;
-  else
-    rm -rf ${FILE_DST};
-    cp -r ${FILE_SRC} ${FILE_DST}
-    cd ${BUILD_TEMP_DIR}
-    docker --log-level ERROR build --quiet --network host -t ${IMAGE_NAME} .
+#   mkdir -p ${__dockerBuildDockerFile_tmp_dir}
 
-    cd ${ROOT_DIR}
-    __RETURN=1;
-  fi
-  return ${__RETURN}
-}
+#   if [[ -d ${__dockerBuildDockerFile_docker_file} ]]; then
+#     cp -rf -T ${__dockerBuildDockerFile_docker_file} ${__dockerBuildDockerFile_tmp_dir}
+#   fi
+
+#   log "Building docker image [${dockerBuildDockerFile_image_name}]"
+#   if ! [[ -f ${dockerBuildDockerFile_FILE_SRC} ]]; then
+#     logError ${1} "Docker file not found [${dockerBuildDockerFile_FILE_SRC}]"
+#     return 0
+#   else
+#     cp -rf ${dockerBuildDockerFile_FILE_SRC} ${dockerBuildDockerFile_FILE_DST}
+#     cd ${__dockerBuildDockerFile_tmp_dir}
+#     docker --log-level ERROR build --quiet --network host -t ${dockerBuildDockerFile_image_name} .
+#     return 1
+#   fi
+# }
 
 function dockerBuildCompose()
 {
@@ -336,9 +338,20 @@ function dockerBuildCompose()
   export APPLICATION_DEPLOY_APP_DIR=${__docker_build_compose_dir}
   export APPLICATION_DEPLOY_NETWORK_NAME=${__docker_build_network_name}
 
-  export APPLICATION_DEPLOY_DNS=${__docker_build_service}
+  if [[ ${APPLICATION_DEPLOY_DNS} == "" ]];then
+    export APPLICATION_DEPLOY_DNS=${__docker_build_service}
+  fi
+  if [[ ${APPLICATION_DEPLOY_DNS_PATH} == "" ]];then
+    export APPLICATION_DEPLOY_DNS_PATH=/
+  fi
+  if [[ ${APPLICATION_DEPLOY_DNS_PATH_PUBLIC} == "" ]]; then
+    export APPLICATION_DEPLOY_DNS_PATH_PUBLIC="/"
+  fi
   if [[ ${APPLICATION_DEPLOY_DNS_PUBLIC} == "" ]]; then
     export APPLICATION_DEPLOY_DNS_PUBLIC=${__docker_build_service}
+  fi
+  if [[ ${APPLICATION_DEPLOY_DNS_PUBLIC_PATH} == "" ]]; then
+    export APPLICATION_DEPLOY_DNS_PUBLIC_PATH="/"
   fi
 
   # ref https://docs.docker.com/compose/environment-variables/envvars/
