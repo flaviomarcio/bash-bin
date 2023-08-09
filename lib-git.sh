@@ -83,6 +83,16 @@ function gitClone()
   export __func_return=
   echM "  Git cloning repository"
 
+  __git_check=$(which git)
+  if [[ ${__git_check} == ""  ]]; then
+    echR "  ==============================  "
+    echR "      **********************      "
+    echR "  ****GIT não está instalado****  "
+    echR "      **********************      "
+    echR "  ==============================  "
+    return 0
+  fi
+
   __git_clone_repository=${1}
   __git_clone_branch=${2}
   __git_clone_dir=${3}

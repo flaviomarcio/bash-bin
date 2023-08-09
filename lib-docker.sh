@@ -268,34 +268,6 @@ function dockerNetworkCreate()
   return 1
 }
 
-# function dockerBuildDockerFile()
-# {
-#   dockerBuildDockerFile_app_name=${2}
-#   dockerBuildDockerFile_image_name=${3}
-#   dockerBuildDockerFile_FILE_SRC=${4}
-#   dockerBuildDockerFile_FILE_SRC=${5}
-
-#   export __dockerBuildDockerFile_docker_file=${STACK_INSTALLER___dockerBuildDockerFile_docker_file}/${APPLICATION_STACK}
-#   export __dockerBuildDockerFile_tmp_dir=${HOME}/build/${dockerBuildDockerFile_app_name}
-
-#   mkdir -p ${__dockerBuildDockerFile_tmp_dir}
-
-#   if [[ -d ${__dockerBuildDockerFile_docker_file} ]]; then
-#     cp -rf -T ${__dockerBuildDockerFile_docker_file} ${__dockerBuildDockerFile_tmp_dir}
-#   fi
-
-#   log "Building docker image [${dockerBuildDockerFile_image_name}]"
-#   if ! [[ -f ${dockerBuildDockerFile_FILE_SRC} ]]; then
-#     logError ${1} "Docker file not found [${dockerBuildDockerFile_FILE_SRC}]"
-#     return 0
-#   else
-#     cp -rf ${dockerBuildDockerFile_FILE_SRC} ${dockerBuildDockerFile_FILE_DST}
-#     cd ${__dockerBuildDockerFile_tmp_dir}
-#     docker --log-level ERROR build --quiet --network host -t ${dockerBuildDockerFile_image_name} .
-#     return 1
-#   fi
-# }
-
 function dockerBuildCompose()
 {
   __docker_build_name=${1}
@@ -335,7 +307,6 @@ function dockerBuildCompose()
   export APPLICATION_DEPLOY_BINARY_DIR=${__docker_build_builder_dir}
   export APPLICATION_DEPLOY_IMAGE=${__docker_build_image}
   export APPLICATION_DEPLOY_HOSTNAME=${__docker_build_hostname}
-  export APPLICATION_DEPLOY_APP_DIR=${__docker_build_compose_dir}
   export APPLICATION_DEPLOY_NETWORK_NAME=${__docker_build_network_name}
 
   if [[ ${APPLICATION_DEPLOY_DNS} == "" ]];then
@@ -348,7 +319,7 @@ function dockerBuildCompose()
     export APPLICATION_DEPLOY_DNS_PATH_PUBLIC="/"
   fi
   if [[ ${APPLICATION_DEPLOY_DNS_PUBLIC} == "" ]]; then
-    export APPLICATION_DEPLOY_DNS_PUBLIC=${__docker_build_service}
+    export APPLICATION_DEPLOY_DNS_PUBLIC=${APPLICATION_DEPLOY_DNS}
   fi
   if [[ ${APPLICATION_DEPLOY_DNS_PUBLIC_PATH} == "" ]]; then
     export APPLICATION_DEPLOY_DNS_PUBLIC_PATH="/"
@@ -382,19 +353,18 @@ function dockerBuildCompose()
   if ! [[ -f ${__docker_build_env_file_export} ]]; then
     echo "#!/bin/bash">${__docker_build_env_file_export}
   fi
-  echo "export COMPOSE_CONVERT_WINDOWS_PATHS=${COMPOSE_CONVERT_WINDOWS_PATHS}"      >>${__docker_build_env_file_export}
+  echo "export APPLICATION_DEPLOY_BINARY_DIR=${APPLICATION_DEPLOY_BINARY_DIR}"      >>${__docker_build_env_file_export}
+  echo "export APPLICATION_DEPLOY_DNS=${APPLICATION_DEPLOY_DNS}"                    >>${__docker_build_env_file_export}
+  echo "export APPLICATION_DEPLOY_HOSTNAME=${APPLICATION_DEPLOY_HOSTNAME}"          >>${__docker_build_env_file_export}
+  echo "export APPLICATION_DEPLOY_IMAGE=${APPLICATION_DEPLOY_IMAGE}"                >>${__docker_build_env_file_export}
+  echo "export APPLICATION_DEPLOY_NETWORK_NAME=${APPLICATION_DEPLOY_NETWORK_NAME}"  >>${__docker_build_env_file_export}
+  if [[ -f ${__docker_build_binary_file} ]]; then
+  echo "export APPLICATION_DEPLOY_FILE=${__docker_build_binary_file}"               >>${__docker_build_env_file_export}
+  fi
   echo "export APPLICATION_ENV_FILE=${APPLICATION_ENV_FILE}"                        >>${__docker_build_env_file_export}
   echo "export APPLICATION_NAME=${APPLICATION_NAME}"                                >>${__docker_build_env_file_export}
   echo "export APPLICATION_SERVICE=${APPLICATION_SERVICE}"                          >>${__docker_build_env_file_export}
-  echo "export APPLICATION_DEPLOY_APP_DIR=${APPLICATION_DEPLOY_APP_DIR}"            >>${__docker_build_env_file_export}
-  echo "export APPLICATION_DEPLOY_BINARY_DIR=${APPLICATION_DEPLOY_BINARY_DIR}"      >>${__docker_build_env_file_export}
-  echo "export APPLICATION_DEPLOY_DNS=${APPLICATION_DEPLOY_DNS}"                    >>${__docker_build_env_file_export}
-  echo "export APPLICATION_DEPLOY_IMAGE=${APPLICATION_DEPLOY_IMAGE}"                >>${__docker_build_env_file_export}
-  echo "export APPLICATION_DEPLOY_HOSTNAME=${APPLICATION_DEPLOY_HOSTNAME}"          >>${__docker_build_env_file_export}
-  echo "export APPLICATION_DEPLOY_NETWORK_NAME=${APPLICATION_DEPLOY_NETWORK_NAME}"  >>${__docker_build_env_file_export}
-  if [[ -f ${__docker_build_binary_file} ]]; then
-  echo "export APPLICATION_FILE=${__docker_build_binary_file}"        >>${__docker_build_env_file_export}
-  fi
+  echo "export COMPOSE_CONVERT_WINDOWS_PATHS=${COMPOSE_CONVERT_WINDOWS_PATHS}"      >>${__docker_build_env_file_export}
   
 
   __docker_build_cmd_1="docker --log-level ERROR build --quiet --file $(basename ${__docker_build_dockerfile}) -t ${__docker_build_service} ."
@@ -422,43 +392,43 @@ function dockerBuildCompose()
 
 
 
-  echo "#!/bin/bash"                                                                 >${__docker_build_compose_sh_file}
-  echo ""                                                                           >>${__docker_build_compose_sh_file}
+  echo "#!/bin/bash"                                                                     >${__docker_build_compose_sh_file}
+  echo ""                                                                               >>${__docker_build_compose_sh_file}
   if [[ -f ${__docker_build_env_file_static} ]]; then
-  echo "source ./$(basename ${__docker_build_env_file_static})"                     >>${__docker_build_compose_sh_file}
+  echo "source ./$(basename ${__docker_build_env_file_static})"                         >>${__docker_build_compose_sh_file}
   fi
   if [[ -f ${__docker_build_env_file_export} ]]; then
-  echo "source ./$(basename ${__docker_build_env_file_export})"                     >>${__docker_build_compose_sh_file}
+  echo "source ./$(basename ${__docker_build_env_file_export})"                         >>${__docker_build_compose_sh_file}
   fi
-  echo ""                                                                           >>${__docker_build_compose_sh_file}
-  echo "export APPLICATION_FILE=$(basename ${__docker_build_binary_file})"          >>${__docker_build_compose_sh_file}
-  echo "if [[ \${1} == \"--run\" ]]; then"                                          >>${__docker_build_compose_sh_file}
-  echo "    if [[ \$(echo \${APPLICATION_FILE} | grep '.jar') != \"\" ]]; then"     >>${__docker_build_compose_sh_file}
-  echo "        java -jar ./\${APPLICATION_FILE}"                                   >>${__docker_build_compose_sh_file}
-  echo "    else"                                                                   >>${__docker_build_compose_sh_file}
-  echo "        ./\${APPLICATION_FILE}"                                             >>${__docker_build_compose_sh_file}
-  echo "    fi"                                                                     >>${__docker_build_compose_sh_file}
-  echo "    exit 0"                                                                 >>${__docker_build_compose_sh_file}
-  echo "fi"                                                                         >>${__docker_build_compose_sh_file}
-  echo ""                                                                           >>${__docker_build_compose_sh_file}
-  echo "echo \"${__docker_build_cmd_1}\""                                           >>${__docker_build_compose_sh_file}
-  echo ${__docker_build_cmd_1}                                                      >>${__docker_build_compose_sh_file}
-  echo ""                                                                           >>${__docker_build_compose_sh_file}
-  echo "echo \"${__docker_build_cmd_2}\""                                           >>${__docker_build_compose_sh_file}
-  echo ${__docker_build_cmd_2}                                                      >>${__docker_build_compose_sh_file}
-  echo ""                                                                           >>${__docker_build_compose_sh_file}
-  echo "echo \"${__docker_build_cmd_3}\""                                           >>${__docker_build_compose_sh_file}
-  echo ${__docker_build_cmd_3}                                                      >>${__docker_build_compose_sh_file}
-  echo ""                                                                           >>${__docker_build_compose_sh_file}
-  echo "echo \"${__docker_build_cmd_4}\""                                           >>${__docker_build_compose_sh_file}
-  echo ${__docker_build_cmd_4}                                                      >>${__docker_build_compose_sh_file}
-  echo ""                                                                           >>${__docker_build_compose_sh_file}
-  echo "echo \"${__docker_build_cmd_5}\""                                           >>${__docker_build_compose_sh_file}
-  echo ${__docker_build_cmd_5}                                                      >>${__docker_build_compose_sh_file}
-  echo ""                                                                           >>${__docker_build_compose_sh_file}
-  echo "echo \"${__docker_build_cmd_6}\""                                           >>${__docker_build_compose_sh_file}
-  echo ${__docker_build_cmd_6}                                                      >>${__docker_build_compose_sh_file}
-  echo ""                                                                           >>${__docker_build_compose_sh_file}
+  echo ""                                                                               >>${__docker_build_compose_sh_file}
+  echo "export APPLICATION_DEPLOY_FILE=$(basename ${__docker_build_binary_file})"       >>${__docker_build_compose_sh_file}
+  echo "if [[ \${1} == \"--run\" ]]; then"                                              >>${__docker_build_compose_sh_file}
+  echo "    if [[ \$(echo \${APPLICATION_DEPLOY_FILE} | grep '.jar') != \"\" ]]; then"  >>${__docker_build_compose_sh_file}
+  echo "        java -jar ./\${APPLICATION_DEPLOY_FILE}"                                >>${__docker_build_compose_sh_file}
+  echo "    else"                                                                       >>${__docker_build_compose_sh_file}
+  echo "        ./\${APPLICATION_DEPLOY_FILE}"                                          >>${__docker_build_compose_sh_file}
+  echo "    fi"                                                                         >>${__docker_build_compose_sh_file}
+  echo "    exit 0"                                                                     >>${__docker_build_compose_sh_file}
+  echo "fi"                                                                             >>${__docker_build_compose_sh_file}
+  echo ""                                                                               >>${__docker_build_compose_sh_file}
+  echo "echo \"${__docker_build_cmd_1}\""                                               >>${__docker_build_compose_sh_file}
+  echo ${__docker_build_cmd_1}                                                          >>${__docker_build_compose_sh_file}
+  echo ""                                                                               >>${__docker_build_compose_sh_file}
+  echo "echo \"${__docker_build_cmd_2}\""                                               >>${__docker_build_compose_sh_file}
+  echo ${__docker_build_cmd_2}                                                          >>${__docker_build_compose_sh_file}
+  echo ""                                                                               >>${__docker_build_compose_sh_file}
+  echo "echo \"${__docker_build_cmd_3}\""                                               >>${__docker_build_compose_sh_file}
+  echo ${__docker_build_cmd_3}                                                          >>${__docker_build_compose_sh_file}
+  echo ""                                                                               >>${__docker_build_compose_sh_file}
+  echo "echo \"${__docker_build_cmd_4}\""                                               >>${__docker_build_compose_sh_file}
+  echo ${__docker_build_cmd_4}                                                          >>${__docker_build_compose_sh_file}
+  echo ""                                                                               >>${__docker_build_compose_sh_file}
+  echo "echo \"${__docker_build_cmd_5}\""                                               >>${__docker_build_compose_sh_file}
+  echo ${__docker_build_cmd_5}                                                          >>${__docker_build_compose_sh_file}
+  echo ""                                                                               >>${__docker_build_compose_sh_file}
+  echo "echo \"${__docker_build_cmd_6}\""                                               >>${__docker_build_compose_sh_file}
+  echo ${__docker_build_cmd_6}                                                          >>${__docker_build_compose_sh_file}
+  echo ""                                                                               >>${__docker_build_compose_sh_file}
 
   chmod +x ${__docker_build_compose_sh_file}  
 
@@ -489,7 +459,7 @@ function dockerBuildCompose()
 function dockerRegistryImageCheck()
 {
   export __dockerRegistryImageCheckImage=${1}
-  __dockerRegistryImageCheck=$(curl -s -H "Accept: application/vnd.docker.distribution.manifest.v2+json" -X GET "http://${STACK_REGISTRY_DNS}/v2/${__dockerRegistryImageCheckImage}/manifests/latest" | jq '.config.mediaType')
+  __dockerRegistryImageCheck=$(curl -s -H "Accept: application/vnd.docker.distribution.manifest.v2+json" -X GET "http://${STACK_REGISTRY_DNS_PUBLIC}/v2/${__dockerRegistryImageCheckImage}/manifests/latest" | jq '.config.mediaType')
   if [[ ${__dockerRegistryImageCheck} == "" || ${__dockerRegistryImageCheck} == "null" ]]; then
     return 0;
   fi

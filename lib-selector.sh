@@ -126,7 +126,6 @@ function selectorPGPass()
   echC "      export PG_PASS=\${HOME}/.pgpass"
   echC "      export PUBLIC_LOCALHOST=localhost"
   echC "      export PUBLIC_HOST_NAME=${PUBLIC_HOST_IPv4}"
-  echC "      export PUBLIC_HOST_LOCA=${PUBLIC_HOST_IP}"
   echC "      export PUBLIC_HOST_IPv4=${PUBLIC_HOST_IPv4}"
   echC "      export POSTGRESS_CONFIG='5432:postgres:postgres:postgres'"
   echC ""
@@ -297,21 +296,59 @@ function selectorDNSOption()
   return 0
 }
 
+function __private_selectorInitTargets()
+{
+  export __func_return=
+  clearTerm
+  export __selector_dir=/data/applications
+  mkdir -p ${__selector_dir}
+  if [[ -f ${__selector_dir} ]]; then
+    echR "No create root dir ${__selector_dir}"
+    read
+    return 0
+  fi
+
+  export __selector_file=${__selector_dir}/stack_targets.env
+  if [[ -f ${__selector_file} ]]; then
+    export __func_return=${__selector_file}
+    return 1
+  fi
+
+
+  while :
+  do
+    __selector_values=
+    echY "Uninitialized targets"
+    echG    "   Target file: ${__selector_values}"
+    echG    "   Set target names: ex: name1 name2 name3"
+    echo -n "   names: "
+    read __selector_values
+    if [[ ${__selector_values} == "" ]]; then
+      echR "Invalid target names"
+    else
+      echo ${__selector_values}>${__selector_file}
+      export __func_return=${__selector_file}  
+      return 1
+    fi
+  done
+  return 0
+}
+
 function selectorCustomer()
 {
   export __selector=
-  if [[ ${STACK_ROOT_DIR} == "" ]]; then
-    export __selector_dir=${HOME}
-  else
-    export __selector_dir=${STACK_ROOT_DIR}
+  __private_selectorInitTargets
+  if ! [ "$?" -eq 1 ]; then
+    return 0;       
   fi
-  export __selector_file=${__selector_dir}/applications/stack_targets.env
-  if [[ -f ${__selector_file} ]]; then
-    options=$(cat ${__selector_file})
-    options="quit ${options}"
-  else
-    options="quit"
+  export __selector_file=${__func_return}
+  if ! [[ -f ${__selector_file} ]]; then
+    echR "No create root dir ${__selector_dir}"
+    read
+    return 0;
   fi
+  options=$(cat ${__selector_file})
+  options="quit ${options}"
   options=(${options})
 
   clearTerm
@@ -412,6 +449,40 @@ function selector()
     return 1;
   done
   return 0;
+}
+
+function selectorYesNo()
+{
+  __selector_title=${1}
+  selector "${__selector_title}" "Yes No}"
+  if [[ ${__selector} == "Yes" ]]; then
+    return 1;
+  fi
+  return 0
+}
+
+function selectorWaitSeconds()
+{
+  __selectorWaitSeconds_seconds=${1}
+  __selectorWaitSeconds_title=${2}
+  __selectorWaitSeconds_color=${2}
+
+  if [[ ${__selectorWaitSeconds_seconds} == "" ]]; then
+    __selectorWaitSeconds_seconds=10
+  fi
+
+  if [[ ${__selectorWaitSeconds_title} == "" ]]; then
+    __selectorWaitSeconds_title="Wainting ${__selectorWaitSeconds_seconds} seconds, use [CTRL+C] to abort..."
+  fi
+
+  if [[ ${__selectorWaitSeconds_color} == "" ]]; then
+    __selectorWaitSeconds_color=${COLOR_BLUE_B}
+  fi
+
+  echo -e "${__selectorWaitSeconds_color}${__selectorWaitSeconds_title}${COLOR_OFF}"
+  for i in $(seq ${__selectorWaitSeconds_seconds} -1 0); do echo -e -n "${i}... "; sleep 1; done; echo -e "\n"
+
+  return 1
 }
 
 function selectorBack()

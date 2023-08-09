@@ -66,7 +66,6 @@ function qtBuild()
   __qtBuild_qt_plugin_dir=${__qtBuild_qt_library_path}/plugins
   __qtBuild_qmake=${__qtBuild_qt_bin_dir}/qmake
 
-
   echG "  Source building with Qt/QMake"
   if ! [[ -d ${__qtBuild_qt_root_dir} ]]; then
     echR "      - Invalid qt root dir: ${__qtBuild_qt_root_dir}"
@@ -110,7 +109,7 @@ function qtBuild()
     echY "      - make --silent --quiet -j12"
     echo $(make --silent --quiet -j12)&>/dev/null
     if ! [[ -f ${__qtBuild_target_file} ]]; then
-      echR "      - Invalid target file: ${__qtBuild_target_file}"
+      echR "      - Invalid qt target file: ${__qtBuild_target_file}"
     else
       __qtBuild_target_file_final=${__qtBuild_base_dir}/${__qtBuild_target_name}
       cp -rf ${__qtBuild_target_file} ${__qtBuild_target_file_final}
@@ -144,9 +143,8 @@ function mavenBuild()
   __mvn_jar_filter=${2}
 
   echG "  Source building with Maven"
-  __mvn_check=$(mvn --version)
-  __mvn_check=$(mvn --version | grep Apache)
-  if [[ ${__mvn_check} != *"Apache"*  ]]; then
+  __mvn_check=$(which mvn)
+  if [[ ${__mvn_check} == ""  ]]; then
     echR "  ==============================  "
     echR "     ************************     "
     echR "  ***MAVEN não está instalado***  "
@@ -189,10 +187,13 @@ function mavenBuild()
     echR "    ==============================  "
     printf "${__mvn_output}"
   else
-
+    __mvn_cmd="mvn help:evaluate -Dexpression=project.build.finalName -q -DforceStdout"
+    echY "      - ${__mvn_cmd}"
+    #__mvn_jar_filter=$(mvn help:evaluate -Dexpression=project.build.finalName -q -DforceStdout)
+    __mvn_jar_filter="app-0.0.1-SNAPSHOT.jar"
     #binary jar file name
-    __mvn_jar_filter="$(mvn help:evaluate -Dexpression=project.build.finalName -q -DforceStdout).jar"
-    __mvn_jar_source_file=$(find ${__mvn_build_src_bin_dir} -name ${__mvn_jar_filter})  
+    __mvn_jar_source_file=${__mvn_build_src_bin_dir}/${__mvn_jar_filter}
+    echG "      - jar file: ${__mvn_jar_source_file}"
     if ! [[ -f ${__mvn_jar_source_file} ]]; then
       echY "      jar file: ${__mvn_jar_source_file}"
       echR "      ==============================  "
@@ -205,24 +206,6 @@ function mavenBuild()
       export __func_return="${__func_return} ${__mvn_jar_source_file_new}"
       echC "      - JAR file: ${__mvn_jar_source_file_new}"
     fi
-
-    # export __mvn_jar_source_files=$(find ${__mvn_build_src_bin_dir} -name ${__mvn_jar_filter})
-  
-    # if [[ ${__mvn_jar_source_files} == "" ]]; then
-    #   echR "      ==============================  "
-    #   echR "      ******JAR file not found******  "
-    #   echR "      ******JAR file not found******  "
-    #   echR "      ==============================  "
-    # else
-    #   __mvn_jar_source_files=(${__mvn_jar_source_files})
-    #   for __mvn_jar_source_file in "${__mvn_jar_source_files[@]}"
-    #   do
-    #     __mvn_jar_source_file_new=${__mvn_build_base_dir}/$(basename ${__mvn_jar_source_file})
-    #     mv ${__mvn_jar_source_file} ${__mvn_jar_source_file_new}
-    #     export __func_return="${__func_return} ${__mvn_jar_source_file_new}"
-    #     echC "      - JAR file: ${__mvn_jar_source_file_new}"
-    #   done
-    # fi
   fi
   cd ${__mvn_build_base_dir}
   rm -rf ${__mvn_build_src_dir}

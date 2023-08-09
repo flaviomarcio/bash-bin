@@ -167,42 +167,13 @@ function __private_pg_envs_check()
   if ! [ "$?" -eq 1 ]; then
     return 0;       
   fi
-  if [[ ${POSTGRES_HOST} == "" ]]; then
-    export POSTGRES_HOST="localhost"
-  fi
-  if [[ ${POSTGRES_USER} == "" ]]; then
-    export POSTGRES_USER=services
-  fi
-  if [[ ${POSTGRES_PASSWORD} == "" ]]; then
-    export POSTGRES_PASSWORD=services
-  fi
-  if [[ ${POSTGRES_DB} == "" ]]; then
-    export POSTGRES_DB=services
-  fi
-  if [[ ${POSTGRES_PORT} == "" ]]; then
-    export POSTGRES_PORT=5432
-  fi
 
-  if [[ ${POSTGRES_HOST} == "" ]]; then 
-    echR "Invalid env: POSTGRES_HOST=${POSTGRES_HOST}"
-    return 0
-  fi
-  if [[ ${POSTGRES_USER} == "" ]]; then 
-    echR "Invalid env: POSTGRES_USER=${POSTGRES_USER}"
-    return 0
-  fi
-  if [[ ${POSTGRES_PASSWORD} == "" ]]; then 
-    echR "Invalid env: POSTGRES_PASSWORD=${POSTGRES_PASSWORD}"
-    return 0
-  fi
-  if [[ ${POSTGRES_DB} == "" ]]; then 
-    echR "Invalid env: POSTGRES_DB=${POSTGRES_DB}"
-    return 0
-  fi
-  if [[ ${POSTGRES_PORT} == "" ]]; then 
-    echR "Invalid env: POSTGRES_PORT=${POSTGRES_PORT}"
-    return 0
-  fi
+  envsSetIfIsEmpty POSTGRES_HOST localhost
+  envsSetIfIsEmpty POSTGRES_USER services
+  envsSetIfIsEmpty POSTGRES_PASSWORD services
+  envsSetIfIsEmpty POSTGRES_DB services
+  envsSetIfIsEmpty POSTGRES_PORT 5432
+
   return 1
 }
 
@@ -251,11 +222,11 @@ function databaseUpdateExec()
   echM "    Executing"
   echB "      -Environments"
   echC "        - export POSTGRES_HOST=${POSTGRES_HOST}"
-  echC "        - export POSTGRES_DB=${POSTGRES_DB}"
+  echC "        - export POSTGRES_DATABASE=${POSTGRES_DATABASE}"
   echC "        - export POSTGRES_USER=${POSTGRES_USER}"
   echC "        - export POSTGRES_PASSWORD=${POSTGRES_PASSWORD}"
   echC "        - export POSTGRES_PORT=${POSTGRES_PORT}"
-  echY "        - psql -q -h \${POSTGRES_HOST} -U \${POSTGRES_USER} -p \${POSTGRES_PORT} -d \${POSTGRES_DB} -a -f \${FILE}\""
+  echY "        - psql -q -h \${POSTGRES_HOST} -U \${POSTGRES_USER} -p \${POSTGRES_PORT} -d \${POSTGRES_DATABASE} -a -f \${POSTGRES_SCRIPT_FILE}\""
   echB "      -Executing"
   DB_DDL_FILE_TMP="/tmp/ddl_file.sql"
   EXEC_FILES=$(__private_db_ddl_apply_scan ${DATABASE_DIR})

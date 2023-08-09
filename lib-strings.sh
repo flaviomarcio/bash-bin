@@ -1,11 +1,40 @@
 #!/bin/bash
 
-export COLOR_RED="\e[31m"
-export COLOR_GREEN="\e[32m"
-export COLOR_YELLOW="\e[33m"
-export COLOR_BLUE="\e[34m"
-export COLOR_MAGENTA="\e[35m"
-export COLOR_CIANO="\e[36m"
+    # coff='\e[0m'
+    # black='\e[0;30m'
+    # red='\e[0;31m'
+    # green='\e[0;32m'
+    # yellow='\e[0;33m'
+    # blue='\e[0;34m'
+    # purple='\e[0;35m'
+    # cyan='\e[0;36m'
+    # white='\e[0;37m'
+    # bblack='\e[1;30m'
+    # bred='\e[1;31m'
+    # bgreen='\e[1;32m'
+    # byellow='\e[1;33m'
+    # bblue='\e[1;34m'
+    # bpurple='\e[1;35m'
+    # bcyan='\e[1;36m'
+    # bwhite='\e[1;37m'
+
+export COLOR_OFF='\e[0m'
+export COLOR_BACK='\e[0;30m'
+export COLOR_BACK_B='\e[1;30m'
+export COLOR_RED='\e[0;31m'
+export COLOR_RED_B='\e[0;31m'
+export COLOR_GREEN='\e[0;32m'
+export COLOR_GREEN_B='\e[1;32m'
+export COLOR_YELLOW='\e[0;33m'
+export COLOR_YELLOW_B='\e[2;33m'
+export COLOR_BLUE='\e[0;34m'
+export COLOR_BLUE_B='\e[1;34m'
+export COLOR_MAGENTA='\e[0;35m'
+export COLOR_MAGENTA_B='\e[1;35m'
+export COLOR_CIANO='\e[0;36m'
+export COLOR_CIANO_B='\e[1;36m'
+export COLOR_WHITE='\e[0;37m'
+export COLOR_WHITE_B='\e[1;37m'
 
 if [[ ${ROOT_DIR} == "" ]]; then
   export ROOT_DIR=${PWD}
@@ -57,20 +86,6 @@ function logIdent()
 
   echo $(strRightJustified 4 ${CHAR} ${CHAR} )
   return 1
-
-  # for i in $(seq 1 4);
-  # do
-  #   TEXT="${TEXT}${CHAR}"
-  # done
-  # TEXT="${TEXT}"
-  
-  # for i in $(seq 1 ${IDENT})
-  # do
-  #   CHARS="${TEXT}${CHARS}"
-  # done
-  # echo -n ${CHARS}
-
-  return 0;
 }
 
 function log()
@@ -166,73 +181,34 @@ function logFinished()
 }
 
 function cdDir()
-{
-  idt="$(toInt ${1})"
-  NEW_DIR="${2}"
-  OLD_DIR=${PWD}
-  logStart ${idt} "cdDir"
-  logInfo ${idt} "of" ${OLD_DIR}
-  logInfo ${idt} "to" ${NEW_DIR}
-  if ! [[ -d ${NEW_DIR} ]]; then
-    logError ${idt} "invalid-dir: ${NEW_DIR}"
+{ 
+  __cdDir_NEW_DIR="${1}"
+  if ! [[ -d ${__cdDir_NEW_DIR} ]]; then
     return 0;
   fi
-  cd ${NEW_DIR}
-  if [[ ${PWD} != ${NEW_DIR} ]]; then
-    logError ${idt} "no-access-dir:${NEW_DIR}"
-    logFinished ${idt} "cdDir"
+  cd ${__cdDir_NEW_DIR}
+  if [[ ${PWD} != ${__cdDir_NEW_DIR} ]]; then
     return 0;
   fi
-  logSuccess ${idt}
-  logFinished ${idt} "cdDir"
-  return 1;
-}
-
-function fileExists()
-{
-  idt="$(toInt ${1})"
-  logStart ${idt} "fileExists"
-  TARGET="${2}"
-  DIR="${3}"
-  if [[ ${DIR} == "" ]]; then
-    DIR=${PWD}
-  fi
-
-  logTarget ${idt} ${TARGET}
-  logInfo ${idt} "dir" ${DIR}
-  FILE=${DIR}/${TARGET}
-  if ! [[ -f ${FILE} ]]; then
-    logError ${idt} "file-not-found|fileName:${FILE}"
-    logFinished ${idt} "fileExists"
-    return 0;
-  fi
-  logSuccess ${idt}
-  logFinished ${idt} "fileExists"
   return 1;
 }
 
 function copyFile()
 {
-  idt="$(toInt ${1})"
-  logStart ${idt} "copyFile"
-  SRC="${2}"
-  DST="${3}"
+  __copyFile_SRC="${1}"
+  __copyFile_DST="${2}"
 
-  logTarget ${idt} ${SRC}
-  logInfo ${idt} "destine" ${DST}
-
-  logMethod "${1}" "Copying ${SRC} to ${DST}"
-  if [[ -f ${SRC} ]]; then
-    logError ${idt} "sources-does-not-exists[${SRC}]"
-  elif [[ -f ${DST} ]]; then
-    logError ${idt} "destine-exists-[${DST}]"
-  else
-    cp -rf ${SRC} ${DST}
-    if [[ -f ${DST} ]]; then
-      logSuccess ${idt}
-    fi
+  if [[ -f ${__copyFile_SRC} ]]; then
+    return 0;
   fi
-  logFinished ${idt} "copyFile"
+  if [[ -f ${__copyFile_DST} ]]; then
+    return 0
+  fi
+  cp -rf ${__copyFile_SRC} ${__copyFile_DST}
+  if [[ -f ${__copyFile_DST} ]]; then
+    return 1
+  fi
+  return 0
 }
 
 function fileDedupliceLines()
@@ -258,36 +234,40 @@ function fileDedupliceLines()
 
 function copyFileIfNotExists()
 {
-  idt="$(toInt ${1})"
-  logStart ${idt} "copyFileIfNotExists"
-  SRC=$2
-  DST=$3
+  __copyFileIfNotExists_SRC=${1}
+  __copyFileIfNotExists_DST=${2}
   
-  logTarget ${idt} ${SRC}
-  logInfo ${idt} "destine" ${DST}
-  if ! [[ -f ${SRC} ]]; then
-    logError ${idt} "source-does-not-exists-[${SRC}]"
-  else
-    if [[ -d ${DST} ]]; then
-      rm -rf ${DST}
-      logInfo ${idt} "remove" ${DST}
-    fi
-    cp -rf ${SRC} ${DST}
-    if [[ -d ${DST} ]]; then
-      logSuccess ${idt}
-    fi
+  if ! [[ -f ${__copyFileIfNotExists_SRC} ]]; then
+    return 0
   fi
-  logFinished ${idt} "copyFileIfNotExists"
+
+  if [[ -d ${__copyFileIfNotExists_DST} ]]; then
+    rm -rf ${__copyFileIfNotExists_DST}
+    logInfo ${idt} "remove" ${__copyFileIfNotExists_DST}
+  fi
+  cp -rf ${__copyFileIfNotExists_SRC} ${__copyFileIfNotExists_DST}
+  if [[ -d ${__copyFileIfNotExists_DST} ]]; then
+    return 1
+  fi
+  return 0
 }
 
 function utilInitialize()
 {
-  export PUBLIC_LOG_LEVEL=false
   export STACK_LOG=0            
   export STACK_LOG_VERBOSE=0            
   export STACK_LOG_VERBOSE_SUPER=0
+
+  export PUBLIC_LOG_LEVEL=false
   export PUBLIC_RUNNER_MODE=runner
   export PUBLIC_RUNNER_TEST=false
+
+  if [[ -f ./gitGo ]];then
+    __utilInitialize_check=$(which u-env)
+    if [[ ${__utilInitialize_check} != "" ]]; then
+      source ./gitGo
+    fi
+  fi
 
   for PARAM in "$@"
   do
@@ -375,6 +355,75 @@ function envsOS()
   return 1
 }
 
+function envsSetIfIsEmpty()
+{
+  __envsSetIfIsEmpty_name=${1}
+  __envsSetIfIsEmpty_default_value=${2}
+  __envsSetIfIsEmpty_check=${!__envsSetIfIsEmpty_name}
+  if [[ ${__envsSetIfIsEmpty_check} == "" ]]; then
+    __envsSetIfIsEmpty_check=$(echo ${__envsSetIfIsEmpty_default_value} | grep ' ')
+    if [[ ${__envsSetIfIsEmpty_check} != "" ]]; then
+      __envsSetIfIsEmpty_default_value=$(echo "${__envsSetIfIsEmpty_default_value}" | sed 's/"//g' )
+      export ${__envsSetIfIsEmpty_name}="\"${__envsSetIfIsEmpty_default_value}\""
+    else
+      export ${__envsSetIfIsEmpty_name}=${__envsSetIfIsEmpty_default_value}
+    fi    
+  fi
+  return 1;  
+}
+
+function envsFileAddIfNotExists()
+{
+  __envsFileAddIfNotExists_file=${1}
+  __envsFileAddIfNotExists_name=${2}
+  __envsFileAddIfNotExists_value=${3}
+
+
+  if [[ ${__envsFileAddIfNotExists_file} == "" || ${__envsFileAddIfNotExists_name} == "" ]]; then
+    return 0
+  fi
+
+  if ! [[ -f ${__envsFileAddIfNotExists_file} ]]; then
+    __envsFileAddIfNotExists_file_dir=$(dirname ${__envsFileAddIfNotExists_file})
+    if ! [[ -d ${__envsFileAddIfNotExists_file_dir} ]];then
+      mkdir -p ${__envsFileAddIfNotExists_file_dir}
+    fi
+    if ! [[ -d ${__envsFileAddIfNotExists_file_dir} ]];then
+      echR "No create env dir: ${__envsFileAddIfNotExists_file_dir}"
+      echR "No create env file: ${__envsFileAddIfNotExists_file}"
+      return 0
+    fi
+    echo "#!/bin/bash">${__envsFileAddIfNotExists_file}
+  fi
+
+  __envsFileAddIfNotExists_check=$(cat ${__envsFileAddIfNotExists_file} | grep ${__envsFileAddIfNotExists_name} )
+  if [[ ${__envsFileAddIfNotExists_check} != "" ]]; then
+    return 1
+  fi
+  #se nao for informado o valor da variavel recuperaremos seu valor pelo nome indicado
+  if [[ ${__envsFileAddIfNotExists_value} == "" ]]; then
+    __envsFileAddIfNotExists_value=${!__envsFileAddIfNotExists_name}
+  fi
+
+  __envsFileAddIfNotExists_file_temp="/tmp/envsFileAddIfNotExists_${RANDOM}.env"
+  cat ${__envsFileAddIfNotExists_file}>${__envsFileAddIfNotExists_file_temp}
+
+  __envsFileAddIfNotExists_check=$(echo ${__envsFileAddIfNotExists_value} | grep ' ')
+  if [[ ${__envsFileAddIfNotExists_check} == "" ]]; then
+    echo "export ${__envsFileAddIfNotExists_name}=${__envsFileAddIfNotExists_value}">>${__envsFileAddIfNotExists_file_temp}
+  else
+    __envsFileAddIfNotExists_value=$(echo "${__envsFileAddIfNotExists_value}" | sed 's/"//g' )
+    echo "export ${__envsFileAddIfNotExists_name}=\"${__envsFileAddIfNotExists_value}\"">>${__envsFileAddIfNotExists_file_temp}
+  fi
+
+  #sort lines
+  sort -u ${__envsFileAddIfNotExists_file_temp} -o ${__envsFileAddIfNotExists_file}
+  rm -rf ${__envsFileAddIfNotExists_file_temp}
+
+  return 1;
+
+}
+
 function envsExtractStatic()
 {
   export __func_return=
@@ -404,29 +453,25 @@ function envsExtractStatic()
 
 function runSource()
 {
-  RUN_FILE="${2}"
-  RUN_PARAMS="${3}"
-  idt="$(toInt ${1})"
-  logStart ${idt} "runSource"
-  logTarget ${idt} "${RUN_FILE}"
-
-  if [[ ${RUN_FILE} == "" ]]; then
-    logError ${idt} "run file is empty"
-  elif ! [[ -f ${RUN_FILE} ]]; then
-    logError ${idt} "run file not found"
-  else
-    echo $(chmod +x ${RUN_FILE})&>/dev/null
-    source ${RUN_FILE} ${RUN_PARAMS}
-    logSuccess ${idt}
-    logFinished ${idt} "runSource"
-    return 1
+  export __func_return=
+  __runSource_RUN_FILE="${1}"
+  __runSource_RUN_PARAMS="${2}"
+  if [[ ${__runSource_RUN_FILE} == "" ]]; then
+    return 0
   fi
-  logFinished ${idt} "runSource" ${RUN_FILE}
+
+  if ! [[ -f ${__runSource_RUN_FILE} ]]; then
+    return 0
+  fi
+
+  echo $(chmod +x ${__runSource_RUN_FILE})&>/dev/null
+  source ${__runSource_RUN_FILE} ${__runSource_RUN_PARAMS}
   return 0
 }
 
 function envsPrepareFile()
 {
+  export __func_return=
   __envsPrepareFile_target=${1}
   __envsPrepareFile_target_output=${2}
   if ! [[ -f ${__envsPrepareFile_target} ]]; then
@@ -576,15 +621,15 @@ function envsParserFile()
 
 function envsParserDir()
 {
-  export DIR="${2}"
-  export EXT="${3}"
+  export __envsParserDir_DIR="${2}"
+  export __envsParserDir_EXT="${3}"
 
-  if [[ ${DIR} == "" || ${EXT} == "" ]]; then
-    if [[ -d ${DIR} ]]; then
-      FILELIST=($(find ${DIR} -name ${EXT}))
-      for FILE in "${FILELIST[@]}"
+  if [[ ${__envsParserDir_DIR} == "" || ${__envsParserDir_EXT} == "" ]]; then
+    if [[ -d ${__envsParserDir_DIR} ]]; then
+      __envsParserDir_TARGETS=($(find ${__envsParserDir_DIR} -name ${__envsParserDir_EXT}))
+      for __envsParserDir_TARGET in "${__envsParserDir_TARGETS[@]}"
       do
-        envsParserFile "$(incInt ${1})" ${FILE}
+        envsParserFile ${__envsParserDir_TARGET}
       done
     fi
   fi
@@ -601,12 +646,12 @@ function clearTerm()
 
 function strExtractFilePath()
 {
+  export __func_return=
   __str_file="${1}"
-  __func_return=
   if [[ ${__str_file} == "" ]]; then
     return 0
   fi
-  __func_return=$(dirname ${__str_file})
+  export __func_return=$(dirname ${__str_file})
   echo ${__func_return}
   return 1;  
 }
@@ -766,36 +811,36 @@ function strCenterJustified()
 
 function replaceString()
 {
-  SOURCE="${1}"
-  TARGET="${2}"
-  REPLAC="${3}"
+  __replaceString_SOURCE="${1}"
+  __replaceString_TARGET="${2}"
+  __replaceString_REPLAC="${3}"
 
-  if [[ "${SOURCE}" == "" ]]; then
+  if [[ "${__replaceString_SOURCE}" == "" ]]; then
     return 0;
   fi
 
-  if [[ "${TARGET}" == "${REPLAC}" ]]; then
-    echo ${SOURCE} 
+  if [[ "${__replaceString_TARGET}" == "${__replaceString_REPLAC}" ]]; then
+    echo ${__replaceString_SOURCE} 
     return 0;
   fi
 
-  OUTPUT=${SOURCE}
+  OUTPUT=${__replaceString_SOURCE}
   while :
   do
-    LAST_OUTPUT=${OUTPUT}
-    OUTPUT=$(echo ${LAST_OUTPUT} | sed "s/${TARGET}/${REPLAC}/g")
-    if [[ "${OUTPUT}" == "${LAST_OUTPUT}" ]]; then
+    __replaceString_LAST_OUTPUT=${__replaceString_OUTPUT}
+    __replaceString_OUTPUT=$(echo ${LAST_OUTPUT} | sed "s/${__replaceString_TARGET}/${__replaceString_REPLAC}/g")
+    if [[ "${__replaceString_OUTPUT}" == "${__replaceString_LAST_OUTPUT}" ]]; then
       break
     fi
     break;
   done
-  echo ${OUTPUT}
+  echo ${__replaceString_OUTPUT}
   return 1
 }
 
 function echoColor()
 {
-  echo -e "${1}${2}\e[0m"
+  echo -e "${1}${2}${COLOR_OFF}"
 }
 
 function echR()
