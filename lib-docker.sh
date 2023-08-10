@@ -239,32 +239,28 @@ function dockerConfigure()
 
 function dockerNetworkCreate()
 {
-  __docker_network_name=${1}
-  if [[ ${__docker_network_name} == "" ]]; then
-    echo "Invalid \${__docker_network_name}"
+  __docker_network_names=${1}
+  if [[ ${__docker_network_names} == "" ]]; then
+    echo "Invalid \${__docker_network_names}"
     return 0
   fi
-  __docker_network_check=$(docker network ls | grep ${__docker_network_name})
-  if [[ ${__docker_network_check} != "" ]]; then
-    return 1
-  fi
-  __docker_network_cmd="docker --log-level ERROR network create --driver=overlay ${__docker_network_name}"
-  echM "    Docker network configuration"
-  echC "      - Network: ${__docker_network_name}"
-  echY "      - ${__docker_network_cmd}"
-  echo $(${__docker_network_cmd})&>/dev/null
+  __docker_network_names=(${__docker_network_names})
+  
+  for __docker_network_name in "${__docker_network_names[@]}"
+  do
+    __docker_network_check=$(docker network ls | grep ${__docker_network_name})
+    if [[ ${__docker_network_check} != "" ]]; then
+      continue
+    fi
+    __docker_network_cmd="docker --log-level ERROR network create --driver=overlay ${__docker_network_name}"
+    echo $(${__docker_network_cmd})&>/dev/null
 
-  __docker_network_check=$(docker network ls | grep ${__docker_network_name})
-  if [[ ${__docker_network_check} == "" ]]; then
-    echY "      target: [${__docker_network_name}]"
-    echR "      ===============================  "
-    echR "              ***************          "
-    echR "      ********Invalid network********  "
-    echR "              ***************          "
-    echR "      ===============================  "
-    return 0
-  fi
-  echG "    Finished"
+    __docker_network_check=$(docker network ls | grep ${__docker_network_name})
+    if [[ ${__docker_network_check} == "" ]]; then
+      export __func_return="fail on create netweork \${__docker_network_name}: ${__docker_network_name}"
+      return 0
+    fi
+  done
   return 1
 }
 
