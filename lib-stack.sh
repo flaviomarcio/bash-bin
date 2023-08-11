@@ -1,58 +1,44 @@
 #!/bin/bash
 
 if [[ ${BASH_BIN} == "" ]]; then
-  export BASH_BIN=${PWD}
+  BASH_BIN=${PWD}
 fi
 
 . ${BASH_BIN}/lib-strings.sh
 . ${BASH_BIN}/lib-docker.sh
 
-function __private_stack_mk_dir()
+function stackMkDir()
 {
-  __private_stack_mk_dir_permission=${1}
-  __private_stack_mk_dir_dir=${2}
+  stackMkDir_permission=${1}
+  stackMkDir_dirs=${2}
   
-  if [[ ${__private_stack_mk_dir_dir} == "" ]]; then
+  if [[ ${stackMkDir_dirs} == "" ]]; then
+    export __func_return="No valid dir: env \${stackMkDir_dirs}: ${stackMkDir_dirs}"
     return 0
   fi
 
-  if [[ -d ${__private_stack_mk_dir_dir} ]]; then
-    return 1
-  fi
+  stackMkDir_dirs=(${stackMkDir_dirs})
 
-  mkdir -p ${__private_stack_mk_dir_dir}
-  chmod ${__private_stack_mk_dir_permission} ${__private_stack_mk_dir_dir}
-  if ! [[ -d ${__private_stack_mk_dir_dir} ]]; then
-    export __func_return="No create dir: env \${__private_stack_mk_dir_dir}:${__private_stack_mk_dir_dir}"
-    return 0
-  fi
-  return 1
-}
-
-function __private_dns_configure_host_name()
-{
-  export __func_return=
-  __private_dns_configure_service_domain=${1}
-  __private_dns_configure_service_name=${2}
-
-  if [[ ${__private_dns_configure_service_domain} == "" ]]; then
-    export __func_return="Invalid target name: env: \${__private_dns_configure_service_domain}"
-    return 0;
-  fi
-
-  if [[ ${__private_dns_configure_service_name} == "" ]]; then
-    export __func_return="Invalid target name: env: \${__private_dns_configure_service_name}"
-    return 0;
-  fi
-
-
+  for stackMkDir_dir in ${stackMkDir_dirs[*]}; 
+  do
+    if [[ -d ${stackMkDir_dir} ]]; then
+      continue
+    fi
+    mkdir -p ${stackMkDir_dir}
+    chmod ${stackMkDir_permission} ${stackMkDir_dir}
+    if ! [[ -d ${stackMkDir_dir} ]]; then
+      export __func_return="No create dir: env \${stackMkDir_dir}:${stackMkDir_dir}"
+      return 0
+    fi    
+  done 
 
   return 1
 }
 
-function __private_stack_mk_dir_lib_configure()
+
+function stackMkDir_lib_configure()
 {
-  envsSetIfIsEmpty STACK_LIB_DIR "${STACK_APPLICATIONS_DIR}/lib"
+  envsSetIfIsEmpty STACK_LIB_DIR "${ROOT_APPLICATIONS_DIR}/lib"
   if [[ ${STACK_LIB_DIR} == "" ]]; then
     export __func_return="invalid env \${STACK_LIB_DIR}"
     return 1;
@@ -62,13 +48,13 @@ function __private_stack_mk_dir_lib_configure()
     return 1;
   fi
 
-  __private_stack_mk_dir_lib_configure_dirs=("/data/lib" "/data/lib.dir" "/mnt/storage/lib.dir")
-  for __private_stack_mk_dir_lib_configure_dir in "${__private_stack_mk_dir_lib_configure_dirs[@]}"
+  stackMkDir_lib_configure_dirs=("/data/lib" "/data/lib.dir" "/mnt/storage/lib.dir")
+  for stackMkDir_lib_configure_dir in "${stackMkDir_lib_configure_dirs[@]}"
   do
-    if ! [[ -d ${__private_stack_mk_dir_lib_configure_dir} ]]; then
+    if ! [[ -d ${stackMkDir_lib_configure_dir} ]]; then
       continue;
     fi
-    echo $(ln -s ${__private_stack_mk_dir_lib_configure_dir} ${STACK_LIB_DIR})&>/dev/null
+    echo $(ln -s ${stackMkDir_lib_configure_dir} ${STACK_LIB_DIR})&>/dev/null
     break;
   done
   if ! [[ -d ${STACK_LIB_DIR} ]]; then
@@ -108,36 +94,19 @@ function stackStorageMake()
 {
   export __func_return=
   #stack dirs
-  __private_stack_mk_dir 755 "${STACK_ROOT_DIR}"
+  stackMkDir 755 "${STACK_ROOT_DIR}"
   if ! [ "$?" -eq 1 ]; then
     export __func_return="No create \${STACK_ROOT_DIR}: ${STACK_ROOT_DIR}"
     return 0;
   fi
 
-  __private_stack_mk_dir 755 "${STACK_INFRA_DIR}"
-  __private_stack_mk_dir 777 "${STORAGE_SERVICE_DIR}"
-  __private_stack_mk_dir 755 "${STACK_APPLICATIONS_DIR}"
-  __private_stack_mk_dir 755 "${STACK_TARGET_DIR}"
+  stackMkDir 755 "${STACK_INFRA_DIR} ${ROOT_APPLICATIONS_DIR} ${ROOT_TARGET_DIR} ${STACK_CERT_DEFAULT_DIR} ${ROOT_ENVIRONMENT_DIR} ${STACK_INFRA_DIR}"
+  stackMkDir 777 "${STORAGE_SERVICE_DIR}"
 
 
-  if [[ ${STACK_SERVICE_STORAGE_DIR} != "" ]]; then
-    #stack target dirs
-    __private_stack_mk_dir 755 "${STACK_SERVICE_STORAGE_DIR}"
-    if ! [ "$?" -eq 1 ]; then
-      export __func_return="No create \${STACK_SERVICE_STORAGE_DIR}: ${STACK_SERVICE_STORAGE_DIR}"
-      return 0;
-    fi
-    __private_stack_mk_dir 755 "${STACK_SERVICE_STORAGE_DIR}"
-  fi
-  __private_stack_mk_dir 755 "${STACK_CERT_DEFAULT_DIR}"
-  __private_stack_mk_dir 755 "${STACK_ENVIRONMENT_DIR}"
-  __private_stack_mk_dir 755 "${STACK_INFRA_DIR}"
-  
-  #__private_stack_mk_dir 755 ${STACK_INFRA_CONF_DIR}
-
-  __private_stack_mk_dir_lib_configure
+  stackMkDir_lib_configure
   if ! [ "$?" -eq 1 ]; then
-    export __func_return="fail on calling __private_stack_mk_dir_lib_configure: ${__func_return}"
+    export __func_return="fail on calling stackMkDir_lib_configure: ${__func_return}"
     return 0;
   fi
   return 1
@@ -162,12 +131,14 @@ function stackInitTargetEnvFile()
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_NODE_GLOBAL
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_NODE_DB
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_NODE_SERVICES
-
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} POSTGRES_HOST
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} POSTGRES_USER
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} POSTGRES_PASSWORD
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} POSTGRES_DB
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} POSTGRES_PORT
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_CPU_DEFAULT
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_MEMORY_DEFAULT
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DEPLOY_REPLICAS
 
 
   echo $(chmod +x ${PUBLIC_STACK_TARGET_ENVS_FILE})&>/dev/null
@@ -180,9 +151,9 @@ function __private_stackEnvsLoadByStack()
   export STACK_IMAGE_NAME=
   export STACK_SERVICE_NAME=
   export STACK_SERVICE_HOSTNAME=
-  export STACK_SERVICE_HOSTNAME=
   export STACK_SERVICE_HOSTNAME_PUBLIC=
-  export STACK_SERVICE_STORAGE_DIR=
+  export STACK_SERVICE_STORAGE_DATA_DIR=
+  export STACK_SERVICE_STORAGE_BACKUP_DIR=
 
   if [[ ${STACK_NAME} == "" ]]; then
     export __func_return="failt on calling __private_stackEnvsLoadByStack, invalid env \${STACK_NAME}"
@@ -194,14 +165,19 @@ function __private_stackEnvsLoadByStack()
   fi
   __private_services_names_configure_name=${2}
 
-  export STACK_IMAGE_NAME="${STACK_PREFIX}-${STACK_NAME}"
-  export STACK_IMAGE_NAME_URL="${STACK_REGISTRY_DNS_PUBLIC}/${STACK_IMAGE_NAME}"
-  export STACK_SERVICE_NAME="${STACK_PREFIX}-${STACK_NAME}"
-  export STACK_SERVICE_STORAGE_DIR=${STACK_TARGET_STORAGE_DIR}/${STACK_SERVICE_NAME}
+  export STACK_SERVICE_NAME=$(echo "${STACK_PREFIX}-${STACK_NAME}" | sed 's/_/-/g')
 
-  export STACK_SERVICE_HOSTNAME=$(echo ${STACK_SERVICE_NAME} | sed 's/_/-/g')
+  export __private_stackEnvsLoadByStack_storage=${STACK_TARGET_STORAGE_DIR}/${STACK_SERVICE_NAME}
+  export STACK_SERVICE_STORAGE_DATA_DIR=${__private_stackEnvsLoadByStack_storage}/data
+  export STACK_SERVICE_STORAGE_BACKUP_DIR=${__private_stackEnvsLoadByStack_storage}/backup
+
+  export STACK_IMAGE_NAME="${STACK_SERVICE_NAME}"
+  export STACK_IMAGE_NAME_URL="${STACK_REGISTRY_DNS_PUBLIC}/${STACK_IMAGE_NAME}"
+
   export STACK_SERVICE_HOSTNAME=${STACK_SERVICE_NAME}
-  export STACK_SERVICE_HOSTNAME_PUBLIC=${STACK_SERVICE_NAME}.${STACK_DOMAIN}
+  export STACK_SERVICE_HOSTNAME_PUBLIC=${STACK_SERVICE_HOSTNAME}.${STACK_DOMAIN}
+
+  stackMkDir 755 "${STACK_SERVICE_STORAGE_DATA_DIR} ${STACK_SERVICE_STORAGE_BACKUP_DIR}"
 
   #load envs DNS
 
@@ -216,7 +192,6 @@ function __private_stackEnvsLoadByStack()
 function __private_stackEnvsLoadByTarget()
 {
   export STACK_TARGET=${1}
-  export STACK_TARGET_DIR=
   export STACK_INFRA_DIR=
   export STACK_INFRA_CONF_DIR=
   export STACK_REGISTRY_DNS_PUBLIC=
@@ -227,23 +202,21 @@ function __private_stackEnvsLoadByTarget()
     return 0
   fi
 
-  envsSetIfIsEmpty STACK_PREFIX "${STACK_ENVIRONMENT}-${STACK_TARGET}"
+  export STACK_PREFIX="${STACK_ENVIRONMENT}-${STACK_TARGET}"
   #dirs
-    envsSetIfIsEmpty STACK_TARGET_DIR "${STACK_ENVIRONMENT_DIR}/${STACK_TARGET}"
-    envsSetIfIsEmpty STACK_INFRA_DIR "${STACK_TARGET_DIR}/infrastructure"
-    envsSetIfIsEmpty STACK_INFRA_CONF_DIR "${STACK_TARGET_DIR}/infrastructure/conf"
+  export ROOT_TARGET_DIR="${ROOT_ENVIRONMENT_DIR}/${STACK_TARGET}"
+  export STACK_INFRA_DIR="${ROOT_TARGET_DIR}/infrastructure"
+  export STACK_INFRA_CONF_DIR="${ROOT_TARGET_DIR}/infrastructure/conf"
+  export STACK_TEMPLATES_DIR="${ROOT_TARGET_DIR}/templates"
+  export STACK_TARGET_STORAGE_DIR=${ROOT_TARGET_DIR}/storage-data
 
-    __private_stack_mk_dir 755 "${STACK_TARGET_DIR}"
-    __private_stack_mk_dir 755 "${STACK_INFRA_DIR}"
-    __private_stack_mk_dir 755 "${STACK_INFRA_CONF_DIR}"
-    __private_stack_mk_dir 755 "${PUBLIC_STACK_TARGET_ENVS_FILE}"
+
+    stackMkDir 755 "${ROOT_TARGET_DIR} ${STACK_INFRA_DIR} ${STACK_INFRA_CONF_DIR} ${STACK_TARGET_STORAGE_DIR}"
 
   envsSetIfIsEmpty STACK_NETWORK_DEFAULT "${STACK_ENVIRONMENT}-${STACK_TARGET}-inbound"
   envsSetIfIsEmpty STACK_REGISTRY_DNS_PUBLIC "${STACK_PREFIX}-registry.${STACK_DOMAIN}:5000"
-  export STACK_TARGET_STORAGE_DIR=${STACK_TARGET_DIR}/storage-data
 
-
-  envsSetIfIsEmpty PUBLIC_STACK_TARGET_ENVS_FILE "${STACK_TARGET_DIR}/stack_envs.env"
+  envsSetIfIsEmpty PUBLIC_STACK_TARGET_ENVS_FILE "${ROOT_TARGET_DIR}/stack_envs.env"
   if [[ -f ${PUBLIC_STACK_TARGET_ENVS_FILE} ]]; then
     source ${PUBLIC_STACK_TARGET_ENVS_FILE}
   fi
@@ -273,12 +246,15 @@ function stackEnvsLoad()
   fi
 
   envsSetIfIsEmpty STACK_ROOT_DIR "${HOME}"
-  envsSetIfIsEmpty STACK_APPLICATIONS_DIR "${STACK_ROOT_DIR}/applications"
-  envsSetIfIsEmpty STACK_CERT_DEFAULT_DIR "${STACK_APPLICATIONS_DIR}/certs"
-  envsSetIfIsEmpty PUBLIC_STACK_TARGETS_FILE "${STACK_APPLICATIONS_DIR}/stack_targets.env"
-  envsSetIfIsEmpty PUBLIC_STACK_ENVIRONMENTS_FILE "${STACK_APPLICATIONS_DIR}/stack_environments.env"
+  #remove barra no final
+  export STACK_ROOT_DIR=$(dirname ${STACK_ROOT_DIR}/teste)
 
-  export STACK_ENVIRONMENT_DIR=${STACK_APPLICATIONS_DIR}/${STACK_ENVIRONMENT}
+  export ROOT_APPLICATIONS_DIR="${STACK_ROOT_DIR}/applications"
+  export ROOT_ENVIRONMENT_DIR=${ROOT_APPLICATIONS_DIR}/${STACK_ENVIRONMENT}
+  export STACK_CERT_DEFAULT_DIR="${ROOT_APPLICATIONS_DIR}/certs"
+  export PUBLIC_STACK_TARGETS_FILE="${ROOT_APPLICATIONS_DIR}/stack_targets.env"
+  export PUBLIC_STACK_ENVIRONMENTS_FILE="${ROOT_APPLICATIONS_DIR}/stack_environments.env"
+
   if ! [[ -f ${PUBLIC_STACK_ENVIRONMENTS_FILE} ]]; then
     envsSetIfIsEmpty STACK_ENVIRONMENTS "testing development stating production"
     echo ${STACK_ENVIRONMENTS}>${PUBLIC_STACK_ENVIRONMENTS_FILE}
@@ -317,6 +293,9 @@ function stackEnvsLoad()
   envsSetIfIsEmpty STACK_PROXY_PORT_HTTP 80
   envsSetIfIsEmpty STACK_PROXY_PORT_HTTPS 443
   envsSetIfIsEmpty STACK_VAULT_TOKEN "00000000-0000-0000-0000-000000000000"
+  envsSetIfIsEmpty STACK_CPU_DEFAULT 1
+  envsSetIfIsEmpty STACK_MEMORY_DEFAULT "1GB"
+  envsSetIfIsEmpty STACK_DEPLOY_REPLICAS 1
 
   #cosntruira diretorios de envs carregadas
   stackStorageMake
@@ -358,6 +337,26 @@ function stackEnvsLoad()
   return 1
 }
 
+function stackEnvsClearByStack()
+{
+  export APPLICATION_STACK=
+  export APPLICATION_NAME=
+  export APPLICATION_GIT=
+  export APPLICATION_GIT_BRANCH=
+  export APPLICATION_DEPLOY_PORT=
+  export APPLICATION_DEPLOY_DNS=
+  export APPLICATION_DEPLOY_DNS_PUBLIC=
+  export APPLICATION_DEPLOY_IMAGE=
+  export APPLICATION_DEPLOY_HOSTNAME=
+  export APPLICATION_DEPLOY_NODE=
+  export APPLICATION_DEPLOY_MODE=
+  export APPLICATION_DEPLOY_REPLICAS=
+  export APPLICATION_DEPLOY_DATA_DIR=
+  export APPLICATION_DEPLOY_BACKUP_DIR=
+  export APPLICATION_DEPLOY_NETWORK_NAME=
+  return 1
+}
+
 function stackEnvsLoadByStack()
 {
   __private_stackEnvsLoadByStack_environment=${1}
@@ -389,7 +388,10 @@ function stackEnvsLoadByStack()
   fi
 
   __private_stackEnvsLoadByStack "${__private_stackEnvsLoadByStack_stack_name}"
-  if [[ ${STACK_TARGET} == "" ]]; then
+  if ! [ "$?" -eq 1 ]; then
+    export __func_return="fail on calling __private_stackEnvsLoadByStack, ${__func_return}"
+    return 0;
+  elif [[ ${STACK_TARGET} == "" ]]; then
     export __func_return="fail on calling __private_stackEnvsLoadByStack: env: \${STACK_TARGET}"
     return 0;
   fi
@@ -415,12 +417,9 @@ function stackEnvsLoadByStack()
   elif [[ ${STACK_IMAGE_NAME} == ""  ]]; then
     echFail "${1}" "fail on calling __private_stackEnvsLoadByStack, invalid env \${STACK_IMAGE_NAME}"
     return 0;
-  elif [[  ${STACK_IMAGES_DIR} == "" ]]; then
-    echFail "${1}" "fail on calling __private_stackEnvsLoadByStack, invalid env \${STACK_IMAGES_DIR}"
-    return 0;
-  elif ! [[ -d ${STACK_IMAGES_DIR} ]]; then
-    echFail "${1}" "fail on calling __private_stackEnvsLoadByStack, invalid dir \${STACK_IMAGES_DIR}: ${STACK_IMAGES_DIR}"
-    return 0;
+  elif [[ ${STACK_SERVICE_HOSTNAME} == ""  ]]; then
+    echFail "${1}" "fail on calling __private_stackEnvsLoadByStack, invalid env \${STACK_SERVICE_HOSTNAME}"
+    return 0;    
   fi
 
   return 1;
