@@ -996,27 +996,37 @@ function echCommand()
 {
   __e_c_env_i=1
   __e_c_command=
+  __e_c_command_ignore=
   export __echCommand=
   for __e_c_env in "$@"
   do
-    if [[ ${__e_c_env_i} == "" ]]; then
-      __e_c_command="${__e_c_command} ${__e_c_env}"
+    if [[ ${__e_c_env} == "--ignore" ]]; then
+      __e_c_command_ignore=true
+    else
+      if [[ ${__e_c_env_i} == "" ]]; then
+        __e_c_command="${__e_c_command} ${__e_c_env}"
+      fi
+      __e_c_env_i=
     fi
-    __e_c_env_i=
   done
 
   __e_c_out=$(echText 2 "${1}" "-${__e_c_command}")
 
   echY "${__e_c_out}"
-  if [[ ${__e_c_command} != "" ]]; then
-    if [[ -f ${__e_c_command} ]]; then
-      export __echCommand=$(source ${__e_c_command})
-    else
-      export __echCommand=$(exec ${__e_c_command})
-    fi
-    return "$?"
+  if [[ ${__e_c_command_ignore} != "" ]]; then
+    return 1
   fi
-  return 0
+
+  if [[ ${__e_c_command} == "" ]]; then
+    return 0
+  fi
+
+  if [[ -f ${__e_c_command} ]]; then
+    export __echCommand=$(source ${__e_c_command})
+  else
+    export __echCommand=$(exec ${__e_c_command})
+  fi
+  return "$?"
 }
 
 function echStep()
