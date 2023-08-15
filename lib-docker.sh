@@ -123,7 +123,7 @@ function dockerCleanup()
 
   fi
     if [[ ${__docker_cleanup_removed} == false ]]; then
-      echC "      - No services for clear"
+      echC "      - No services to clear"
       echG "    Finished"
       return 1
     fi
