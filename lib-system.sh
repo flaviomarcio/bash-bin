@@ -73,7 +73,7 @@ function systemDNSList()
   do
     __systemDNSList_dns_out="${__systemDNSList_dns_out} ${STACK_PREFIX}-${__systemDNSList_dns}"
     if [[ ${__systemDNSList_inc_pub} == true ]]; then
-      __systemDNSList_dns_out="${__systemDNSList_dns_out} ${STACK_PREFIX}-${__systemDNSList_dns}${STACK_DOMAIN}"
+      __systemDNSList_dns_out="${__systemDNSList_dns_out} ${STACK_PREFIX}-${__systemDNSList_dns}.${STACK_DOMAIN}"
     fi
   done
   echo ${__systemDNSList_dns_out}
@@ -82,8 +82,12 @@ function systemDNSList()
 
 function systemETCHostApply()
 {
+  __systemETCHostApply_tag=${1}
   if [[ ${ROOT_APPLICATIONS_DIR} == "" ]]; then
-    return 1;
+    return 0;
+  fi
+  if [[ ${__systemETCHostApply_tag} == "" ]]; then
+    return 0;
   fi
   __systemETCHostApply_dns_list=( $(systemDNSList true) )
   export __systemETCHostApply_hosts=/etc/hosts
@@ -95,6 +99,7 @@ function systemETCHostApply()
   sed -i '/^\s*$/d' ${__systemETCHostApply_hosts_TMP}
   sed -i '/srv-/d' ${__systemETCHostApply_hosts_TMP}
   sed -i '/mcs-/d' ${__systemETCHostApply_hosts_TMP}
+  sed -i "/${__systemETCHostApply_tag}/d" ${__systemETCHostApply_hosts_TMP}
 
   if ! [[ -f ${__systemETCHostApply_hosts_BKP} ]]; then
     echR "    +===========================+"
@@ -113,6 +118,7 @@ function systemETCHostApply()
   echY "      - cp -rf ${__systemETCHostApply_hosts} ${__systemETCHostApply_hosts_TMP}"
   echY "      - cp -rf ${__systemETCHostApply_hosts} ${__systemETCHostApply_hosts_BKP}"
   echB "    Cleanup"
+  echY "      - sed -i '/^\s*$/d' ${__systemETCHostApply_hosts_TMP}"
   echY "      - sed -i '/^\s*$/d' ${__systemETCHostApply_hosts_TMP}"
   echY "      - sed -i '/srv-/d' ${__systemETCHostApply_hosts_TMP}"
   echY "      - sed -i '/mcs-/d' ${__systemETCHostApply_hosts_TMP}"
