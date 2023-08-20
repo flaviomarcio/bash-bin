@@ -180,7 +180,7 @@ function systemETCHostRemove()
   cp -rf ${__systemETCHostRemove_hosts} ${__systemETCHostRemove_hosts_BKP}
   cp -rf ${__systemETCHostRemove_hosts} ${__systemETCHostRemove_hosts_TMP}
 
-  sed -i '/${__systemETCHostRemove_tag}/d' ${__systemETCHostRemove_hosts_TMP}
+  sed -i "/${__systemETCHostRemove_tag}/d" ${__systemETCHostRemove_hosts_TMP}
 
   if ! [[ -f ${__systemETCHostRemove_hosts_BKP} ]]; then
     echR "    +===========================+"
