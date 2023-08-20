@@ -41,55 +41,23 @@ function __private_script_scan_files()
     return 0;
   fi
 
-  __private_script_scan_files_filters=${__private_script_scan_files_filters} 
 
-  __private_script_scan_files_filters=(${__private_script_scan_files_filters})
   __private_script_scan_files_dirs=($(ls ${__private_script_scan_files_target_dir}))
   for __private_script_scan_files_dir in ${__private_script_scan_files_dirs[*]}; 
   do
     __private_script_scan_files_files=
-    for __private_script_scan_files_filter in ${__private_script_scan_files_filters[*]}; 
-    do
-      if [[ $(echo ${__private_script_scan_files_filter} | grep sl) == "" ]]; then
-        __private_script_scan_files_filter="${__private_script_scan_files_filter}*.sh"
-      fi
-      __private_script_scan_find_files=($(echo $(find ${__private_script_scan_files_target_dir}/${__private_script_scan_files_dir} -iname ${__private_script_scan_files_filter} | sort)))
-      for __private_script_scan_find_file in ${__private_script_scan_find_files[*]};
-      do
-        __private_script_scan_files_files="${__private_script_scan_files_files} ${__private_script_scan_find_file}"
-      done
-    done
-    if [[ ${__private_script_scan_files_files} != "" ]]; then
-      export __func_return="${__func_return} [${__private_script_scan_files_dir}] ${__private_script_scan_files_files}"
+    if [[ $(echo ${__private_script_scan_files_filter} | grep sl) == "" ]]; then
+      __private_script_scan_files_filter="*.sh"
     fi
+    __private_script_scan_find_files=($(echo $(find ${__private_script_scan_files_target_dir}/${__private_script_scan_files_dir} -iname '*.sh' | sort)))
+    for __private_script_scan_find_file in ${__private_script_scan_find_files[*]};
+    do
+      export __func_return="${__func_return} ${__private_script_scan_find_file}"
+    done
   done
 
   echo ${__func_return}
   return 1  
-}
-
-function __private_script_scan_files_for_ddl()
-{
-  __private_script_envs_check
-  if ! [ "$?" -eq 1 ]; then
-    return 0;       
-  fi
-  if [[ ${SCRIPT_ENVIRONMENT} == "production" ]]; then
-    __private_script_scan_files_for_ddl_filter="tables constraints.sql constraints-pk constraints-fk constraints-check indexes initdata view"
-  elif [[ ${SCRIPT_ENVIRONMENT} == "testing" || ${SCRIPT_ENVIRONMENT} == "development"  || ${SCRIPT_ENVIRONMENT} == "stating" ]]; then
-    __private_script_scan_files_for_ddl_filter="tables constraints.sql constraints-pk constraints-fk constraints-check indexes initdata view fakedata"
-  else
-    __private_script_scan_files_for_ddl_filter=
-  fi  
-  if [[ ${__private_script_scan_files_for_ddl_filter} == "" ]]; then
-    return 0;
-  fi
-
-  __private_script_scan_files "${1}" "${__private_script_scan_files_for_ddl_filter}"
-  if ! [ "$?" -eq 1 ]; then
-    return 0;       
-  fi
-  return 1
 }
 
 function scriptsExecute()
@@ -102,7 +70,9 @@ function scriptsExecute()
   echM "    Executing"
   echB "      -Target dir: ${SCRIPT_DIR}"
   echB "      -Executing"
+
   __scriptsExecute_files=($(__private_script_scan_files "${SCRIPT_DIR}"))
+
   if [[ ${__scriptsExecute_files} == "" ]]; then
     echR "        - No files found"
   else
@@ -110,7 +80,7 @@ function scriptsExecute()
     for __scriptsExecute_file in ${__scriptsExecute_files[*]};
     do
       echY "          source ${__scriptsExecute_file}"
-       source ${__scriptsExecute_file}
+      source ${__scriptsExecute_file}
     done
   fi
   echB "      Finished"
