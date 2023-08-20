@@ -198,8 +198,6 @@ function systemETCHostRemove()
   echB "    Prepare"
   echY "      - cp -rf ${__systemETCHostRemove_hosts} ${__systemETCHostRemove_hosts_TMP}"
   echY "      - cp -rf ${__systemETCHostRemove_hosts} ${__systemETCHostRemove_hosts_BKP}"
-  echB "    Cleanup"
-  echY "      - sed -i '/${__systemETCHostRemove_tag}/d' ${__systemETCHostRemove_hosts_TMP}"
   echG "    Finished"
   echo ""
   echB "    SUDO request"
@@ -225,16 +223,8 @@ function systemETCHostRemove()
 
   echB "    DNS Change"
   echC "      - Target: ${__systemETCHostRemove_hosts_TMP}"
-  echB "      Actions"
-
-  echo "">>${__systemETCHostRemove_hosts_TMP}
-  for systemETCHostRemove_dns in "${__systemETCHostRemove_dns_list[@]}"
-  do
-    CMD="echo \"127.0.0.1 ${systemETCHostRemove_dns}\">>${__systemETCHostRemove_hosts_TMP}"
-    echY "          - ${CMD}"
-    echo "127.0.0.1 ${systemETCHostRemove_dns}">>${__systemETCHostRemove_hosts_TMP}
-  done
-
+  echB "      Cleanup"
+  echY "        - sed -i '/${__systemETCHostRemove_tag}/d' ${__systemETCHostRemove_hosts_TMP}"
   echB "    DNS Apply"
   echC "      - Target: ${__systemETCHostRemove_hosts}"
   echC "      - Source: ${__systemETCHostRemove_hosts_TMP}"
