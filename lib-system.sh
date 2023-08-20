@@ -61,6 +61,7 @@ function systemDNSEssentialList()
 
 function systemDNSList()
 {
+  __systemDNSList_inc_pub=${1}
   if [[ ${STACK_PREFIX} == "" ]]; then
     return 0
   fi
@@ -71,6 +72,9 @@ function systemDNSList()
   for __systemDNSList_dns in "${__systemDNSList_dns_list[@]}"
   do
     __systemDNSList_dns_out="${__systemDNSList_dns_out} ${STACK_PREFIX}-${__systemDNSList_dns}"
+    if [[ ${__systemDNSList_inc_pub} == true ]]; then
+      __systemDNSList_dns_out="${__systemDNSList_dns_out} ${STACK_PREFIX}-${__systemDNSList_dns}${STACK_DOMAIN}"
+    fi
   done
   echo ${__systemDNSList_dns_out}
   return 1
@@ -81,7 +85,7 @@ function systemETCHostApply()
   if [[ ${ROOT_APPLICATIONS_DIR} == "" ]]; then
     return 1;
   fi
-  __systemETCHostApply_dns_list=( $(systemDNSList) )
+  __systemETCHostApply_dns_list=( $(systemDNSList true) )
   export __systemETCHostApply_hosts=/etc/hosts
   export __systemETCHostApply_hosts_BKP=${ROOT_APPLICATIONS_DIR}/hosts.backup
   export __systemETCHostApply_hosts_TMP=${ROOT_APPLICATIONS_DIR}/hosts.temp
@@ -143,8 +147,8 @@ function systemETCHostApply()
   echo "">>${__systemETCHostApply_hosts_TMP}
   for systemETCHostApply_dns in "${__systemETCHostApply_dns_list[@]}"
   do
-    CMD="echo \"127.0.0.1 ${systemETCHostApply_dns}\">>${__systemETCHostApply_hosts_TMP}"
-    echY "          - ${CMD}"
+    systemETCHostApply_cmd="echo \"127.0.0.1 ${systemETCHostApply_dns}\">>${__systemETCHostApply_hosts_TMP}"
+    echY "          ${systemETCHostApply_cmd}"
     echo "127.0.0.1 ${systemETCHostApply_dns}">>${__systemETCHostApply_hosts_TMP}
   done
 
