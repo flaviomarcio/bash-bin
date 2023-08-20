@@ -64,7 +64,6 @@ function systemDNSList()
   if [[ ${STACK_PREFIX} == "" ]]; then
     return 0
   fi
-
   __systemDNSList_dns_list=" $(systemDNSEssentialList) ${STACK_DNS_LIST} "
   __systemDNSList_dns_list=$(echo ${__systemDNSList_dns_list} | sort)
   __systemDNSList_dns_list=(${__systemDNSList_dns_list})
@@ -156,6 +155,93 @@ function systemETCHostApply()
   echC "      Action"
   echY "        - sudo cp -rf ${__systemETCHostApply_hosts_TMP} ${__systemETCHostApply_hosts}"
   sudo cp -rf ${__systemETCHostApply_hosts_TMP} ${__systemETCHostApply_hosts}
+  echG "    Finished"
+
+  echo ""
+  echG "  Finished"
+  echo ""
+  return 1
+}
+
+function systemETCHostRemove()
+{
+  __systemETCHostRemove_tag=${1}
+  if [[ ${ROOT_APPLICATIONS_DIR} == "" ]]; then
+    return 0;
+  fi
+  if [[ ${__systemETCHostRemove_tag} == "" ]]; then
+    return 0;
+  fi
+  __systemETCHostRemove_dns_list=( $(systemDNSList) )
+  export __systemETCHostRemove_hosts=/etc/hosts
+  export __systemETCHostRemove_hosts_BKP=${ROOT_APPLICATIONS_DIR}/hosts.backup
+  export __systemETCHostRemove_hosts_TMP=${ROOT_APPLICATIONS_DIR}/hosts.temp
+
+  cp -rf ${__systemETCHostRemove_hosts} ${__systemETCHostRemove_hosts_BKP}
+  cp -rf ${__systemETCHostRemove_hosts} ${__systemETCHostRemove_hosts_TMP}
+
+  sed -i '/${__systemETCHostRemove_tag}/d' ${__systemETCHostRemove_hosts_TMP}
+
+  if ! [[ -f ${__systemETCHostRemove_hosts_BKP} ]]; then
+    echR "    +===========================+"
+    echR "    +        ***********        +"
+    echR "    +********Backup Fail********+"
+    echR "    +        ***********        +"
+    echR "    +===========================+"
+    echo ""
+    return 0
+  fi
+
+  echM "  DNS inserting"
+  echC "    - Target: ${__systemETCHostRemove_hosts_TMP}"
+  echC "    - Backup: ${__systemETCHostRemove_hosts_BKP}"
+  echB "    Prepare"
+  echY "      - cp -rf ${__systemETCHostRemove_hosts} ${__systemETCHostRemove_hosts_TMP}"
+  echY "      - cp -rf ${__systemETCHostRemove_hosts} ${__systemETCHostRemove_hosts_BKP}"
+  echB "    Cleanup"
+  echY "      - sed -i '/${__systemETCHostRemove_tag}/d' ${__systemETCHostRemove_hosts_TMP}"
+  echG "    Finished"
+  echo ""
+  echB "    SUDO request"
+  echY "    +===========================+"
+  echY "    +          *******          +"
+  echY "    +***********Alert***********+"
+  echY "    +          *******          +"
+  echY "    +===========================+"
+  echo ""
+  echG "       [ENTER] para continuar"
+  echo ""
+  read
+  sudoSet
+  if ! [ "$?" -eq 1 ]; then
+    echR "    +===========================+"
+    echR "    +         *********         +"
+    echR "    +*********SUDO Fail*********+"
+    echR "    +         *********         +"
+    echR "    +===========================+"
+    echo ""
+    return 0
+  fi
+
+  echB "    DNS Change"
+  echC "      - Target: ${__systemETCHostRemove_hosts_TMP}"
+  echB "      Actions"
+
+  echo "">>${__systemETCHostRemove_hosts_TMP}
+  for systemETCHostRemove_dns in "${__systemETCHostRemove_dns_list[@]}"
+  do
+    CMD="echo \"127.0.0.1 ${systemETCHostRemove_dns}\">>${__systemETCHostRemove_hosts_TMP}"
+    echY "          - ${CMD}"
+    echo "127.0.0.1 ${systemETCHostRemove_dns}">>${__systemETCHostRemove_hosts_TMP}
+  done
+
+  echB "    DNS Apply"
+  echC "      - Target: ${__systemETCHostRemove_hosts}"
+  echC "      - Source: ${__systemETCHostRemove_hosts_TMP}"
+  echC "      - Backup: ${__systemETCHostRemove_hosts_BKP}"
+  echC "      Action"
+  echY "        - sudo cp -rf ${__systemETCHostRemove_hosts_TMP} ${__systemETCHostRemove_hosts}"
+  sudo cp -rf ${__systemETCHostRemove_hosts_TMP} ${__systemETCHostRemove_hosts}
   echG "    Finished"
 
   echo ""
