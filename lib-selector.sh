@@ -274,28 +274,6 @@ function selectorBuildOption()
   return 0;
 }
 
-function selectorDNSOption()
-{
-  export __selector=
-  clearTerm
-  options=(Back etc-hosts print)
-  echG $'\n'"DNS options"$'\n'
-  PS3=$'\n'"Choose option: "
-  select opt in "${options[@]}"
-  do
-    export __selector=${opt}
-    if [[ ${opt} == "Back" ]]; then
-      return 0;
-    elif [[ ${opt} != "" ]]; then
-      echo ${opt}
-      return 1
-    else
-      break
-    fi
-  done
-  return 0
-}
-
 function __private_selectorInitTargets()
 {
   export __func_return=
@@ -431,22 +409,30 @@ function selector()
   if [[ ${__selector_args} == "" ]]; then
     return 0
   fi
-  clearTerm
-  __private_print_os_information
-  echM $'\n'"${__selector_title}"$'\n'
-  PS3=$'\n'"Choose a option: "
-  options=(${__selector_args})
-  select opt in "${options[@]}"
+  while :
   do
-    export __selector=${opt}
-    if [[ ${opt} == "back" ]]; then
-      return 0;
-    elif [[ ${opt} == "quit" ]]; then
-      return 2;
-    elif [[ ${opt} == "all" ]]; then
-      export __selector=${__selector_args}
-    fi
-    return 1;
+    clearTerm
+    __private_print_os_information
+    echM $'\n'"${__selector_title}"$'\n'
+    PS3=$'\n'"Choose a option: "
+    options=(${__selector_args})
+    select opt in "${options[@]}"
+    do
+      arrayContains "${__selector_args}" "${opt}"
+      if ! [ "$?" -eq 1 ]; then
+        break;
+      fi
+
+      export __selector=${opt}
+      if [[ ${opt} == "back" ]]; then
+        return 0;
+      elif [[ ${opt} == "quit" ]]; then
+        return 2;
+      elif [[ ${opt} == "all" ]]; then
+        export __selector=${__selector_args}
+      fi
+      return 1;
+    done
   done
   return 0;
 }

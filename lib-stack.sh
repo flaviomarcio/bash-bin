@@ -309,6 +309,7 @@ function stackEnvsLoad()
   envsSetIfIsEmpty STACK_SERVICE_DEFAULT_USER services
   envsSetIfIsEmpty STACK_SERVICE_DEFAULT_PASS services
   envsSetIfIsEmpty STACK_SERVICE_DEFAULT_DATABASE services
+  envsSetIfIsEmpty STACK_SERVICE_DEFAULT_CONTEXT_PATH "/"
 
   #nodes
   envsSetIfIsEmpty STACK_SERVICE_NODE_GLOBAL "node.role == manager"
