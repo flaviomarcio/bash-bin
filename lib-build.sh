@@ -46,7 +46,7 @@ function qtBuild()
   __qtBuild_qt_version=${QT_VERSION}
 
   if [[ ${__qtBuild_qt_version} == "" ]]; then
-    __qtBuild_qt_version="6.5.1"
+    __qtBuild_qt_version="6.5.2"
   fi
 
   if [[ ${__qtBuild_qt_root_dir} == "" ]]; then
