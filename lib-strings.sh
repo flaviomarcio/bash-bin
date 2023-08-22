@@ -231,7 +231,6 @@ function fileDedupliceLines()
   return 1;
 }
 
-
 function copyFileIfNotExists()
 {
   __copyFileIfNotExists_SRC=${1}
@@ -1141,3 +1140,16 @@ function jsonGet()
   return 1
 }
 
+function arrayContains()
+{
+  __inArray_array=(${1})
+  __inArray_arg=${2}
+
+  for __inArray_item in "${__inArray_array[@]}"
+  do
+    if [[ ${__inArray_arg} == ${__inArray_item} ]]; then
+      return 1
+    fi
+  done
+  return 0
+}

@@ -441,20 +441,30 @@ function selector()
     __private_print_os_information
   fi
 
-  echM $'\n'"${__selector_title}"$'\n'
-  PS3=$'\n'"Choose a option: "
-  options=(${__selector_args})
-  select opt in "${options[@]}"
+  while :
   do
-    export __selector=${opt}
-    if [[ ${opt} == "back" ]]; then
-      return 0;
-    elif [[ ${opt} == "quit" ]]; then
-      return 2;
-    elif [[ ${opt} == "all" ]]; then
-      export __selector=${__selector_args}
-    fi
-    return 1;
+    clearTerm
+    __private_print_os_information
+    echM $'\n'"${__selector_title}"$'\n'
+    PS3=$'\n'"Choose a option: "
+    options=(${__selector_args})
+    select opt in "${options[@]}"
+    do
+      arrayContains "${__selector_args}" "${opt}"
+      if ! [ "$?" -eq 1 ]; then
+        break;
+      fi
+
+      export __selector=${opt}
+      if [[ ${opt} == "back" ]]; then
+        return 0;
+      elif [[ ${opt} == "quit" ]]; then
+        return 2;
+      elif [[ ${opt} == "all" ]]; then
+        export __selector=${__selector_args}
+      fi
+      return 1;
+    done
   done
   return 0;
 }

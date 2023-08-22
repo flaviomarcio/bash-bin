@@ -309,6 +309,7 @@ function stackEnvsLoad()
   envsSetIfIsEmpty STACK_SERVICE_DEFAULT_USER services
   envsSetIfIsEmpty STACK_SERVICE_DEFAULT_PASS services
   envsSetIfIsEmpty STACK_SERVICE_DEFAULT_DATABASE services
+  envsSetIfIsEmpty STACK_SERVICE_DEFAULT_CONTEXT_PATH "/"
 
   #nodes
   envsSetIfIsEmpty STACK_SERVICE_NODE_GLOBAL "node.role == manager"
@@ -465,7 +466,7 @@ function stackPublicEnvs()
     do
       echY "  - ${__stackPublicEnvs_env}: ${!__stackPublicEnvs_env}"
     done
-    selector "Select env to edit" "${__stackPublicEnvs_envs}" false
+    selector "Select env to edit" "Back ${__stackPublicEnvs_envs}" false
     if [[ ${__selector} == "Back" ]]; then
       return 1;
     else
