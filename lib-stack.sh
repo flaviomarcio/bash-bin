@@ -445,6 +445,57 @@ function stackMakeStructure()
   return 1
 }
 
+function stackPublicEnvs()
+{
+  clearTerm
+
+  __stackPublicEnvs_bashrc="${HOME}/.bashrc"
+  __stackPublicEnvs_envFile="public_stack_envs.sh"
+  __stackPublicEnvs_envs="STACK_TARGET STACK_ENVIRONMENT STACK_ROOT_DIR QT_VERSION"
+
+  while :
+  do
+    if [[ -f ${__stackPublicEnvs_envFilePath} ]]; then
+      source ${__stackPublicEnvs_envFilePath}
+    fi
+    clearTerm
+    __private_print_os_information
+    echM "Current public envs values"
+    for __stackPublicEnvs_env in ${__stackPublicEnvs_envs[*]}; 
+    do
+      echY "  - ${__stackPublicEnvs_env}: ${!__stackPublicEnvs_env}"
+    done
+    selector "Select env to edit" "${__stackPublicEnvs_envs}" false
+    if [[ ${__selector} == "Back" ]]; then
+      return 1;
+    else
+      printf "set ${__selector}: "
+      read __stackPublicEnvs_env_value
+      export ${__selector}=${__stackPublicEnvs_env_value}
+      __stackPublicEnvs_envs=(${__stackPublicEnvs_envs})
+
+      __stackPublicEnvs_envFilePath=${ROOT_APPLICATIONS_DIR}/${__stackPublicEnvs_envFile}
+      if ! [[ -f ${__stackPublicEnvs_envFilePath} ]]; then
+        echo "#!/bin/bash">${__stackPublicEnvs_envFilePath}
+      fi
+      for __stackPublicEnvs_env in ${__stackPublicEnvs_envs[*]}; 
+      do
+        sed -i "/${__stackPublicEnvs_env}/d" ${__stackPublicEnvs_bashrc}
+        sed -i "/${__stackPublicEnvs_env}/d" ${__stackPublicEnvs_envFilePath}
+        echo "export ${__stackPublicEnvs_env}=${!__stackPublicEnvs_env}">>${__stackPublicEnvs_envFilePath}
+      done
+
+      sed -i "/${__stackPublicEnvs_envFile}/d" ${__stackPublicEnvs_bashrc}
+      chmod +x ${__stackPublicEnvs_envFilePath}
+      echo "source ${__stackPublicEnvs_envFilePath}">>${__stackPublicEnvs_bashrc}
+      utilPrepareInit "${STACK_ENVIRONMENT}" "${STACK_TARGET}"
+    fi
+  done
+
+  return 1
+
+}
+
 function __lib_stack_tests()
 {
   stackEnvsLoad development company

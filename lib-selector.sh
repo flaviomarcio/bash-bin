@@ -428,11 +428,19 @@ function selector()
   export __selector=
   __selector_title=${1}
   __selector_args=${2}
+  __selector_clear=${3}
   if [[ ${__selector_args} == "" ]]; then
     return 0
   fi
-  clearTerm
-  __private_print_os_information
+  if [[ ${__selector_clear} == "" ]]; then
+    __selector_clear=true
+  fi
+
+  if [[ ${__selector_clear} == true ]]; then
+    clearTerm
+    __private_print_os_information
+  fi
+
   echM $'\n'"${__selector_title}"$'\n'
   PS3=$'\n'"Choose a option: "
   options=(${__selector_args})
@@ -454,7 +462,7 @@ function selector()
 function selectorYesNo()
 {
   __selector_title=${1}
-  selector "${__selector_title}" "Yes No}"
+  selector "${__selector_title}" "Yes No"
   if [[ ${__selector} == "Yes" ]]; then
     return 1;
   fi
