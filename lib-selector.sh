@@ -274,6 +274,28 @@ function selectorBuildOption()
   return 0;
 }
 
+function selectorDNSOption()
+{
+  export __selector=
+  clearTerm
+  options=(Back etc-hosts print)
+  echG $'\n'"DNS options"$'\n'
+  PS3=$'\n'"Choose option: "
+  select opt in "${options[@]}"
+  do
+    export __selector=${opt}
+    if [[ ${opt} == "Back" ]]; then
+      return 0;
+    elif [[ ${opt} != "" ]]; then
+      echo ${opt}
+      return 1
+    else
+      break
+    fi
+  done
+  return 0
+}
+
 function __private_selectorInitTargets()
 {
   export __func_return=
@@ -406,9 +428,19 @@ function selector()
   export __selector=
   __selector_title=${1}
   __selector_args=${2}
+  __selector_clear=${3}
   if [[ ${__selector_args} == "" ]]; then
     return 0
   fi
+  if [[ ${__selector_clear} == "" ]]; then
+    __selector_clear=true
+  fi
+
+  if [[ ${__selector_clear} == true ]]; then
+    clearTerm
+    __private_print_os_information
+  fi
+
   while :
   do
     clearTerm
@@ -440,7 +472,7 @@ function selector()
 function selectorYesNo()
 {
   __selector_title=${1}
-  selector "${__selector_title}" "Yes No}"
+  selector "${__selector_title}" "Yes No"
   if [[ ${__selector} == "Yes" ]]; then
     return 1;
   fi

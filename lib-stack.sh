@@ -219,7 +219,7 @@ function __private_stackEnvsLoadByTarget()
 
   envsSetIfIsEmpty STACK_NETWORK_DEFAULT "${STACK_ENVIRONMENT}-${STACK_TARGET}-inbound"
   envsSetIfIsEmpty STACK_REGISTRY_DNS_PUBLIC "${STACK_PREFIX}-registry.${STACK_DOMAIN}:5000"
-
+  envsSetIfIsEmpty PUBLIC_STACK_ENVS_FILE "${STACK_ROOT_DIR}/stack_envs.env"
   envsSetIfIsEmpty PUBLIC_STACK_TARGET_ENVS_FILE "${ROOT_TARGET_DIR}/stack_envs.env"
   if [[ -f ${PUBLIC_STACK_TARGET_ENVS_FILE} ]]; then
     source ${PUBLIC_STACK_TARGET_ENVS_FILE}
@@ -452,6 +452,59 @@ function stackMakeStructure()
     return 0;
   fi
   return 1
+}
+
+function stackPublicEnvsConfigure()
+{
+  __stackPublicEnvs_bashrc="${HOME}/.bashrc"
+  __stackPublicEnvs_envFile=$(basename ${PUBLIC_STACK_ENVS_FILE})
+  __stackPublicEnvs_envs_args="STACK_TARGET STACK_ENVIRONMENT STACK_ROOT_DIR QT_VERSION"
+  __stackPublicEnvs_envs=(${__stackPublicEnvs_envs_args})
+  if ! [[ -f ${PUBLIC_STACK_ENVS_FILE} ]]; then
+    echo "#!/bin/bash">${PUBLIC_STACK_ENVS_FILE}
+  fi
+  for __stackPublicEnvs_env in ${__stackPublicEnvs_envs[*]}; 
+  do
+    sed -i "/${__stackPublicEnvs_env}/d" ${__stackPublicEnvs_bashrc}
+    sed -i "/${__stackPublicEnvs_env}/d" ${PUBLIC_STACK_ENVS_FILE}
+    echo "export ${__stackPublicEnvs_env}=${!__stackPublicEnvs_env}">>${PUBLIC_STACK_ENVS_FILE}
+  done
+
+  sed -i "/${__stackPublicEnvs_envFile}/d" ${__stackPublicEnvs_bashrc}
+  echo "source ${PUBLIC_STACK_ENVS_FILE}">>${__stackPublicEnvs_bashrc}
+  chmod +x ${PUBLIC_STACK_ENVS_FILE}
+  source ${PUBLIC_STACK_ENVS_FILE}
+  utilPrepareInit "${STACK_ENVIRONMENT}" "${STACK_TARGET}"
+}
+
+function stackPublicEnvs()
+{
+  clearTerm
+
+  stackPublicEnvsConfigure
+  while :
+  do
+    clearTerm
+    __private_print_os_information
+    echM "Current public envs values"
+    
+    for __stackPublicEnvs_env in ${__stackPublicEnvs_envs[*]}; 
+    do
+      echY "  - ${__stackPublicEnvs_env}: ${!__stackPublicEnvs_env}"
+    done
+    selector "Select env to edit" "Back ${__stackPublicEnvs_envs_args}" false
+    if [[ ${__selector} == "Back" ]]; then
+      return 1;
+    else
+      printf "set ${__selector}: "
+      read __stackPublicEnvs_env_value
+      export ${__selector}=${__stackPublicEnvs_env_value}
+      stackPublicEnvsConfigure
+    fi
+  done
+
+  return 1
+
 }
 
 function __lib_stack_tests()

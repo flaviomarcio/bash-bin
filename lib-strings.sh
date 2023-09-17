@@ -1153,3 +1153,29 @@ function arrayContains()
   done
   return 0
 }
+
+function toUpper()
+{
+  echo $(echo "$@" | tr '[:lower:]' '[:upper:]')  
+  return 1;  
+}
+
+function toLower()
+{
+  echo $(echo "$@" | tr '[:upper:]' '[:lower:]')  
+  return 1;
+}
+
+function nameFormat()
+{
+  local __nameFormat_args=($@)
+  local __nameFormat_output=
+  for __nameFormat_arg in "${__nameFormat_args[@]}"
+  do
+    local __nameFormat_first=$(toUpper ${__nameFormat_arg:0:1})
+    local __nameFormat_body=$(toLower ${__nameFormat_arg:1})
+    __nameFormat_output="${__nameFormat_output} ${__nameFormat_first}${__nameFormat_body}"
+  done
+  echo ${__nameFormat_output}
+  return 1;
+}
