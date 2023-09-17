@@ -322,7 +322,7 @@ function dockerBuildCompose()
     export APPLICATION_DEPLOY_DNS_PUBLIC_PATH="/"
   fi
   if [[ ${APPLICATION_DEPLOY_SHELF_LIFE} == "" ]]; then
-    export APPLICATION_DEPLOY_SHELF_LIFE=1d
+    export APPLICATION_DEPLOY_SHELF_LIFE=24h
   fi
 
   export COMPOSE_HTTP_TIMEOUT=$(parserTime ${APPLICATION_DEPLOY_SHELF_LIFE})
