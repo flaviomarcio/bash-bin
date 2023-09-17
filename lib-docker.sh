@@ -6,6 +6,7 @@ fi
 
 . ${BASH_BIN}/lib-strings.sh
 . ${BASH_BIN}/lib-system.sh
+. ${BASH_BIN}/lib-util-date.sh
 
 # export DOCKER_OPTION=
 # export DOCKER_SCOPE=
@@ -320,6 +321,11 @@ function dockerBuildCompose()
   if [[ ${APPLICATION_DEPLOY_DNS_PUBLIC_PATH} == "" ]]; then
     export APPLICATION_DEPLOY_DNS_PUBLIC_PATH="/"
   fi
+  if [[ ${APPLICATION_DEPLOY_SHELF_LIFE} == "" ]]; then
+    export APPLICATION_DEPLOY_SHELF_LIFE=1d
+  fi
+
+  export COMPOSE_HTTP_TIMEOUT=$(parserTime ${APPLICATION_DEPLOY_SHELF_LIFE})
 
   # ref https://docs.docker.com/compose/environment-variables/envvars/
 
@@ -360,8 +366,10 @@ function dockerBuildCompose()
   echo "export APPLICATION_ENV_FILE=${APPLICATION_ENV_FILE}"                        >>${__docker_build_env_file_export}
   echo "export APPLICATION_NAME=${APPLICATION_NAME}"                                >>${__docker_build_env_file_export}
   echo "export APPLICATION_SERVICE=${APPLICATION_SERVICE}"                          >>${__docker_build_env_file_export}
+  echo "#convert paths"                                                             >>${__docker_build_env_file_export}
   echo "export COMPOSE_CONVERT_WINDOWS_PATHS=${COMPOSE_CONVERT_WINDOWS_PATHS}"      >>${__docker_build_env_file_export}
-  
+  echo "#container shelf life"                                                      >>${__docker_build_env_file_export}
+  echo "export COMPOSE_HTTP_TIMEOUT=${COMPOSE_HTTP_TIMEOUT}"                        >>${__docker_build_env_file_export}
 
   __docker_build_cmd_1="docker --log-level ERROR build --quiet --file $(basename ${__docker_build_dockerfile}) -t ${__docker_build_service} ."
   __docker_build_cmd_2="docker --log-level ERROR image tag ${__docker_build_service} ${__docker_build_image}"
@@ -443,6 +451,8 @@ function dockerBuildCompose()
   echY "        - ${__docker_build_cmd_5}"
   echo $(${__docker_build_cmd_5})&>/dev/null
   __docker_build_check=$(docker service ls | grep ${__docker_build_service})
+
+  export COMPOSE_HTTP_TIMEOUT=$(parserTime 1y)
   if [[ ${__docker_build_check} == "" ]]; then
   echR "    [FAIL]Service not found:${__docker_build_service}"
     return 0
