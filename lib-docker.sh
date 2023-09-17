@@ -143,6 +143,31 @@ function dockerPrune()
 
 function dockerReset()
 {
+  echo ""
+  echR "  =============================  "
+  echR "  ***********CRITICAL**********  "
+  echR "  =============================  "
+  echo ""
+  echY "  =============================  "
+  echY "  ********DOCKER RESET*********  "
+  echY "  =============================  "
+  echo ""
+  selectorWaitSeconds 3 "" "${COLOR_YELLOW_B}"
+
+  selectorYesNo "Docker reset"
+  if ! [ "$?" -eq 1 ]; then
+    return 1
+  fi
+  echo ""
+  echR "  =============================  "
+  echR "  ***********CRITICAL**********  "
+  echR "  =============================  "
+  echo ""
+  echY "  =============================  "
+  echY "  ********DOCKER RESET*********  "
+  echY "  =============================  "
+  echo ""
+  selectorWaitSeconds 10 "" "${COLOR_YELLOW_B}"
   __docker_reset_tags=${1}
   echG "  Docker reset"
   dockerCleanup
