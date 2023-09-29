@@ -298,7 +298,7 @@ function dockerBuildCompose()
 
   cd ${__docker_build_compose_dir}
 
-  export APPLICATION_ENV_FILE=${__docker_build_env_file_export}
+  export APPLICATION_ENV_FILE=${__docker_build_env_file_docker}
   export APPLICATION_NAME=${__docker_build_service}
   export APPLICATION_SERVICE=$(echo ${__docker_build_service} | sed 's/-/_/g')
   export APPLICATION_DEPLOY_BINARY_DIR=${__docker_build_builder_dir}
@@ -306,23 +306,21 @@ function dockerBuildCompose()
   export APPLICATION_DEPLOY_HOSTNAME=${__docker_build_hostname}
   export APPLICATION_DEPLOY_NETWORK_NAME=${__docker_build_network_name}
 
-  if [[ ${APPLICATION_DEPLOY_DNS} == "" ]];then
-    export APPLICATION_DEPLOY_DNS=${__docker_build_service}
-  fi
-  if [[ ${APPLICATION_DEPLOY_DNS_PATH} == "" ]];then
-    export APPLICATION_DEPLOY_DNS_PATH=/
-  fi
-  if [[ ${APPLICATION_DEPLOY_DNS_PATH_PUBLIC} == "" ]]; then
-    export APPLICATION_DEPLOY_DNS_PATH_PUBLIC="/"
-  fi
-  if [[ ${APPLICATION_DEPLOY_DNS_PUBLIC} == "" ]]; then
-    export APPLICATION_DEPLOY_DNS_PUBLIC=${APPLICATION_DEPLOY_DNS}
-  fi
-  if [[ ${APPLICATION_DEPLOY_DNS_PUBLIC_PATH} == "" ]]; then
-    export APPLICATION_DEPLOY_DNS_PUBLIC_PATH="/"
-  fi
-  if [[ ${APPLICATION_DEPLOY_SHELF_LIFE} == "" ]]; then
-    export APPLICATION_DEPLOY_SHELF_LIFE=24h
+  envsSetIfIsEmpty APPLICATION_DEPLOY_DNS "${__docker_build_service}"
+  envsSetIfIsEmpty APPLICATION_DEPLOY_DNS_PATH "/"
+  envsSetIfIsEmpty APPLICATION_DEPLOY_DNS_PATH_PUBLIC "/"
+  envsSetIfIsEmpty APPLICATION_DEPLOY_DNS_PUBLIC "${APPLICATION_DEPLOY_DNS}"
+  envsSetIfIsEmpty APPLICATION_DEPLOY_DNS_PUBLIC_PATH "/"
+  envsSetIfIsEmpty APPLICATION_DEPLOY_SHELF_LIFE "24h"
+  if [[ ${APPLICATION_DEPLOY_HEALTH_CHECK_URL} == "" ]]; then
+    export APPLICATION_DEPLOY_HEALTH_CHECK_URL="${APPLICATION_DEPLOY_DNS}:${APPLICATION_DEPLOY_PORT}"
+    if [[ ${APPLICATION_CONTEXT_PATH} != "" && ${APPLICATION_CONTEXT_PATH} != "/" ]]; then
+      export APPLICATION_DEPLOY_HEALTH_CHECK_URL="${APPLICATION_DEPLOY_HEALTH_CHECK_URL}/${APPLICATION_CONTEXT_PATH}"
+    fi
+    export APPLICATION_DEPLOY_HEALTH_CHECK_URL=${APPLICATION_DEPLOY_HEALTH_CHECK_URL/\/\//\/}
+    export APPLICATION_DEPLOY_HEALTH_CHECK_URL="http://${APPLICATION_DEPLOY_HEALTH_CHECK_URL}/actuator/health"
+  else
+    export APPLICATION_DEPLOY_HEALTH_CHECK_URL=${APPLICATION_DEPLOY_HEALTH_CHECK_URL/\/\//\/}
   fi
 
   export COMPOSE_HTTP_TIMEOUT=$(parserTime ${APPLICATION_DEPLOY_SHELF_LIFE})
@@ -352,24 +350,9 @@ function dockerBuildCompose()
     envsFileConvertToExport ${__docker_build_env_file_docker} ${__docker_build_env_file_export}
   fi
 
-  if ! [[ -f ${__docker_build_env_file_export} ]]; then
-    echo "#!/bin/bash">${__docker_build_env_file_export}
-  fi
-  echo "export APPLICATION_DEPLOY_BINARY_DIR=${APPLICATION_DEPLOY_BINARY_DIR}"      >>${__docker_build_env_file_export}
-  echo "export APPLICATION_DEPLOY_DNS=${APPLICATION_DEPLOY_DNS}"                    >>${__docker_build_env_file_export}
-  echo "export APPLICATION_DEPLOY_HOSTNAME=${APPLICATION_DEPLOY_HOSTNAME}"          >>${__docker_build_env_file_export}
-  echo "export APPLICATION_DEPLOY_IMAGE=${APPLICATION_DEPLOY_IMAGE}"                >>${__docker_build_env_file_export}
-  echo "export APPLICATION_DEPLOY_NETWORK_NAME=${APPLICATION_DEPLOY_NETWORK_NAME}"  >>${__docker_build_env_file_export}
-  if [[ -f ${__docker_build_binary_file} ]]; then
-  echo "export APPLICATION_DEPLOY_FILE=${__docker_build_binary_file}"               >>${__docker_build_env_file_export}
-  fi
-  echo "export APPLICATION_ENV_FILE=${APPLICATION_ENV_FILE}"                        >>${__docker_build_env_file_export}
-  echo "export APPLICATION_NAME=${APPLICATION_NAME}"                                >>${__docker_build_env_file_export}
-  echo "export APPLICATION_SERVICE=${APPLICATION_SERVICE}"                          >>${__docker_build_env_file_export}
-  echo "#convert paths"                                                             >>${__docker_build_env_file_export}
-  echo "export COMPOSE_CONVERT_WINDOWS_PATHS=${COMPOSE_CONVERT_WINDOWS_PATHS}"      >>${__docker_build_env_file_export}
-  echo "#container shelf life"                                                      >>${__docker_build_env_file_export}
-  echo "export COMPOSE_HTTP_TIMEOUT=${COMPOSE_HTTP_TIMEOUT}"                        >>${__docker_build_env_file_export}
+  stackEnvsByStackExportToFile ${__docker_build_env_file_export}
+  envsFileAddIfNotExists ${__export_file} COMPOSE_CONVERT_WINDOWS_PATHS
+  envsFileAddIfNotExists ${__export_file} COMPOSE_HTTP_TIMEOUT
 
   __docker_build_cmd_1="docker --log-level ERROR build --quiet --file $(basename ${__docker_build_dockerfile}) -t ${__docker_build_service} ."
   __docker_build_cmd_2="docker --log-level ERROR image tag ${__docker_build_service} ${__docker_build_image}"
@@ -391,10 +374,6 @@ function dockerBuildCompose()
   if [[ -f ${__docker_build_binary_file} ]]; then
   echC "        - application file: ${__docker_build_binary_file}"
   fi
-  
-
-
-
 
   echo "#!/bin/bash"                                                                     >${__docker_build_compose_sh_file}
   echo ""                                                                               >>${__docker_build_compose_sh_file}
@@ -405,6 +384,7 @@ function dockerBuildCompose()
   echo "source ./$(basename ${__docker_build_env_file_export})"                         >>${__docker_build_compose_sh_file}
   fi
   echo ""                                                                               >>${__docker_build_compose_sh_file}
+  if [[ ${__docker_build_binary_file} ]]; then
   echo "export APPLICATION_DEPLOY_FILE=$(basename ${__docker_build_binary_file})"       >>${__docker_build_compose_sh_file}
   echo "if [[ \${1} == \"--run\" ]]; then"                                              >>${__docker_build_compose_sh_file}
   echo "    if [[ \$(echo \${APPLICATION_DEPLOY_FILE} | grep '.jar') != \"\" ]]; then"  >>${__docker_build_compose_sh_file}
@@ -414,6 +394,7 @@ function dockerBuildCompose()
   echo "    fi"                                                                         >>${__docker_build_compose_sh_file}
   echo "    exit 0"                                                                     >>${__docker_build_compose_sh_file}
   echo "fi"                                                                             >>${__docker_build_compose_sh_file}
+  fi
   echo ""                                                                               >>${__docker_build_compose_sh_file}
   echo "echo \"${__docker_build_cmd_1}\""                                               >>${__docker_build_compose_sh_file}
   echo ${__docker_build_cmd_1}                                                          >>${__docker_build_compose_sh_file}

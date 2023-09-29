@@ -171,7 +171,7 @@ function __private_pg_envs_check()
   envsSetIfIsEmpty POSTGRES_HOST localhost
   envsSetIfIsEmpty POSTGRES_USER services
   envsSetIfIsEmpty POSTGRES_PASSWORD services
-  envsSetIfIsEmpty POSTGRES_DB services
+  envsSetIfIsEmpty POSTGRES_DATABASE services
   envsSetIfIsEmpty POSTGRES_PORT 5432
 
   return 1
@@ -193,7 +193,7 @@ function __private_pg_script_exec()
   #   return 0;
   # fi 
 
-  echo $(psql -q -h ${POSTGRES_HOST} -U ${POSTGRES_USER} -p ${POSTGRES_PORT} -d ${POSTGRES_DB} -a -f ${__private_pg_script_exec_file})&>/dev/null
+  echo $(psql -q -h ${POSTGRES_HOST} -U ${POSTGRES_USER} -p ${POSTGRES_PORT} -d ${POSTGPOSTGRES_DATABASERES_DB} -a -f ${__private_pg_script_exec_file})&>/dev/null
   return 1
 }
 
@@ -201,7 +201,7 @@ function __private_pg_pass_apply()
 {
   #postgres
   export POSTGRES_PGPASS=${HOME}/.pgpass
-  AUTH="${POSTGRES_HOST}:${POSTGRES_PORT}:${POSTGRES_DB}:${POSTGRES_USER}:${POSTGRES_PASSWORD}">${POSTGRES_PGPASS}
+  AUTH="${POSTGRES_HOST}:${POSTGRES_PORT}:${POSTGRES_DATABASE}:${POSTGRES_USER}:${POSTGRES_PASSWORD}">${POSTGRES_PGPASS}
   if [[ -f ${POSTGRES_PGPASS} ]];then
       echo ${AUTH} >> ${POSTGRES_PGPASS}
   else

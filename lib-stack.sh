@@ -120,29 +120,59 @@ function stackInitTargetEnvFile()
     return 0
   fi
 
+  #primary default envs
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_TZ
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DOMAIN
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_PROXY_PORT_HTTP
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_PROXY_PORT_HTTPS
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_PROXY_LOG_LEVEL
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_VAULT_TOKEN
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_CPU_DEFAULT
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_MEMORY_DEFAULT
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_REPLICAS
+
+
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DEFAULT_USERNAME
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DEFAULT_PASSWORD
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DEFAULT_DATABASE
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DEFAULT_CONTEXT_PATH
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DEFAULT_PORT
+
+  #database envs
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DEFAULT_DB_HOST
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DEFAULT_DB_PORT
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DEFAULT_DB_NAME
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DEFAULT_DB_USERNAME
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DEFAULT_DB_PASSWORD
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DEFAULT_DB_SCHEMA
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DEFAULT_DB_URL
+
+  #
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_DEFAULT_NODE_GLOBAL
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_DEFAULT_NODE_DB
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_DEFAULT_NODE_MODE
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_DEFAULT_NODE_SERVICES
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_DEFAULT_USER
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_DEFAULT_PASS
-  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_NODE_GLOBAL
-  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_NODE_DB
-  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_NODE_SERVICES
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_DEFAULT_DATABASE
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_DEFAULT_CONTEXT_PATH
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_DEFAULT_PORT
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_RESOURCE_CPU
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_RESOURCE_MEMORY
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_RESOURCE_REPLICA
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_SHELF_LIFE
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_HEALTH_CHECK_INTERVAL
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_HEALTH_CHECK_TIMEOUT
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_HEALTH_CHECK_RETRIES
+
+  #postgres envs
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} POSTGRES_URL
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} POSTGRES_HOST
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} POSTGRES_USER
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} POSTGRES_PASSWORD
-  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} POSTGRES_DB
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} POSTGRES_DATABASE
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} POSTGRES_PORT
-  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_CPU_DEFAULT
-  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_MEMORY_DEFAULT
-  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DEPLOY_REPLICAS
-  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DEPLOY_SHELF_LIFE
-  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DEPLOY_HEALTH_CHECK_INTERVAL
-  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DEPLOY_HEALTH_CHECK_TIMEOUT
-  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DEPLOY_HEALTH_CHECK_RETRIES
+
 
 
   echo $(chmod +x ${PUBLIC_STACK_TARGET_ENVS_FILE})&>/dev/null
@@ -152,7 +182,7 @@ function stackInitTargetEnvFile()
 function __private_stackEnvsLoadByStack()
 {
   export STACK_NAME=${1}
-  export STACK_IMAGE_NAME=
+  export STACK_SERVICE_IMAGE=
   export STACK_SERVICE_NAME=
   export STACK_SERVICE_HOSTNAME=
   export STACK_SERVICE_HOSTNAME_PUBLIC=
@@ -175,8 +205,8 @@ function __private_stackEnvsLoadByStack()
   export STACK_SERVICE_STORAGE_DATA_DIR=${__private_stackEnvsLoadByStack_storage}/data
   export STACK_SERVICE_STORAGE_BACKUP_DIR=${__private_stackEnvsLoadByStack_storage}/backup
 
-  export STACK_IMAGE_NAME="${STACK_SERVICE_NAME}"
-  export STACK_IMAGE_NAME_URL="${STACK_REGISTRY_DNS_PUBLIC}/${STACK_IMAGE_NAME}"
+  export STACK_SERVICE_IMAGE="${STACK_SERVICE_NAME}"
+  export STACK_SERVICE_IMAGE_URL="${STACK_REGISTRY_DNS_PUBLIC}/${STACK_SERVICE_IMAGE}"
 
   export STACK_SERVICE_HOSTNAME=${STACK_SERVICE_NAME}
   export STACK_SERVICE_HOSTNAME_PUBLIC=${STACK_SERVICE_HOSTNAME}.${STACK_DOMAIN}
@@ -297,9 +327,9 @@ function stackEnvsLoad()
   envsSetIfIsEmpty STACK_PROXY_PORT_HTTP 80
   envsSetIfIsEmpty STACK_PROXY_PORT_HTTPS 443
   envsSetIfIsEmpty STACK_VAULT_TOKEN "00000000-0000-0000-0000-000000000000"
-  envsSetIfIsEmpty STACK_CPU_DEFAULT 1
-  envsSetIfIsEmpty STACK_MEMORY_DEFAULT "1GB"
-  envsSetIfIsEmpty STACK_DEPLOY_REPLICAS 1
+  envsSetIfIsEmpty STACK_DEFAULT_DEPLOY_CPU "0.5"
+  envsSetIfIsEmpty STACK_DEFAULT_DEPLOY_MEMORY "1GB"
+  envsSetIfIsEmpty STACK_DEFAULT_DEPLOY_REPLICAS 1
 
   #cosntruira diretorios de envs carregadas
   stackStorageMake
@@ -307,20 +337,45 @@ function stackEnvsLoad()
     export __func_return="fail on calling stackStorageMake, ${__func_return}"
     return 0;
   fi
-  
+
+  #primary default envs
+  envsSetIfIsEmpty STACK_DEFAULT_USERNAME services
+  envsSetIfIsEmpty STACK_DEFAULT_PASSWORD services  
+  envsSetIfIsEmpty STACK_DEFAULT_DATABASE services
+  envsSetIfIsEmpty STACK_DEFAULT_CONTEXT_PATH "/"
+  envsSetIfIsEmpty STACK_DEFAULT_PORT 8080
+
+  #database envs
+  envsSetIfIsEmpty STACK_DEFAULT_DB_HOST ${STACK_PREFIX}-postgres
+  envsSetIfIsEmpty STACK_DEFAULT_DB_PORT 5432
+  envsSetIfIsEmpty STACK_DEFAULT_DB_NAME ${STACK_DEFAULT_DATABASE}
+  envsSetIfIsEmpty STACK_DEFAULT_DB_USERNAME ${STACK_DEFAULT_USERNAME}
+  envsSetIfIsEmpty STACK_DEFAULT_DB_PASSWORD ${STACK_DEFAULT_PASSWORD}
+  envsSetIfIsEmpty STACK_DEFAULT_DB_SCHEMA
+  envsSetIfIsEmpty STACK_DEFAULT_DB_URL "jdbc:postgresql://${STACK_PREFIX}-postgres:${STACK_DEFAULT_DB_PORT}/${STACK_DEFAULT_DB_NAME}"
+
+  #postgres envs
+  envsSetIfIsEmpty POSTGRES_URL ${STACK_DEFAULT_DB_URL}
+  envsSetIfIsEmpty POSTGRES_HOST ${STACK_DEFAULT_DB_HOST}
+  envsSetIfIsEmpty POSTGRES_USER ${STACK_DEFAULT_DB_USERNAME}
+  envsSetIfIsEmpty POSTGRES_PASSWORD ${STACK_DEFAULT_DB_PASSWORD}
+  envsSetIfIsEmpty POSTGRES_DATABASE "${STACK_DEFAULT_DB_PASSWORD}"
+  envsSetIfIsEmpty POSTGRES_PORT ${STACK_DEFAULT_DB_PORT}
 
   #default users
-  envsSetIfIsEmpty STACK_SERVICE_DEFAULT_USER services
-  envsSetIfIsEmpty STACK_SERVICE_DEFAULT_PASS services
-  envsSetIfIsEmpty STACK_SERVICE_DEFAULT_DATABASE services
-  envsSetIfIsEmpty STACK_SERVICE_DEFAULT_CONTEXT_PATH "/"
+  envsSetIfIsEmpty STACK_SERVICE_DEFAULT_USER ${STACK_DEFAULT_USERNAME}
+  envsSetIfIsEmpty STACK_SERVICE_DEFAULT_PASS ${STACK_DEFAULT_PASSWORD}
+  envsSetIfIsEmpty STACK_SERVICE_DEFAULT_DATABASE ${STACK_DEFAULT_DATABASE}  
+  envsSetIfIsEmpty STACK_SERVICE_DEFAULT_CONTEXT_PATH ${STACK_DEFAULT_CONTEXT_PATH}
+  envsSetIfIsEmpty STACK_SERVICE_DEFAULT_PORT ${STACK_DEFAULT_PORT}
 
   #nodes
-  envsSetIfIsEmpty STACK_SERVICE_NODE_GLOBAL "node.role == manager"
-  envsSetIfIsEmpty STACK_SERVICE_NODE_GLOBAL_SERVICES "${STACK_SERVICE_NODE_GLOBAL}"
-  envsSetIfIsEmpty STACK_SERVICE_NODE_DB "${STACK_SERVICE_NODE_GLOBAL}"
-  envsSetIfIsEmpty STACK_SERVICE_NODE_SERVICES "${STACK_SERVICE_NODE_GLOBAL}"
-  envsSetIfIsEmpty STACK_SERVICE_NODE_FW "${STACK_SERVICE_NODE_GLOBAL}"
+  envsSetIfIsEmpty STACK_SERVICE_DEFAULT_NODE_MODE global
+  envsSetIfIsEmpty STACK_SERVICE_DEFAULT_NODE_GLOBAL node.role==manager
+  envsSetIfIsEmpty STACK_SERVICE_DEFAULT_NODE_GLOBAL_SERVICES ${STACK_SERVICE_DEFAULT_NODE_GLOBAL}
+  envsSetIfIsEmpty STACK_SERVICE_DEFAULT_NODE_DB ${STACK_SERVICE_DEFAULT_NODE_GLOBAL}
+  envsSetIfIsEmpty STACK_SERVICE_DEFAULT_NODE_SERVICES ${STACK_SERVICE_DEFAULT_NODE_GLOBAL}
+  envsSetIfIsEmpty STACK_SERVICE_DEFAULT_NODE_FW ${STACK_SERVICE_DEFAULT_NODE_GLOBAL}
 
   #resources limit
   envsSetIfIsEmpty STACK_SERVICE_RESOURCE_CPU "0.5"
@@ -331,11 +386,10 @@ function stackEnvsLoad()
   envsSetIfIsEmpty STACK_SERVICE_HEALTH_CHECK_TIMEOUT "5s"
   envsSetIfIsEmpty STACK_SERVICE_HEALTH_CHECK_RETRIES "5"
 
-  envsSetIfIsEmpty POSTGRES_HOST localhost
-  envsSetIfIsEmpty POSTGRES_USER ${STACK_SERVICE_DEFAULT_USER}
-  envsSetIfIsEmpty POSTGRES_PASSWORD ${STACK_SERVICE_DEFAULT_PASS}
-  envsSetIfIsEmpty POSTGRES_DB "${STACK_SERVICE_DEFAULT_DATABASE}"
-  envsSetIfIsEmpty POSTGRES_PORT 5432
+
+
+
+
 
   stackInitTargetEnvFile
   if ! [ "$?" -eq 1 ]; then
@@ -346,32 +400,74 @@ function stackEnvsLoad()
   return 1
 }
 
+function stackEnvsByStackExportToFile()
+{
+  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_BACKUP_DIR
+  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_BINARY_DIR
+  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_CPU
+  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_DATA_DIR
+  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_DNS
+  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_DNS_3RDPARTY
+  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_DNS_3RDPARTY_PATH
+  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_DNS_PATH
+  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_DNS_PUBLIC
+  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_DNS_PUBLIC_PATH
+  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_HEALTH_CHECK_INTERVAL
+  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_HEALTH_CHECK_RETRIES
+  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_HEALTH_CHECK_TIMEOUT
+  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_HOSTNAME
+  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_IMAGE
+  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_MEMORY
+  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_MODE
+  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_NETWORK_NAME
+  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_NODE
+  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_PORT
+  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_REPLICAS
+  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_SHELF_LIFE
+  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_FILE
+  envsFileAddIfNotExists "${1}" APPLICATION_ENV_FILE
+  envsFileAddIfNotExists "${1}" APPLICATION_ENV_TAGS
+  envsFileAddIfNotExists "${1}" APPLICATION_GIT
+  envsFileAddIfNotExists "${1}" APPLICATION_GIT_BRANCH
+  envsFileAddIfNotExists "${1}" APPLICATION_NAME
+  envsFileAddIfNotExists "${1}" APPLICATION_SERVICE
+  envsFileAddIfNotExists "${1}" APPLICATION_STACK
+  
+  return 1
+}
+
 function stackEnvsClearByStack()
 {
-  export APPLICATION_STACK=
-  export APPLICATION_NAME=
-  export APPLICATION_GIT=
-  export APPLICATION_GIT_BRANCH=
-  export APPLICATION_CONTEXT_PATH=
-  export APPLICATION_DEPLOY_PORT=
+  export APPLICATION_DEPLOY_BACKUP_DIR=
+  export APPLICATION_DEPLOY_BINARY_DIR=
+  export APPLICATION_DEPLOY_CPU=
+  export APPLICATION_DEPLOY_DATA_DIR=
   export APPLICATION_DEPLOY_DNS=
+  export APPLICATION_DEPLOY_DNS_3RDPARTY=
+  export APPLICATION_DEPLOY_DNS_3RDPARTY_PATH=
   export APPLICATION_DEPLOY_DNS_PATH=
   export APPLICATION_DEPLOY_DNS_PUBLIC=
   export APPLICATION_DEPLOY_DNS_PUBLIC_PATH=
-  export APPLICATION_DEPLOY_DNS_3RDPARTY=
-  export APPLICATION_DEPLOY_DNS_3RDPARTY_PATH=
-  export APPLICATION_DEPLOY_IMAGE=
-  export APPLICATION_DEPLOY_HOSTNAME=
-  export APPLICATION_DEPLOY_NODE=
-  export APPLICATION_DEPLOY_MODE=
-  export APPLICATION_DEPLOY_REPLICAS=
-  export APPLICATION_DEPLOY_DATA_DIR=
-  export APPLICATION_DEPLOY_BACKUP_DIR=
-  export APPLICATION_DEPLOY_NETWORK_NAME=
-  export APPLICATION_DEPLOY_SHELF_LIFE=
   export APPLICATION_DEPLOY_HEALTH_CHECK_INTERVAL=
-  export APPLICATION_DEPLOY_HEALTH_CHECK_TIMEOUT=
   export APPLICATION_DEPLOY_HEALTH_CHECK_RETRIES=
+  export APPLICATION_DEPLOY_HEALTH_CHECK_TIMEOUT=
+  export APPLICATION_DEPLOY_HOSTNAME=
+  export APPLICATION_DEPLOY_IMAGE=
+  export APPLICATION_DEPLOY_MEMORY=
+  export APPLICATION_DEPLOY_MODE=
+  export APPLICATION_DEPLOY_NETWORK_NAME=
+  export APPLICATION_DEPLOY_NODE=
+  export APPLICATION_DEPLOY_PORT=
+  export APPLICATION_DEPLOY_REPLICAS=
+  export APPLICATION_DEPLOY_SHELF_LIFE=
+  export APPLICATION_DEPLOY_FILE=
+  export APPLICATION_ENV_FILE=
+  export APPLICATION_ENV_TAGS=
+  export APPLICATION_GIT=
+  export APPLICATION_GIT_BRANCH=
+  export APPLICATION_NAME=
+  export APPLICATION_SERVICE=
+  export APPLICATION_STACK=
   
   return 1
 }
@@ -381,7 +477,6 @@ function stackEnvsLoadByStack()
   __private_stackEnvsLoadByStack_environment=${1}
   __private_stackEnvsLoadByStack_target=${2}
   __private_stackEnvsLoadByStack_stack_name=${3}
-
 
   if [[ ${__private_stackEnvsLoadByStack_environment} == "" ]]; then
     export __func_return="Invaid env: \${__private_stackEnvsLoadByStack_environment}"
@@ -393,7 +488,6 @@ function stackEnvsLoadByStack()
     export __func_return="Invaid env: \${__private_stackEnvsLoadByStack_stack_name}"
     return 0;
   fi
-
 
   stackEnvsLoad "${__private_stackEnvsLoadByStack_environment}" "${__private_stackEnvsLoadByStack_target}"
   if [[ ${STACK_ENVIRONMENT} == "" ]]; then
@@ -433,8 +527,8 @@ function stackEnvsLoadByStack()
   elif [[ ${STACK_PREFIX} == ""  ]]; then
     echFail "${1}" "fail on calling __private_stackEnvsLoadByStack, invalid env \${STACK_PREFIX}"
     return 0;
-  elif [[ ${STACK_IMAGE_NAME} == ""  ]]; then
-    echFail "${1}" "fail on calling __private_stackEnvsLoadByStack, invalid env \${STACK_IMAGE_NAME}"
+  elif [[ ${STACK_SERVICE_IMAGE} == ""  ]]; then
+    echFail "${1}" "fail on calling __private_stackEnvsLoadByStack, invalid env \${STACK_SERVICE_IMAGE}"
     return 0;
   elif [[ ${STACK_SERVICE_HOSTNAME} == ""  ]]; then
     echFail "${1}" "fail on calling __private_stackEnvsLoadByStack, invalid env \${STACK_SERVICE_HOSTNAME}"
@@ -512,13 +606,13 @@ function stackPublicEnvs()
 
 }
 
-function __lib_stack_tests()
-{
-  stackEnvsLoad development company
-  echo "stackEnvsLoad::${__func_return}"
-  stackEnvsLoadByStack development company appTest
-  echo "stackEnvsLoadByStack::${__func_return}"
-  return 1;
-}
+# function __lib_stack_tests()
+# {
+#   stackEnvsLoad development company
+#   echo "stackEnvsLoad::${__func_return}"
+#   stackEnvsLoadByStack development company appTest
+#   echo "stackEnvsLoadByStack::${__func_return}"
+#   return 1;
+# }
 
-#__lib_stack_tests
+# #__lib_stack_tests
