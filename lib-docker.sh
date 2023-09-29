@@ -134,16 +134,50 @@ function dockerCleanup()
 
 function dockerPrune()
 {
-  __docker_prune_cmd="docker --log-level ERROR system prune -a --all --force"
+  local __docker_prune_cmd_01="docker --log-level ERROR system prune -a --all --force"
+  local __docker_prune_cmd_02="docker --log-level ERROR volume prune -a --all --force"
   echM "    Docker prune"
   echR "      Removing ..."
-  echY "        - ${__docker_prune_cmd}"
-  echo $(${__docker_prune_cmd})&>/dev/null
+  echY "        - ${__docker_prune_cmd_01}"
+  echY "        - ${__docker_prune_cmd_02}"
+  sleep 2
+  for i in {1..5}
+  do
+    echB "        - step: ${i}"
+    echo $(${__docker_prune_cmd_01})&>/dev/null
+    echo $(${__docker_prune_cmd_02})&>/dev/null
+    sleep 1
+  done
   echG "    Finished"
 }
 
 function dockerReset()
 {
+  echo ""
+  echR "  =============================  "
+  echR "  ***********CRITICAL**********  "
+  echR "  =============================  "
+  echo ""
+  echY "  =============================  "
+  echY "  ********DOCKER RESET*********  "
+  echY "  =============================  "
+  echo ""
+  selectorWaitSeconds 3 "" "${COLOR_YELLOW_B}"
+
+  selectorYesNo "Docker reset"
+  if ! [ "$?" -eq 1 ]; then
+    return 1
+  fi
+  echo ""
+  echR "  =============================  "
+  echR "  ***********CRITICAL**********  "
+  echR "  =============================  "
+  echo ""
+  echY "  =============================  "
+  echY "  ********DOCKER RESET*********  "
+  echY "  =============================  "
+  echo ""
+  selectorWaitSeconds 10 "" "${COLOR_YELLOW_B}"
   __docker_reset_tags=${1}
   echG "  Docker reset"
   dockerCleanup
