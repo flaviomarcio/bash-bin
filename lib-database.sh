@@ -4,6 +4,11 @@ if [[ ${BASH_BIN} == "" ]]; then
   BASH_BIN=${PWD}
 fi
 
+if [[ ${BASH_BIN_BIN} == "" ]]; then
+  BASH_BIN_BIN=${BASH_BIN}/bin
+  export PATH=${PATH}:${BASH_BIN_BIN}
+fi
+
 . ${BASH_BIN}/lib-strings.sh
 
 # export DATABASE_DIR=
@@ -193,7 +198,11 @@ function __private_pg_script_exec()
   #   return 0;
   # fi 
 
-  echo $(psql -q -h ${POSTGRES_HOST} -U ${POSTGRES_USER} -p ${POSTGRES_PORT} -d ${POSTGPOSTGRES_DATABASERES_DB} -a -f ${__private_pg_script_exec_file})&>/dev/null
+  #echo $(psql -q -h ${POSTGRES_HOST} -U ${POSTGRES_USER} -p ${POSTGRES_PORT} -d ${POSTGRES_DATABASE} -a -f ${__private_pg_script_exec_file})&>/dev/null
+  #--quiet --hostname=localhost --username=services --password=services --port=5432 -database=services -format= -c="select*from pg_catalog.pg_tables"
+  local __cmd="qsql --format= --quiet --hostname=${POSTGRES_HOST} --username=${POSTGRES_USER} --password=${POSTGRES_PASSWORD} --port=${POSTGRES_PORT} --database=${POSTGRES_DATABASE} --command=${__private_pg_script_exec_file}"
+  #echo ${__cmd}
+  echo -n $(${__cmd})
   return 1
 }
 
@@ -226,9 +235,10 @@ function databaseUpdateExec()
   echC "        - export POSTGRES_USER=${POSTGRES_USER}"
   echC "        - export POSTGRES_PASSWORD=${POSTGRES_PASSWORD}"
   echC "        - export POSTGRES_PORT=${POSTGRES_PORT}"
-  echY "        - psql -q -h \${POSTGRES_HOST} -U \${POSTGRES_USER} -p \${POSTGRES_PORT} -d \${POSTGRES_DATABASE} -a -f \${POSTGRES_SCRIPT_FILE}\""
+  #echY "        - psql -q -h \${POSTGRES_HOST} -U \${POSTGRES_USER} -p \${POSTGRES_PORT} -d \${POSTGRES_DATABASE} -a -f \${POSTGRES_SCRIPT_FILE}"
+  echY "        - qsql --format= --quiet --driver=QPSQL --hostname=\${POSTGRES_HOST} --username=\${POSTGRES_USER} --password=\${POSTGRES_PASSWORD} --port=\${POSTGRES_PORT} --database=\${POSTGRES_DATABASE} --output=\${POSTGRES_SCRIPT_FILE}"
   echB "      -Executing"
-  DB_DDL_FILE_TMP="/tmp/ddl_file.sql"
+  
   EXEC_FILES=$(__private_db_ddl_apply_scan ${DATABASE_DIR})
   if [[ ${EXEC_FILES} == "" ]]; then
     echR "        - No files found"
@@ -244,6 +254,8 @@ function databaseUpdateExec()
         BASE2=$(basename ${BASE2})
         BASE3=$(basename ${BASE3})
         echC "          - ${BASE1} from ${BASE2}"
+
+        local DB_DDL_FILE_TMP="/tmp/ddl_file_$RANDOM.sql"
         echo "set client_min_messages to WARNING; ">${DB_DDL_FILE_TMP};
         cat ${EXEC_FILE} >> ${DB_DDL_FILE_TMP};
         __private_pg_script_exec ${DB_DDL_FILE_TMP}
