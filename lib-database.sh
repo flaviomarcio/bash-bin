@@ -189,20 +189,13 @@ function __private_pg_script_exec()
     return 0;
   fi
 
-  # if [[ ${DATABASE_ENVIRONMENT} == "production" ]]; then
-  #   __private_db_cleanup_sql ${__private_pg_script_exec_file}
-  # elif [[ ${DATABASE_ENVIRONMENT} == "testing" || ${DATABASE_ENVIRONMENT} == "development"  || ${DATABASE_ENVIRONMENT} == "stating" ]]; then
-    #remove empty lines
-    sed -i '/^$/d' ${__private_pg_script_exec_file}
-  # else
-  #   return 0;
-  # fi 
-
-  #echo $(psql -q -h ${POSTGRES_HOST} -U ${POSTGRES_USER} -p ${POSTGRES_PORT} -d ${POSTGRES_DATABASE} -a -f ${__private_pg_script_exec_file})&>/dev/null
-  #--quiet --hostname=localhost --username=services --password=services --port=5432 -database=services -format= -c="select*from pg_catalog.pg_tables"
-  local __cmd="qsql --format= --quiet --hostname=${POSTGRES_HOST} --username=${POSTGRES_USER} --password=${POSTGRES_PASSWORD} --port=${POSTGRES_PORT} --database=${POSTGRES_DATABASE} --command=${__private_pg_script_exec_file}"
-  #echo ${__cmd}
-  echo -n $(${__cmd})
+  sed -i '/^$/d' ${__private_pg_script_exec_file}
+  local __check=$(which qsql)
+  if [[ ${__check} != "" ]]; then
+    qsql --action=exec --format= --quiet --hostname=${POSTGRES_HOST} --username=${POSTGRES_USER} --password=${POSTGRES_PASSWORD} --port=${POSTGRES_PORT} --database=${POSTGRES_DATABASE} --command=${__private_pg_script_exec_file}
+  else
+    echo $(psql -q -h ${POSTGRES_HOST} -U ${POSTGRES_USER} -p ${POSTGRES_PORT} -d ${POSTGRES_DATABASE} -a -f ${__private_pg_script_exec_file})&>/dev/null
+  fi
   return 1
 }
 
@@ -230,13 +223,19 @@ function databaseUpdateExec()
   __private_pg_pass_apply
   echM "    Executing"
   echB "      -Environments"
-  echC "        - export POSTGRES_HOST=${POSTGRES_HOST}"
-  echC "        - export POSTGRES_DATABASE=${POSTGRES_DATABASE}"
-  echC "        - export POSTGRES_USER=${POSTGRES_USER}"
-  echC "        - export POSTGRES_PASSWORD=${POSTGRES_PASSWORD}"
-  echC "        - export POSTGRES_PORT=${POSTGRES_PORT}"
-  #echY "        - psql -q -h \${POSTGRES_HOST} -U \${POSTGRES_USER} -p \${POSTGRES_PORT} -d \${POSTGRES_DATABASE} -a -f \${POSTGRES_SCRIPT_FILE}"
-  echY "        - qsql --format= --quiet --driver=QPSQL --hostname=\${POSTGRES_HOST} --username=\${POSTGRES_USER} --password=\${POSTGRES_PASSWORD} --port=\${POSTGRES_PORT} --database=\${POSTGRES_DATABASE} --output=\${POSTGRES_SCRIPT_FILE}"
+  echC "        - export PG_HOST=${POSTGRES_HOST}"
+  echC "        - export PG_DATABASE=${POSTGRES_DATABASE}"
+  echC "        - export PG_USER=${POSTGRES_USER}"
+  echC "        - export PG_PASSWORD=${POSTGRES_PASSWORD}"
+  echC "        - export PG_PORT=${POSTGRES_PORT}"
+  which qsql
+  local __check=$(which qsql)
+  if [[ ${__check} != "" ]]; then
+  echY "        - qsql --format= --quiet --driver=QPSQL --hostname=\${PG_HOST} --username=\${PG_USER} --password=\${PG_PASSWORD} --port=\${PG_PORT} --database=\${PG_DATABASE} --output=\${PG_SQL_FILE}"
+  else
+  echC "        - Using password in .pgpass"
+  echY "        - psql -q -h \${PG_HOST} -U \${PG_USER} -p \${PG_PORT} -d \${PG_DATABASE} -a -f \${PG_SQL_FILE}"
+  fi
   echB "      -Executing"
   
   EXEC_FILES=$(__private_db_ddl_apply_scan ${DATABASE_DIR})

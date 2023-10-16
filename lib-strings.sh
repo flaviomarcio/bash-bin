@@ -676,6 +676,30 @@ function strExtractFileExtension()
   return 1;
 }
 
+# function strArg(){
+#   local __args=(${1})
+#   local __arg="${2}"
+#   local __return=
+#   for arg in "${__args[@]}"
+#   do
+#     local key=$(echo "$arg" | cut -d '=' -f1)
+#     if ! [[ ${arg} == "--"* ]]; then
+#       continue;
+#     fi
+
+#     echo "if [[ "${arg}" == "--${arg}="* ]]; then"
+
+#     if [[ "${arg}" == "--${arg}="* ]]; then
+#       continue;
+#     fi
+
+#     echo $(echo "$arg" | cut -d '=' -f2)
+
+
+#   done
+#   return 0;
+# }
+
 function strArg()
 {
   export __func_return=
