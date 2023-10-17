@@ -228,7 +228,6 @@ function databaseUpdateExec()
   echC "        - export PG_USER=${POSTGRES_USER}"
   echC "        - export PG_PASSWORD=${POSTGRES_PASSWORD}"
   echC "        - export PG_PORT=${POSTGRES_PORT}"
-  which qsql
   local __check=$(which qsql)
   if [[ ${__check} != "" ]]; then
   echY "        - qsql --format= --quiet --driver=QPSQL --hostname=\${PG_HOST} --username=\${PG_USER} --password=\${PG_PASSWORD} --port=\${PG_PORT} --database=\${PG_DATABASE} --output=\${PG_SQL_FILE}"
