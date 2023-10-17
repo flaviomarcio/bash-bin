@@ -531,9 +531,9 @@ function __private_stackEnvsDefaultByStack()
 
 function stackEnvsLoadByStack()
 {
-  __private_stackEnvsLoadByStack_environment=${1}
-  __private_stackEnvsLoadByStack_target=${2}
-  __private_stackEnvsLoadByStack_stack_name=${3}
+  local __private_stackEnvsLoadByStack_environment=${1}
+  local __private_stackEnvsLoadByStack_target=${2}
+  local __private_stackEnvsLoadByStack_stack_name=${3}
 
   if [[ ${__private_stackEnvsLoadByStack_environment} == "" ]]; then
     export __func_return="Invaid env: \${__private_stackEnvsLoadByStack_environment}"
@@ -558,7 +558,7 @@ function stackEnvsLoadByStack()
   fi
 
   __private_stackEnvsLoadByStack "${__private_stackEnvsLoadByStack_stack_name}"
-  __private_stackEnvsDefaultByStack
+  __private_stackEnvsDefaultByStack ${__private_stackEnvsLoadByStack_environment} ${__private_stackEnvsLoadByStack_target} ${__private_stackEnvsLoadByStack_stack_name}
   if ! [ "$?" -eq 1 ]; then
     export __func_return="fail on calling __private_stackEnvsLoadByStack, ${__func_return}"
     return 0;
