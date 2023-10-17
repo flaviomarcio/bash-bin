@@ -139,10 +139,10 @@ function dockerCleanup()
 
 function dockerPrune()
 {
-  local __docker_prune_cmd="docker --log-level ERROR system prune -a --all --volumes --force"
+  local __docker_prune_cmd="docker --log-level ERROR system prune --all --volumes --force"
   echM "    Docker prune"
   echR "      Removing ..."
-  echY "        - ${__docker_prune_cmd_01}"
+  echY "        - ${__docker_prune_cmd}"
   sleep 2
   for i in {1..5}
   do
@@ -335,19 +335,11 @@ function dockerBuildCompose()
   cd ${__docker_build_compose_dir}
 
   export APPLICATION_ENV_FILE=${__docker_build_env_file_docker}
-  export APPLICATION_NAME=${__docker_build_service}
-  export APPLICATION_SERVICE=$(echo ${__docker_build_service} | sed 's/-/_/g')
   export APPLICATION_DEPLOY_BINARY_DIR=${__docker_build_builder_dir}
   export APPLICATION_DEPLOY_IMAGE=${__docker_build_image}
   export APPLICATION_DEPLOY_HOSTNAME=${__docker_build_hostname}
   export APPLICATION_DEPLOY_NETWORK_NAME=${__docker_build_network_name}
 
-  envsSetIfIsEmpty APPLICATION_DEPLOY_DNS "${__docker_build_service}"
-  envsSetIfIsEmpty APPLICATION_DEPLOY_DNS_PATH "/"
-  envsSetIfIsEmpty APPLICATION_DEPLOY_DNS_PATH_PUBLIC "/"
-  envsSetIfIsEmpty APPLICATION_DEPLOY_DNS_PUBLIC "${APPLICATION_DEPLOY_DNS}"
-  envsSetIfIsEmpty APPLICATION_DEPLOY_DNS_PUBLIC_PATH "/"
-  envsSetIfIsEmpty APPLICATION_DEPLOY_SHELF_LIFE "24h"
   if [[ ${APPLICATION_DEPLOY_HEALTH_CHECK_URL} == "" ]]; then
     export APPLICATION_DEPLOY_HEALTH_CHECK_URL="${APPLICATION_DEPLOY_DNS}:${APPLICATION_DEPLOY_PORT}"
     if [[ ${APPLICATION_CONTEXT_PATH} != "" && ${APPLICATION_CONTEXT_PATH} != "/" ]]; then
