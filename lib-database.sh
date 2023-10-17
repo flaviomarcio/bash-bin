@@ -220,14 +220,20 @@ function databaseUpdateExec()
   if ! [ "$?" -eq 1 ]; then
     return 0;
   fi
+  local PG_HOST=${POSTGRES_HOST}
+  local PG_DATABASE=${POSTGRES_DATABASE}
+  local PG_USER=${POSTGRES_USER}
+  local PG_PASSWORD=${POSTGRES_PASSWORD}
+  local PG_PORT=${POSTGRES_PORT}
+
   __private_pg_pass_apply
   echM "    Executing"
   echB "      -Environments"
-  echC "        - export PG_HOST=${POSTGRES_HOST}"
-  echC "        - export PG_DATABASE=${POSTGRES_DATABASE}"
-  echC "        - export PG_USER=${POSTGRES_USER}"
-  echC "        - export PG_PASSWORD=${POSTGRES_PASSWORD}"
-  echC "        - export PG_PORT=${POSTGRES_PORT}"
+  echC "        - export PG_HOST=${PG_HOST}"
+  echC "        - export PG_DATABASE=${PG_DATABASE}"
+  echC "        - export PG_USER=${PG_USER}"
+  echC "        - export PG_PASSWORD=${PG_PASSWORD}"
+  echC "        - export PG_PORT=${PG_PORT}"
   local __check=$(which qsql)
   if [[ ${__check} != "" ]]; then
   echY "        - qsql --format= --quiet --driver=QPSQL --hostname=\${PG_HOST} --username=\${PG_USER} --password=\${PG_PASSWORD} --port=\${PG_PORT} --database=\${PG_DATABASE} --output=\${PG_SQL_FILE}"
