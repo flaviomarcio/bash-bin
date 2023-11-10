@@ -101,6 +101,9 @@ function vaultLogoff()
     echo $(vault token revoke -mode=path auth/token/lookup-self)&>/dev/null
   fi
   unset __private_vault_login_ok
+  unset VAULT_ADDR
+  unset VAULT_NAMESPACE=
+  unset VAULT_FORMAT=json
   return 1
 }
 
@@ -345,6 +348,7 @@ function vaultTests()
     vaultGetAndConvertToEnvsJava ${__kv_app_path_final} ${__kv_src_dir}
     vaultGetAndConvertToEnvsShell ${__kv_app_path_final} ${__kv_src_dir}
   done
+  vaultLogoff
 
 }
 
