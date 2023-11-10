@@ -5,6 +5,39 @@
 #ref
 # https://developer.hashicorp.com/vault/docs/commands
 
+function __private_vaultGetAndConvertToEnv()
+{
+  export __return=
+  if ! [[ ${__private_vault_login_ok} == true ]]; then
+    echR "Invalid login sesssion "
+    return 0;
+  fi
+
+  local __kv_ext="${1}"
+  local __kv_path="${2}"
+  local __kv_destine_dir="${3}"
+
+  if [[ ${__kv_path} == "" ]]; then
+    echR "Invalid vault path, path is null"
+    return 0;
+  fi
+  vaultKvGet ${__kv_path}
+  if ! [ "$?" -eq 1 ]; then
+    return 0;
+  fi
+  if [[ ${__kv_ext} == "sh" ]]; then
+    local __ret=$(echo ${__func_return} | jq -r ' to_entries | .[] | "export \(.key)=\"\(.value)\"x:N:x"')
+  else
+    local __ret=$(echo ${__func_return} | jq -r ' to_entries | .[] | "\(.key)=\"\(.value)\"x:N:x"')
+  fi
+  if [[ -d ${__kv_destine_dir} ]]; then
+    local __out_file=${__kv_destine_dir}/$(basename ${__kv_path}).${__kv_ext}
+    echo -n ${__ret}>${__out_file} 
+    __private_vault_clean_file ${__out_file}
+  fi
+  export __func_return=${__ret}
+}
+
 
 function __private_vault_clean_file()
 {
@@ -265,60 +298,21 @@ function vaultKvPushFromDir()
 function vaultGetAndConvertToEnvsJava()
 {
   export __return=
-  if ! [[ ${__private_vault_login_ok} == true ]]; then
-    echR "Invalid login sesssion "
-    return 0;
-  fi
-
-  local __kv_path="${1}"
-  local __kv_destine_dir="${2}"
-
-  if [[ ${__kv_path} == "" ]]; then
-    echR "Invalid vault path, path is null"
-    return 0;
-  fi
-  vaultKvGet ${__kv_path}
+  __private_vaultGetAndConvertToEnv "env" "${1}" "${2}"
   if ! [ "$?" -eq 1 ]; then
     return 0;
   fi
-  local __kv_ext="env"
-  local __ret=$(echo ${__func_return} | jq -r ' to_entries | .[] | "\(.key)=\"\(.value)\"x:N:x"')
-  if [[ -d ${__kv_destine_dir} ]]; then
-    local __out_file=${__kv_destine_dir}/$(basename ${__kv_path}).${__kv_ext}
-    echo -n ${__ret}>${__out_file} 
-    __private_vault_clean_file ${__out_file}
-  fi
-  export __func_return=${__ret}
+  return 1
 }
 
 function vaultGetAndConvertToEnvsShell()
 {
   export __return=
-  if ! [[ ${__private_vault_login_ok} == true ]]; then
-    echR "Invalid login sesssion "
-    return 0;
-  fi
-
-  local __kv_path="${1}"
-  local __kv_destine_dir="${2}"
-
-  if [[ ${__kv_path} == "" ]]; then
-    echR "Invalid vault path, path is null"
-    return 0;
-  fi
-
-  vaultKvGet ${__kv_path}
+  __private_vaultGetAndConvertToEnv "sh" "${1}" "${2}"
   if ! [ "$?" -eq 1 ]; then
     return 0;
   fi
-  local __kv_ext="sh"
-  local __ret=$(echo ${__func_return} | jq -r ' to_entries | .[] | "export \(.key)=\"\(.value)\"x:N:x"')
-  if [[ -d ${__kv_destine_dir} ]]; then
-    local __out_file=${__kv_destine_dir}/$(basename ${__kv_path}).${__kv_ext}
-    echo -n ${__ret}>${__out_file} 
-    __private_vault_clean_file ${__out_file}
-  fi
-  export __func_return=${__ret}
+  return 1
 }
 
 function vaultTests()
