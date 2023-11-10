@@ -491,6 +491,7 @@ function __private_stackEnvsDefaultByStack()
   local __name=${3}
 
   local __service=${__environment}_${__target}_${__name}
+  local __service=$(echo ${__service} | sed 's/-/_/g')
 
   export APPLICATION_DEPLOY_NAME=${__service}
   export APPLICATION_DEPLOY_HOSTNAME=$(echo ${__service} | sed 's/_/-/g')
