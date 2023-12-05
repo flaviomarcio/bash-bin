@@ -46,7 +46,7 @@ function stackMkDir_lib_configure()
   envsSetIfIsEmpty STACK_LIB_DIR "${ROOT_APPLICATIONS_DIR}/lib"
   if [[ ${STACK_LIB_DIR} == "" ]]; then
     export __func_return="invalid env \${STACK_LIB_DIR}"
-    return 1;
+    return 0;
   fi
 
   if [[ -d ${STACK_LIB_DIR} ]]; then
@@ -63,9 +63,14 @@ function stackMkDir_lib_configure()
     break;
   done
   if ! [[ -d ${STACK_LIB_DIR} ]]; then
-    export __func_return="lib dir not found, STACK_LIB_DIR: ${STACK_LIB_DIR}"
-    return 0;
+    mkdir -p ${STACK_LIB_DIR}
   fi
+
+  if ! [[ -d ${STACK_LIB_DIR} ]]; then
+    export __func_return="invalid lib dir \${STACK_LIB_DIR}: ${STACK_LIB_DIR}"
+    return 0
+  fi
+
   return 1;
 }
 
