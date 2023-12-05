@@ -105,7 +105,7 @@ function stackStorageMake()
     return 0;
   fi
 
-  stackMkDir 755 "${STACK_INFRA_DIR} ${ROOT_APPLICATIONS_DIR} ${ROOT_TARGET_DIR} ${STACK_CERT_DEFAULT_DIR} ${ROOT_ENVIRONMENT_DIR} ${STACK_INFRA_DIR}"
+  stackMkDir 755 "${ROOT_APPLICATIONS_DIR} ${ROOT_TARGET_DIR} ${STACK_CERT_DEFAULT_DIR} ${ROOT_ENVIRONMENT_DIR} ${STACK_INFRA_DIR}"
   stackMkDir 777 "${STORAGE_SERVICE_DIR}"
 
 
@@ -250,7 +250,6 @@ function __private_stackEnvsLoadByTarget()
   export STACK_TEMPLATES_DIR="${ROOT_TARGET_DIR}/templates"
   export STACK_TARGET_STORAGE_DIR=${ROOT_TARGET_DIR}/storage-data
 
-
   stackMkDir 755 "${ROOT_TARGET_DIR} ${STACK_INFRA_DIR} ${STACK_INFRA_CONF_DIR} ${STACK_TARGET_STORAGE_DIR}"
 
   envsSetIfIsEmpty STACK_NETWORK_DEFAULT "${STACK_ENVIRONMENT}-${STACK_TARGET}-inbound"
@@ -295,9 +294,10 @@ function stackEnvsLoad()
   export PUBLIC_STACK_TARGETS_FILE="${ROOT_APPLICATIONS_DIR}/stack_targets.env"
   export PUBLIC_STACK_ENVIRONMENTS_FILE="${ROOT_APPLICATIONS_DIR}/stack_environments.env"
 
+  mkdir -p ${ROOT_APPLICATIONS_DIR}
+
   if ! [[ -f ${PUBLIC_STACK_ENVIRONMENTS_FILE} ]]; then
     envsSetIfIsEmpty STACK_ENVIRONMENTS "testing development stating production"
-    mkdir -p $(dirname ${PUBLIC_STACK_ENVIRONMENTS_FILE})
     echo ${STACK_ENVIRONMENTS}>${PUBLIC_STACK_ENVIRONMENTS_FILE}
   else
     envsSetIfIsEmpty STACK_ENVIRONMENTS "testing development stating production"
@@ -305,14 +305,12 @@ function stackEnvsLoad()
 
   if ! [[ -f ${PUBLIC_STACK_TARGETS_FILE} ]]; then
     envsSetIfIsEmpty PUBLIC_STACK_TARGETS "company"
-    mkdir -p $(dirname ${PUBLIC_STACK_TARGETS_FILE})
     echo ${PUBLIC_STACK_TARGETS}>${PUBLIC_STACK_TARGETS_FILE}
   else
     envsSetIfIsEmpty PUBLIC_STACK_TARGETS "company"
   fi
 
   if ! [[ -f ${PUBLIC_STACK_TARGETS_FILE} ]]; then
-    mkdir -p $(dirname ${PUBLIC_STACK_TARGETS_FILE})
     echo "${PUBLIC_STACK_TARGETS}">${PUBLIC_STACK_TARGETS_FILE}
   fi
 
