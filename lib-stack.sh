@@ -297,6 +297,7 @@ function stackEnvsLoad()
 
   if ! [[ -f ${PUBLIC_STACK_ENVIRONMENTS_FILE} ]]; then
     envsSetIfIsEmpty STACK_ENVIRONMENTS "testing development stating production"
+    mkdir -p $(dirname ${PUBLIC_STACK_ENVIRONMENTS_FILE})
     echo ${STACK_ENVIRONMENTS}>${PUBLIC_STACK_ENVIRONMENTS_FILE}
   else
     envsSetIfIsEmpty STACK_ENVIRONMENTS "testing development stating production"
@@ -304,13 +305,15 @@ function stackEnvsLoad()
 
   if ! [[ -f ${PUBLIC_STACK_TARGETS_FILE} ]]; then
     envsSetIfIsEmpty PUBLIC_STACK_TARGETS "company"
-    echo ${PUBLIC_STACK_TARGETS}>${PUBLIC_STACK_ENVIRONMENTS_FILE}
+    mkdir -p $(dirname ${PUBLIC_STACK_TARGETS_FILE})
+    echo ${PUBLIC_STACK_TARGETS}>${PUBLIC_STACK_TARGETS_FILE}
   else
     envsSetIfIsEmpty PUBLIC_STACK_TARGETS "company"
   fi
 
   if ! [[ -f ${PUBLIC_STACK_TARGETS_FILE} ]]; then
-    echo "company">${PUBLIC_STACK_TARGETS_FILE}
+    mkdir -p $(dirname ${PUBLIC_STACK_TARGETS_FILE})
+    echo "${PUBLIC_STACK_TARGETS}">${PUBLIC_STACK_TARGETS_FILE}
   fi
 
   __private_stackEnvsLoadByTarget ${__private_stackEnvsLoad_target}
