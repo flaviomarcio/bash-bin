@@ -343,6 +343,9 @@ function stackEnvsLoad()
   envsSetIfIsEmpty STACK_DEFAULT_DEPLOY_MEMORY "1GB"
   envsSetIfIsEmpty STACK_DEFAULT_DEPLOY_REPLICAS 1
 
+  envsSetIfIsEmpty STACK_HAPROXY_CERT_DIR "${STACK_INFRA_CONF_DIR}/haproxy/cert"
+  envsSetIfIsEmpty STACK_HAPROXY_CONFIG_FILE "${STACK_INFRA_CONF_DIR}/haproxy/haproxy.cfg"
+
   #cosntruira diretorios de envs carregadas
   stackStorageMake
   if ! [ "$?" -eq 1 ]; then
