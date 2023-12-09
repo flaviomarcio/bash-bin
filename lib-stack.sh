@@ -288,6 +288,7 @@ function stackEnvsLoad()
   if [[ ${STACK_ENVIRONMENT} != "" && ${STACK_TARGET} != "" ]]; then
     export STACK_PREFIX="${STACK_ENVIRONMENT}-${STACK_TARGET}"
   fi
+  export STACK_PREFIX_NAME=$(echo ${STACK_PREFIX} | sed 's/-/_/g')
 
   envsSetIfIsEmpty STACK_ROOT_DIR "${HOME}"
   #remove barra no final
