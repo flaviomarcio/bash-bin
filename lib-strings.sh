@@ -52,7 +52,7 @@ function logVerboseSet()
 
 function toInt()
 {
-  v="${1}"
+  local v="${1}"
   if [[ ${v} == "" ]]; then
     v=0
   fi
@@ -61,8 +61,8 @@ function toInt()
 
 function incInt()
 {
-  v=$(toInt ${1})
-  i=$(toInt ${2})
+  local v=$(toInt ${1})
+  local i=$(toInt ${2})
   if [[ ${i} == 0 ]]; then
     i=1
   fi
@@ -72,19 +72,19 @@ function incInt()
 
 function logIdent()
 {
-  IDENT=$(toInt ${1})
-  CHAR="${2}"
+  local __identity=$(toInt ${1})
+  local __char="${2}"
 
-  if [[ ${CHAR} == "" ]]; then
-    CHAR="."
+  if [[ ${__char} == "" ]]; then
+    local __char="."
   fi
 
-  if [[ ${IDENT} == "" ]]; then
-    echo -n ${CHAR}
+  if [[ ${__identity} == "" ]]; then
+    echo -n ${__char}
     return 0;
   fi
 
-  echo $(strRightJustified 4 ${CHAR} ${CHAR} )
+  echo $(strRightJustified 4 ${__identity} ${__char} )
   return 1
 }
 
@@ -117,12 +117,12 @@ function logInfo()
 {
   if [[ ${STACK_LOG} == 1 || ${STACK_LOG_VERBOSE} == 1 || ${STACK_LOG_VERBOSE_SUPER} == 1 ]]; then
     if [[ "${2}" != "" && "${3}" != "" ]]; then
-      LOG="${2}: ${3}"
+      local __log="${2}: ${3}"
     else
-      LOG="${2}"
+      local __log="${2}"
     fi
-    if [[ ${LOG} != "" ]]; then
-      logMethod "${1}" "-${LOG}"
+    if [[ ${__log} != "" ]]; then
+      logMethod "${1}" "-${__log}"
     fi
   fi
 }
@@ -182,7 +182,7 @@ function logFinished()
 
 function cdDir()
 { 
-  __cdDir_NEW_DIR="${1}"
+  local __cdDir_NEW_DIR="${1}"
   if ! [[ -d ${__cdDir_NEW_DIR} ]]; then
     return 0;
   fi
@@ -195,8 +195,8 @@ function cdDir()
 
 function copyFile()
 {
-  __copyFile_SRC="${1}"
-  __copyFile_DST="${2}"
+  local __copyFile_SRC="${1}"
+  local __copyFile_DST="${2}"
 
   if [[ -f ${__copyFile_SRC} ]]; then
     return 0;
@@ -217,14 +217,14 @@ function fileDedupliceLines()
     return 0
   fi
   
-  __file_deduplice_lines_files=(${1})
-  for __file_deduplice_lines_file in "${__file_deduplice_lines_files[@]}"
+  local __files=(${1})
+  for __file in "${__files[@]}"
   do
-    if [[ -f ${__file_deduplice_lines_file} ]]; then
+    if [[ -f ${__file} ]]; then
       #sort lines
-      sort -u ${__file_deduplice_lines_file} -o ${__file_deduplice_lines_file}
+      sort -u ${__file} -o ${__file}
       #remove duplicate lines
-      sed -i '$!N; /^\(.*\)\n\1$/!P; D' ${__file_deduplice_lines_file}
+      sed -i '$!N; /^\(.*\)\n\1$/!P; D' ${__file}
     fi
   done  
 
@@ -233,19 +233,19 @@ function fileDedupliceLines()
 
 function copyFileIfNotExists()
 {
-  __copyFileIfNotExists_SRC=${1}
-  __copyFileIfNotExists_DST=${2}
+  local __file_src=${1}
+  local __file_dst=${2}
   
-  if ! [[ -f ${__copyFileIfNotExists_SRC} ]]; then
+  if ! [[ -f ${__file_src} ]]; then
     return 0
   fi
 
-  if [[ -d ${__copyFileIfNotExists_DST} ]]; then
-    rm -rf ${__copyFileIfNotExists_DST}
-    logInfo ${idt} "remove" ${__copyFileIfNotExists_DST}
+  if [[ -d ${__file_dst} ]]; then
+    rm -rf ${__file_dst}
+    logInfo ${idt} "remove" ${__file_dst}
   fi
-  cp -rf ${__copyFileIfNotExists_SRC} ${__copyFileIfNotExists_DST}
-  if [[ -d ${__copyFileIfNotExists_DST} ]]; then
+  cp -rf ${__file_src} ${__file_dst}
+  if [[ -d ${__file_dst} ]]; then
     return 1
   fi
   return 0
@@ -283,35 +283,35 @@ function utilInitialize()
     fi
   done
 
-  __utilInitialize_envs=()
-  __utilInitialize_envs+=("..information")
+  local __utilInitialize_envs=()
+  local __utilInitialize_envs+=("..information")
   if [[ ${PUBLIC_LOG_LEVEL} == true ]]; then
-    __utilInitialize_envs+=("....Debug mode is enabled")
+    local __utilInitialize_envs+=("....Debug mode is enabled")
   fi
   if [[ ${STACK_LOG_VERBOSE} == 1 ]]; then
-    __utilInitialize_envs+=("....Log verbose is enabled")
+    local __utilInitialize_envs+=("....Log verbose is enabled")
   fi
   if [[ ${STACK_LOG} == 1 ]]; then
-    __utilInitialize_envs+=("....-Log is enabled")
+    local __utilInitialize_envs+=("....-Log is enabled")
   fi
   if [[ ${PUBLIC_RUNNER_TEST} == true ]]; then
-    __utilInitialize_envs+=("....-Runner mode: ${PUBLIC_RUNNER_MODE}")
+    local __utilInitialize_envs+=("....-Runner mode: ${PUBLIC_RUNNER_MODE}")
   fi
-  __utilInitialize_envs+=("..args:")
+  local __utilInitialize_envs+=("..args:")
   export DOCKER_ARGS_DEFAULT="--quiet --log-level ERROR"
-  __utilInitialize_envs+=("....-docker: ${DOCKER_ARGS_DEFAULT}")
+  local __utilInitialize_envs+=("....-docker: ${DOCKER_ARGS_DEFAULT}")
   export MAVEN_ARGS_DEFAULT="--quiet"
-  __utilInitialize_envs+=("....-maven: ${MAVEN_ARGS_DEFAULT}")
+  local __utilInitialize_envs+=("....-maven: ${MAVEN_ARGS_DEFAULT}")
   if [[ ${STACK_LOG} == 0 ]]; then    
     export GIT_ARGS_DEFAULT="--quiet"
-    __utilInitialize_envs+=("....-git: ${GIT_ARGS_DEFAULT}")
+    local __utilInitialize_envs+=("....-git: ${GIT_ARGS_DEFAULT}")
   fi
 
   if [[ ${__utilInitialize_envs} != "" ]]; then
     echG "Initialization"
     for __utilInitialize_env in "${__utilInitialize_envs[@]}"
     do
-      __utilInitialize_msg=$(echo ${__utilInitialize_env} | sed 's/\./ /g')
+      local __utilInitialize_msg=$(echo ${__utilInitialize_env} | sed 's/\./ /g')
       if [[ ${__utilInitialize_env} == "......"*  ]]; then
         echY "${__utilInitialize_msg}"
       elif [[ ${__utilInitialize_env} == "...."*  ]]; then
@@ -329,10 +329,10 @@ function utilInitialize()
 function envsOS()
 {
   export __func_return=
-  __envsOS_destine=${1}
-  __envsOS="/tmp/env_file_envsOS_${RANDOM}.env"
+  local __envsOS_destine=${1}
+  local __envsOS="/tmp/env_file_envsOS_${RANDOM}.env"
   printenv | sort > ${__envsOS}
-  __envsOS_Remove=(_ __ CLUTTER_IM_MODULE KUBE LOGNAME KONSOLE GPG SHELL SHLVL GTK HIST S_COLORS XDG printenv shell XCURSOR XCURSOR WINDOWID PWD PATH OLDPWD KDE LD_ LANG COLOR DESKTOP DISPLAY DBUS HOME TERM XAUTHORITY XMODIFIERS USER DOCKER_ARGS_DEFAULT)
+  local __envsOS_Remove=(_ __ CLUTTER_IM_MODULE KUBE LOGNAME KONSOLE GPG SHELL SHLVL GTK HIST S_COLORS XDG printenv shell XCURSOR XCURSOR WINDOWID PWD PATH OLDPWD KDE LD_ LANG COLOR DESKTOP DISPLAY DBUS HOME TERM XAUTHORITY XMODIFIERS USER DOCKER_ARGS_DEFAULT)
   for __envsOS_env in "${__envsOS_Remove[@]}"
   do
     sed -i "/^${__envsOS_env}/d" ${__envsOS}
@@ -349,16 +349,16 @@ function envsOS()
 
 function envsSetIfIsEmpty()
 {
-  __envsSetIfIsEmpty_name=${1}
-  __envsSetIfIsEmpty_default_value=${2}
-  __envsSetIfIsEmpty_check=${!__envsSetIfIsEmpty_name}
-  if [[ ${__envsSetIfIsEmpty_check} == "" ]]; then
-    __envsSetIfIsEmpty_check=$(echo ${__envsSetIfIsEmpty_default_value} | grep ' ')
-    if [[ ${__envsSetIfIsEmpty_check} != "" ]]; then
-      __envsSetIfIsEmpty_default_value=$(echo "${__envsSetIfIsEmpty_default_value}" | sed 's/"//g' )
-      export ${__envsSetIfIsEmpty_name}="\"${__envsSetIfIsEmpty_default_value}\""
+  local __env_name=${1}
+  local __env_value=${2}
+  local __check=${!__env_name}
+  if [[ ${__check} == "" ]]; then
+    __check=$(echo ${__env_value} | grep ' ')
+    if [[ ${__check} != "" ]]; then
+      __env_value=$(echo "${__env_value}" | sed 's/"//g' )
+      export ${__env_name}="\"${__env_value}\""
     else
-      export ${__envsSetIfIsEmpty_name}=${__envsSetIfIsEmpty_default_value}
+      export ${__env_name}=${__env_value}
     fi    
   fi
   return 1;  
@@ -366,50 +366,50 @@ function envsSetIfIsEmpty()
 
 function envsFileAddIfNotExists()
 {
-  __envsFileAddIfNotExists_file=${1}
-  __envsFileAddIfNotExists_name=${2}
-  __envsFileAddIfNotExists_value=${3}
+  local __env_file=${1}
+  local __env_file_name=${2}
+  local __env_file_value=${3}
 
-
-  if [[ ${__envsFileAddIfNotExists_file} == "" || ${__envsFileAddIfNotExists_name} == "" ]]; then
+  if [[ ${__env_file} == "" || ${__env_file_name} == "" ]]; then
     return 0
   fi
 
-  if ! [[ -f ${__envsFileAddIfNotExists_file} ]]; then
-    __envsFileAddIfNotExists_file_dir=$(dirname ${__envsFileAddIfNotExists_file})
-    mkdir -p ${__envsFileAddIfNotExists_file_dir}
-    if ! [[ -d ${__envsFileAddIfNotExists_file_dir} ]];then
-      echR "No create env dir: ${__envsFileAddIfNotExists_file_dir}"
-      echR "No create env file: ${__envsFileAddIfNotExists_file}"
+  if ! [[ -f ${__env_file} ]]; then
+    __env_file_dir=$(dirname ${__env_file})
+    mkdir -p ${__env_file_dir}
+    if ! [[ -d ${__env_file_dir} ]];then
+      echR "No create env dir: ${__env_file_dir}"
+      echR "No create env file: ${__env_file}"
       return 0
     fi
-    echo "#!/bin/bash">${__envsFileAddIfNotExists_file}
+    echo "#!/bin/bash">${__env_file}
   fi
 
-  __envsFileAddIfNotExists_check=$(cat ${__envsFileAddIfNotExists_file} | grep ${__envsFileAddIfNotExists_name} )
-  if [[ ${__envsFileAddIfNotExists_check} != "" ]]; then
-    return 1
-  fi
   #se nao for informado o valor da variavel recuperaremos seu valor pelo nome indicado
-  if [[ ${__envsFileAddIfNotExists_value} == "" ]]; then
-    __envsFileAddIfNotExists_value=${!__envsFileAddIfNotExists_name}
+  if [[ ${__env_file_value} == "" ]]; then
+    local __env_file_value=${!__env_file_name}
   fi
 
-  __envsFileAddIfNotExists_file_temp="/tmp/envsFileAddIfNotExists_${RANDOM}.env"
-  cat ${__envsFileAddIfNotExists_file}>${__envsFileAddIfNotExists_file_temp}
 
-  __envsFileAddIfNotExists_check=$(echo ${__envsFileAddIfNotExists_value} | grep ' ')
-  if [[ ${__envsFileAddIfNotExists_check} == "" ]]; then
-    echo "export ${__envsFileAddIfNotExists_name}=${__envsFileAddIfNotExists_value}">>${__envsFileAddIfNotExists_file_temp}
+  local __check=$(echo ${__env_file_value} | grep ' ')
+  if [[ ${__check} == "" ]]; then
+    local __env_final="${__env_file_name}=${__env_file_value}"
   else
-    __envsFileAddIfNotExists_value=$(echo "${__envsFileAddIfNotExists_value}" | sed 's/"//g' )
-    echo "export ${__envsFileAddIfNotExists_name}=\"${__envsFileAddIfNotExists_value}\"">>${__envsFileAddIfNotExists_file_temp}
+    local __env_file_value=$(echo "${__env_file_value}" | sed 's/"//g' )
+    local __env_final="${__env_file_name}=\"${__env_file_value}\""
   fi
 
-  #sort lines
-  sort -u ${__envsFileAddIfNotExists_file_temp} -o ${__envsFileAddIfNotExists_file}
-  rm -rf ${__envsFileAddIfNotExists_file_temp}
-
+  local __check_value=$(echo ${__env_final} | sed 's/\*/\\\*/g')
+  local __check=$(cat ${__env_file} | grep "${__check_value}")
+  if [[ ${__check} != "" ]]; then
+    return 1;
+  fi
+  local __env_file_temp="/tmp/envsFileAddIfNotExists_${RANDOM}.env"
+  cat ${__env_file}>${__env_file_temp}
+  sed -i "/${__env_file_name}=/d" ${__env_file_temp}
+  echo "export ${__env_final}">>${__env_file_temp}
+  sort -u ${__env_file_temp} -o ${__env_file}
+  rm -rf ${__env_file_temp}
   return 1;
 
 }
@@ -417,81 +417,81 @@ function envsFileAddIfNotExists()
 function envsExtractStatic()
 {
   export __func_return=
-  __runSourceOnlyStatic_file=${1}
-  __runSourceOnlyStatic_file_out=${2}
-  if [[ ${__runSourceOnlyStatic_file} == "" ]]; then
+  local __file=${1}
+  local __file_out=${2}
+  if [[ ${__file} == "" ]]; then
     return 0
   fi
-  if ! [[ -f ${__runSourceOnlyStatic_file} ]]; then
+  if ! [[ -f ${__file} ]]; then
     return 0
   fi
-  if [[ ${__runSourceOnlyStatic_file_out} == "" ]]; then
-    __runSourceOnlyStatic_file_out=${__runSourceOnlyStatic_file}
+  if [[ ${__file_out} == "" ]]; then
+    local __file_out=${__file}
   fi
-  __runSourceOnlyStatic_tmp_env="/tmp/env_file_envsExtractStatic_${RANDOM}.env"
-  cat ${__runSourceOnlyStatic_file}>>${__runSourceOnlyStatic_tmp_env}
+  local __file_temp="/tmp/env_file_envsExtractStatic_${RANDOM}.env"
+  cat ${__file}>>${__file_temp}
   #replace " ${"
-  sed -i 's/ \${/\${/g' ${__runSourceOnlyStatic_tmp_env}
+  sed -i 's/ \${/\${/g' ${__file_temp}
   #remove "=${"
-  sed -i '/=\${/d' ${__runSourceOnlyStatic_tmp_env}
-  envsFileConvertToExport ${__runSourceOnlyStatic_tmp_env}
-  cat ${__runSourceOnlyStatic_tmp_env}>${__runSourceOnlyStatic_file_out}
-  rm -rf ${__runSourceOnlyStatic_tmp_env}
-  export __func_return=${__runSourceOnlyStatic_file_out}
+  sed -i '/=\${/d' ${__file_temp}
+  envsFileConvertToExport ${__file_temp}
+  cat ${__file_temp}>${__file_out}
+  rm -rf ${__file_temp}
+  export __func_return=${__file_out}
   return 1
 }
 
 function runSource()
 {
   export __func_return=
-  __runSource_RUN_FILE="${1}"
-  __runSource_RUN_PARAMS="${2}"
-  if [[ ${__runSource_RUN_FILE} == "" ]]; then
+  local __file_name="${1}"
+  local __file_params="${2}"
+  if [[ ${__file_name} == "" ]]; then
     return 0
   fi
 
-  if ! [[ -f ${__runSource_RUN_FILE} ]]; then
+  if ! [[ -f ${__file_name} ]]; then
     return 0
   fi
 
-  echo $(chmod +x ${__runSource_RUN_FILE})&>/dev/null
-  source ${__runSource_RUN_FILE} ${__runSource_RUN_PARAMS}
+  echo $(chmod +x ${__file_name})&>/dev/null
+  source ${__file_name} ${__file_params}
   return 0
 }
 
 function envsPrepareFile()
 {
   export __func_return=
-  __envsPrepareFile_target=${1}
-  __envsPrepareFile_target_output=${2}
-  if ! [[ -f ${__envsPrepareFile_target} ]]; then
+  local __target=${1}
+  local __target_output=${2}
+  if ! [[ -f ${__target} ]]; then
     return 0
   fi
 
-  __envsPrepareFile_target_tmp_1="/tmp/env__envsPrepareFile_target_1_${RANDOM}.env"
-  __envsPrepareFile_target_tmp_2="/tmp/env__envsPrepareFile_target_2_${RANDOM}.env"
-  cat ${__envsPrepareFile_target}>${__envsPrepareFile_target_tmp_1}
+  local __target_tmp_1="/tmp/env__target_1_${RANDOM}.env"
+  local __target_tmp_2="/tmp/env__target_2_${RANDOM}.env"
+  cat ${__target}>${__target_tmp_1}
   #trim lines
-  sed -i 's/^[[:space:]]*//; s/[[:space:]]*$//' ${__envsPrepareFile_target_tmp_1}
+  sed -i 's/^[[:space:]]*//; s/[[:space:]]*$//' ${__target_tmp_1}
   #remove empty lines
-  sed -i '/^$/d' ${__envsPrepareFile_target_tmp_1}  
+  sed -i '/^$/d' ${__target_tmp_1}  
   #remove startWith #
-  sed -i '/^#/d' ${__envsPrepareFile_target_tmp_1}
+  sed -i '/^#/d' ${__target_tmp_1}
   #remove exports
-  sed -i 's/export;//g' ${__envsPrepareFile_target_tmp_1}
-  sed -i 's/export //g' ${__envsPrepareFile_target_tmp_1}
+  sed -i 's/export;//g' ${__target_tmp_1}
+  sed -i 's/export //g' ${__target_tmp_1}
   #sort lines
-  sort -u ${__envsPrepareFile_target_tmp_1} -o ${__envsPrepareFile_target_tmp_2}
+  sort -u ${__target_tmp_1} -o ${__target_tmp_2}
   #after sort remove duplicate lines
-  sed -i '$!N; /^\(.*\)\n\1$/!P; D' ${__envsPrepareFile_target_tmp_2}
+  sed -i '$!N; /^\(.*\)\n\1$/!P; D' ${__target_tmp_2}
 
 
-  rm -rf ${__envsPrepareFile_target_tmp_1}
+  rm -rf ${__target_tmp_1}
 
   #tratando nomes das variaveis
   while IFS= read -r line
   do
-    line=$(echo ${line} | grep =)
+    local line=$(echo ${line} | grep =)
     if [[ ${line} != "" ]]; then
       line=$(echo ${line} | sed 's/ /__xSPC__/g')
       #separando nome da env e dos valores
@@ -506,75 +506,74 @@ function envsPrepareFile()
       line=$(echo ${line} | sed 's/__xSPC__/ /g')
       
       #exportando para arquivo final
-      if [[ -f ${__envsPrepareFile_target_tmp_1} ]]; then
-        echo "${line}">>${__envsPrepareFile_target_tmp_1}
+      if [[ -f ${__target_tmp_1} ]]; then
+        echo "${line}">>${__target_tmp_1}
       else
-        echo "${line}">${__envsPrepareFile_target_tmp_1}
+        echo "${line}">${__target_tmp_1}
       fi
     fi
-  done < "${__envsPrepareFile_target_tmp_2}"
+  done < "${__target_tmp_2}"
 
-  if ! [[ -f ${__envsPrepareFile_target_tmp_1} ]]; then
+  if ! [[ -f ${__target_tmp_1} ]]; then
     return 0
   fi
 
-  if [[ ${__envsPrepareFile_target_output} == "" ]]; then
-    __envsPrepareFile_target_output=${__envsPrepareFile_target}
+  if [[ ${__target_output} == "" ]]; then
+    local __target_output=${__target}
   fi
-  cat ${__envsPrepareFile_target_tmp_1}>${__envsPrepareFile_target_output}
-  rm -rf ${__envsPrepareFile_target_tmp_1}
-  rm -rf ${__envsPrepareFile_target_tmp_2}
-  __func_return=${__envsPrepareFile_target_output}
+  cat ${__target_tmp_1}>${__target_output}
+  rm -rf ${__target_tmp_1}
+  rm -rf ${__target_tmp_2}
+  export __func_return=${__target_output}
   return 1
 }
 
 function envsFileConvertToExport()
 {
   export __func_return=
-  __envsFileConvertToExport_file="${1}"
-  __envsFileConvertToExport_output="${2}"
+  local __file="${1}"
+  local __file_out="${2}"
 
-
-  if [[ ${__envsFileConvertToExport_file} == "" ]]; then
+  if [[ ${__file} == "" ]]; then
     return 0
   fi
 
-  if ! [[ -f ${__envsFileConvertToExport_file} ]]; then
+  if ! [[ -f ${__file} ]]; then
     return 0
   fi
 
-  if [[ ${__envsFileConvertToExport_output} == "" ]]; then
-    __envsFileConvertToExport_output=${__envsFileConvertToExport_file}
+  if [[ ${__file_out} == "" ]]; then
+    local __file_out=${__file}
   else
-    cat ${__envsFileConvertToExport_file}>${__envsFileConvertToExport_output}
+    cat ${__file}>${__file_out}
   fi
 
-  envsPrepareFile ${__envsFileConvertToExport_output}
+  envsPrepareFile ${__file_out}
 
   export __func_return=
   #incluindo prefixo no artquivo
-  sed -i 's/^/export /' ${__envsFileConvertToExport_output}
-  export __func_return=${__envsFileConvertToExport_output} 
+  sed -i 's/^/export /' ${__file_out}
+  export __func_return=${__file_out} 
   return 1
 }
 
 function envsReplaceFile()
 {
-  __envsReplaceFile_file=${1}  
-  if ! [[ -f ${__envsReplaceFile_file} ]]; then
+  local __file=${1}  
+  if ! [[ -f ${__file} ]]; then
     return 0
   fi
 
-  REPLACE_SEPARADOR_250="%REPLACE-250"
-  __envsReplaceFile_envs="/tmp/env_file_envsReplaceFile_${RANDOM}.env"
+  local __char_250="%REPLACE-250"
+  local __file_envs="/tmp/env_file_envsReplaceFile_${RANDOM}.env"
 
-  __envsReplaceFile_envs=($(envsOS))
-  sed -i 's/\${/\[\#\#\]{/g' ${__envsReplaceFile_file}  
-  for __envsReplaceFile_env in "${__envsReplaceFile_envs[@]}"
+  local __file_envs=($(envsOS))
+  sed -i 's/\${/\[\#\#\]{/g' ${__file}  
+  for __file_env in "${__file_envs[@]}"
   do
-    __envsReplaceFile_env=(${__envsReplaceFile_env//=/ })
-    replace="\[\#\#\]{${__envsReplaceFile_env[0]}}"
-    replacewith=$(sed "s/\//$REPLACE_SEPARADOR_250/g" <<< "${__envsReplaceFile_env[1]}")
+    local __file_env=(${__file_env//=/ })
+    local replace="\[\#\#\]{${__file_env[0]}}"
+    local replacewith=$(sed "s/\//$__char_250/g" <<< "${__file_env[1]}")
 
     if [[ ${replace} == "_" ]]; then
       continue;
@@ -582,44 +581,44 @@ function envsReplaceFile()
     if [[ "$replacewith" == *"/"* ]]; then
       continue;
     fi
-    sed -i "s/${replace}/${replacewith}/g" ${__envsReplaceFile_file}
+    sed -i "s/${replace}/${replacewith}/g" ${__file}
   done
-  sed -i 's/\[\#\#\]{/\${/g' ${__envsReplaceFile_file}
-  echo $(sed -i "s/$REPLACE_SEPARADOR_250/\//g" ${__envsReplaceFile_file})&>/dev/null
+  sed -i 's/\[\#\#\]{/\${/g' ${__file}
+  echo $(sed -i "s/$__char_250/\//g" ${__file})&>/dev/null
   return 1;
 }
 
 function envsParserFile()
 {
-  __envsParserFile_file=${1}  
-  if ! [[ -f ${__envsParserFile_file} ]]; then
+  local __file=${1}  
+  if ! [[ -f ${__file} ]]; then
     return 0
   fi
 
-  __envsParserFile_file_tmp="/tmp/env_file___envsParserFile_file_tmp_${RANDOM}.env"
+  local __file_tmp="/tmp/env_file___file_tmp_${RANDOM}.env"
 
-  cat ${__envsParserFile_file}>${__envsParserFile_file_tmp}
+  cat ${__file}>${__file_tmp}
 
-  envsPrepareFile ${__envsParserFile_file_tmp}
-  envsReplaceFile ${__envsParserFile_file_tmp}
+  envsPrepareFile ${__file_tmp}
+  envsReplaceFile ${__file_tmp}
   #sort lines
-  sort -u ${__envsParserFile_file_tmp} -o ${__envsParserFile_file}
-  sed -i '$!N; /^\(.*\)\n\1$/!P; D' ${__envsParserFile_file}
-  rm -rf ${__envsParserFile_file_tmp}
+  sort -u ${__file_tmp} -o ${__file}
+  sed -i '$!N; /^\(.*\)\n\1$/!P; D' ${__file}
+  rm -rf ${__file_tmp}
   return 1;
 }
 
 function envsParserDir()
 {
-  export __envsParserDir_DIR="${2}"
-  export __envsParserDir_EXT="${3}"
+  export __DIR="${2}"
+  export __EXT="${3}"
 
-  if [[ ${__envsParserDir_DIR} == "" || ${__envsParserDir_EXT} == "" ]]; then
-    if [[ -d ${__envsParserDir_DIR} ]]; then
-      __envsParserDir_TARGETS=($(find ${__envsParserDir_DIR} -name ${__envsParserDir_EXT}))
-      for __envsParserDir_TARGET in "${__envsParserDir_TARGETS[@]}"
+  if [[ ${__DIR} == "" || ${__EXT} == "" ]]; then
+    if [[ -d ${__DIR} ]]; then
+      local __TARGETS=($(find ${__DIR} -name ${__EXT}))
+      for __TARGET in "${__TARGETS[@]}"
       do
-        envsParserFile ${__envsParserDir_TARGET}
+        envsParserFile ${__TARGET}
       done
     fi
   fi
@@ -637,7 +636,7 @@ function clearTerm()
 function strExtractFilePath()
 {
   export __func_return=
-  __str_file="${1}"
+  local __str_file="${1}"
   if [[ ${__str_file} == "" ]]; then
     return 0
   fi
@@ -648,64 +647,40 @@ function strExtractFilePath()
 
 function strExtractFileName()
 {
-  __str_file="${1}"
-  __func_return=
+  local __str_file="${1}"
+  local __func_return=
   if [[ ${__str_file} == "" ]]; then
     return 0
   fi
-  __func_return=$(basename ${__str_file})
+  local __func_return=$(basename ${__str_file})
   echo ${__func_return}
   return 1;
 }
 
 function strExtractFileExtension()
 {
-  __str_file="${1}"
-  __func_return=
+  local __str_file="${1}"
+  local __func_return=
   if [[ ${__str_file} == "" ]]; then
     return 0
   fi
-  __str_file_splitted=$(strSplit ${__str_file} ".")
+  local __str_file_splitted=$(strSplit ${__str_file} ".")
   if [[ ${__str_file_splitted} == "" ]]; then
     return 0
   fi
-  __str_file_splitted=(${__str_file_splitted})
-  __str_file_last_index=$((${#__str_file_splitted[@]} - 1))
-  __func_return=${__str_file_splitted[$__str_file_last_index]}
+  local __str_file_splitted=(${__str_file_splitted})
+  local __str_file_last_index=$((${#__str_file_splitted[@]} - 1))
+  export __func_return=${__str_file_splitted[$__str_file_last_index]}
   echo ${__func_return}
   return 1;
 }
 
-# function strArg(){
-#   local __args=(${1})
-#   local __arg="${2}"
-#   local __return=
-#   for arg in "${__args[@]}"
-#   do
-#     local key=$(echo "$arg" | cut -d '=' -f1)
-#     if ! [[ ${arg} == "--"* ]]; then
-#       continue;
-#     fi
-
-#     echo "if [[ "${arg}" == "--${arg}="* ]]; then"
-
-#     if [[ "${arg}" == "--${arg}="* ]]; then
-#       continue;
-#     fi
-
-#     echo $(echo "$arg" | cut -d '=' -f2)
-
-
-#   done
-#   return 0;
-# }
-
 function strArg()
 {
   export __func_return=
-  __strArg_index="${1}"
-  __strArg_args="${2}"
-  __strArg_ifs="${3}"
+  local __strArg_index="${1}"
+  local __strArg_args="${2}"
+  local __strArg_ifs="${3}"
   if [[ ${__strArg_index} == "" ]]; then
     export __func_return="$@"
     echo "$@"
@@ -714,12 +689,12 @@ function strArg()
   if [[ ${__strArg_args} == "" ]]; then
     return 0
   fi
-  __strArg_ifs_old=${IFS}
+  local __strArg_ifs_old=${IFS}
   if [[ ${__strArg_ifs} == "" ]]; then
-    __strArg_ifs=' '
+    local __strArg_ifs=' '
   fi
   IFS=${__strArg_ifs}
-  __strArg_args=(${__strArg_args})
+  local __strArg_args=(${__strArg_args})
   export __func_return=${__strArg_args[${__strArg_index}]}
   echo "${__func_return}"
   IFS=${__strArg_ifs_old}
@@ -728,9 +703,9 @@ function strArg()
 
 function strSplit()
 {
-  __strSplitText="${1}"
-  __strSplitSepatator="${2}"
-  __func_return=
+  local __strSplitText="${1}"
+  local __strSplitSepatator="${2}"
+  export __func_return=
 
   if [[ ${__strSplitText} == ""  ]]; then
     return 0
@@ -738,72 +713,72 @@ function strSplit()
 
   # Defina o IFS para o caractere de espaço em branco
   if [[ "${__strSplitSepatator}" == ""  ]]; then
-    __strSplitSepatator=' '
+    local __strSplitSepatator=' '
   fi
 
   #cache old IFS
   OLD_IFS=${IFS}
   #new char split
   IFS=${__strSplitSepatator}
-  __strSplitArray=($__strSplitText)
+  local __strSplitArray=($__strSplitText)
 
   # restore IFS
   IFS=${OLD_IFS}
   for env in "${__strSplitArray[@]}";
   do
-    __func_return="${__func_return} ${env}"
+    export __func_return="${__func_return} ${env}"
   done
   echo ${__func_return}
 }
 
 function strAlign()
 {
-  __s_j_align="${1}"
-  __s_j_count=$(toInt "${2}")
-  __s_j_return="${3}"
-  __s_j_char="${4}"
+  local __s_j_align="${1}"
+  local __s_j_count=$(toInt "${2}")
+  local __s_j_return="${3}"
+  local __s_j_char="${4}"
 
   if [[ 0 -eq ${__s_j_count} ]]; then
     echo ${__s_j_return}
     return 1;
   fi
   if [[ ${__s_j_char} == "" ]]; then 
-    __s_j_char=" ";
+    local __s_j_char=" ";
   fi
   if [[ ${__s_j_return} == "" ]]; then
-    __s_j_return=${__s_j_char};
+    local __s_j_return=${__s_j_char};
   fi
 
-  __s_j_left=1
+  local __s_j_left=1
   for i in $(seq 1 ${__s_j_count});
   do
-    __s_j_len=$(expr length "${__s_j_return}")
+    local __s_j_len=$(expr length "${__s_j_return}")
     if [[ ${__s_j_len} -ge ${__s_j_count} ]]; then
       break
     fi
 
     if [[ ${__s_j_align} == "left" ]]; then
-      __s_j_return="${__s_j_return}${__s_j_char}"
+      local __s_j_return="${__s_j_return}${__s_j_char}"
     elif [[ ${__s_j_align} == "right" ]]; then
-      __s_j_return="${__s_j_char}${__s_j_return}"
+      local __s_j_return="${__s_j_char}${__s_j_return}"
     elif [[ ${__s_j_align} == "center" ]]; then
       if [[ ${__s_j_left} == 0 ]]; then
-        __s_j_return="${__s_j_return}${__s_j_char}"
-        __s_j_left=1
+        local __s_j_return="${__s_j_return}${__s_j_char}"
+        local __s_j_left=1
       else
-        __s_j_return="${__s_j_char}${__s_j_return}"
-        __s_j_left=0
+        local __s_j_return="${__s_j_char}${__s_j_return}"
+        local __s_j_left=0
       fi
     else
-      __s_j_align=
-      __s_j_count=
-      __s_j_char=
+      local __s_j_align=
+      local __s_j_count=
+      local __s_j_char=
       return 0
     fi
   done
-  __s_j_align=
-  __s_j_count=
-  __s_j_char=
+  local __s_j_align=
+  local __s_j_count=
+  local __s_j_char=
   echo "${__s_j_return}"
   return 1
 }
@@ -825,9 +800,9 @@ function strCenterJustified()
 
 function replaceString()
 {
-  __replaceString_SOURCE="${1}"
-  __replaceString_TARGET="${2}"
-  __replaceString_REPLAC="${3}"
+  local __replaceString_SOURCE="${1}"
+  local __replaceString_TARGET="${2}"
+  local __replaceString_REPLAC="${3}"
 
   if [[ "${__replaceString_SOURCE}" == "" ]]; then
     return 0;
@@ -841,8 +816,8 @@ function replaceString()
   OUTPUT=${__replaceString_SOURCE}
   while :
   do
-    __replaceString_LAST_OUTPUT=${__replaceString_OUTPUT}
-    __replaceString_OUTPUT=$(echo ${LAST_OUTPUT} | sed "s/${__replaceString_TARGET}/${__replaceString_REPLAC}/g")
+    local __replaceString_LAST_OUTPUT=${__replaceString_OUTPUT}
+    local __replaceString_OUTPUT=$(echo ${LAST_OUTPUT} | sed "s/${__replaceString_TARGET}/${__replaceString_REPLAC}/g")
     if [[ "${__replaceString_OUTPUT}" == "${__replaceString_LAST_OUTPUT}" ]]; then
       break
     fi
@@ -889,42 +864,39 @@ function echC()
 
 function echIdent()
 {
-  __e_i_level=$(toInt ${1})
-  __e_i_step=$(toInt "${2}")
+  local __e_i_level=$(toInt ${1})
+  local __e_i_step=$(toInt "${2}")
   let "__e_i_step=${__e_i_step}"
 
   #echo "    __e_i_level=${__e_i_level}, __e_i_step==${__e_i_step}"
 
-  __e_i_out=
-  __e_i_spacer="  "
+  local __e_i_out=
+  local __e_i_spacer="  "
   for i in $(seq 1 ${__e_i_step});
   do
-    __e_i_out="${__e_i_out}${__e_i_spacer}"
+    local __e_i_out="${__e_i_out}${__e_i_spacer}"
   done
 
   for __e_i_level_i in $(seq 1 ${__e_i_level});
   do
     if [[ ${__e_i_level_i} == 5 ]]; then
-      __e_i_spacer=" ."
+      local __e_i_spacer=" ."
     else
-      __e_i_spacer="  "
+      local __e_i_spacer="  "
     fi
-    __e_i_out="${__e_i_out}${__e_i_spacer}"
+    local __e_i_out="${__e_i_out}${__e_i_spacer}"
   done
 
   echo "${__e_i_out}"
-
-  #__e_i_out=$(strAlign right "${__e_i_step}" " " " ")
-  #echo "${__e_i_out}"
 }
 
 function echText()
 {
-  __e_s_lev=${1}
-  __e_s_inc=${2}
-  __e_s_spa="$(echIdent "${__e_s_lev}" "${__e_s_inc}")"
-  __e_s_txt="${3}"
-  __e_s_log="${4}"
+  local __e_s_lev=${1}
+  local __e_s_inc=${2}
+  local __e_s_spa="$(echIdent "${__e_s_lev}" "${__e_s_inc}")"
+  local __e_s_txt="${3}"
+  local __e_s_log="${4}"
 
   if [[ ${PUBLIC_LOG_LEVEL} == true && ${__e_s_log} != "" ]]; then
     echo "${__e_s_spa} ${__e_s_txt} - [ ${__e_s_log} ]"
@@ -940,10 +912,10 @@ function __private_echStart()
 
 function __private_echFinished()
 {
-  __e_a_f_identity="${1}"
-  __e_a_f_return="${2}"
-  __e_a_f_message="${3}"
-  __e_a_f_output="${4}"
+  local __e_a_f_identity="${1}"
+  local __e_a_f_return="${2}"
+  local __e_a_f_message="${3}"
+  local __e_a_f_output="${4}"
 
   if [[ ${__e_a_f_return} != "" && ${__e_a_f_return} != 1 ]]; then
     if [[ ${__e_a_f_return} == 2 ]]; then
@@ -958,15 +930,14 @@ function __private_echFinished()
 
 function __private_echAttibute()
 {
-  __e_p_identity="${1}" 
-  __e_p_key="${2}"
-  __e_p_value="${3}"
+  local __e_p_identity="${1}" 
+  local __e_p_key="${2}"
+  local __e_p_value="${3}"
   if [[ ${__e_p_key} != "" && ${__e_p_value} != "" ]]; then
-    __e_p_value="- ${__e_p_key}: ${__e_p_value}"
+    local __e_p_value="- ${__e_p_key}: ${__e_p_value}"
   else
-    __e_p_value="- ${__e_p_key}${__e_p_value}"
+    local __e_p_value="- ${__e_p_key}${__e_p_value}"
   fi
-
   echo "$(echText 2 "${__e_p_identity}" "${__e_p_value}")"
 }
 
@@ -1010,19 +981,19 @@ function echFinished()
 
 function echCommand()
 {
-  __e_c_env_i=1
-  __e_c_command=
-  __e_c_command_ignore=
+  local __e_c_env_i=1
+  local __e_c_command=
+  local __e_c_command_ignore=
   export __echCommand=
   for __e_c_env in "$@"
   do
     if [[ ${__e_c_env} == "--ignore" ]]; then
-      __e_c_command_ignore=true
+      local __e_c_command_ignore=true
     else
       if [[ ${__e_c_env_i} == "" ]]; then
-        __e_c_command="${__e_c_command} ${__e_c_env}"
+        local __e_c_command="${__e_c_command} ${__e_c_env}"
       fi
-      __e_c_env_i=
+      local __e_c_env_i=
     fi
   done
 
@@ -1057,13 +1028,13 @@ function echInfo()
 
 function echWarning()
 {
-  __e_f_txt=" ${2} "
-  __e_f_out=" ${3} "
+  local __e_f_txt=" ${2} "
+  local __e_f_out=" ${3} "
   if [[ ${__e_f_out} == "" ]]; then
     __e_f_out=${__echCommand}
   fi
   export __echCommand=
-  __e_f_len=$(expr length "${__e_f_txt}")
+  local __e_f_len=$(expr length "${__e_f_txt}")
   let "__e_f_len_inc=${__e_f_len} + 4"
 
   lnContinuoEQU=$(strCenterJustified ${__e_f_len_inc} "=" "=")
@@ -1095,8 +1066,8 @@ function echWarning()
 
 function echFail()
 {
-  __e_f_txt=" ${2} "
-  __e_f_out=" ${3} "
+  local __e_f_txt=" ${2} "
+  local __e_f_out=" ${3} "
   if [[ ${__e_f_out} == "" ]]; then
     __e_f_out=${__echCommand}
   fi
@@ -1105,14 +1076,14 @@ function echFail()
   __e_f_len=$(expr length "${__e_f_txt}")
   let "__e_f_len_inc=${__e_f_len} + 8"
 
-  lnContinuoEQU=$(strCenterJustified ${__e_f_len_inc} "=" "=")
-  lnContinuoMSG=$(strCenterJustified ${__e_f_len_inc} "${__e_f_txt}" "*")
-  lnContinuoSPC=$(strCenterJustified ${__e_f_len} "" "*")
-  lnContinuoSPC=$(strCenterJustified ${__e_f_len_inc} "${lnContinuoSPC}" " ")  
+  local lnContinuoEQU=$(strCenterJustified ${__e_f_len_inc} "=" "=")
+  local lnContinuoMSG=$(strCenterJustified ${__e_f_len_inc} "${__e_f_txt}" "*")
+  local lnContinuoSPC=$(strCenterJustified ${__e_f_len} "" "*")
+  local lnContinuoSPC=$(strCenterJustified ${__e_f_len_inc} "${lnContinuoSPC}" " ")  
   
-  lnContinuoEQU="+${lnContinuoEQU}+"
-  lnContinuoSPC="+${lnContinuoSPC}+"
-  lnContinuoMSG="+${lnContinuoMSG}+"
+  local lnContinuoEQU="+${lnContinuoEQU}+"
+  local lnContinuoSPC="+${lnContinuoSPC}+"
+  local lnContinuoMSG="+${lnContinuoMSG}+"
 
  
   echR "$(echText 2 "${1}" "")"
@@ -1134,40 +1105,40 @@ function echFail()
 function jsonGet()
 {
   export __func_return=
-  __json_get_body=${1}
-  __json_get_tags=${2}
+  local __json_get_body=${1}
+  local __json_get_tags=${2}
 
   if [[ ${__json_get_body} == "" ]]; then
     return 0
   fi
   if [[ -f ${__json_get_body} ]]; then
-    __json_get_body=$(cat ${__json_get_body})
+    local __json_get_body=$(cat ${__json_get_body})
   fi
 
-  __json_get_tag_names=$(strSplit "${__json_get_tags}" ".")
+  local __json_get_tag_names=$(strSplit "${__json_get_tags}" ".")
   if [[ ${__json_get_tag_names} == "" ]]; then
     return 0
   fi
 
-  __json_get_tag_names=(${__json_get_tag_names})
-  __json_get_tag_name=
+  local __json_get_tag_names=(${__json_get_tag_names})
+  local __json_get_tag_name=
   for __json_get_tag in "${__json_get_tag_names[@]}"
   do
-    __json_get_tag_name="${__json_get_tag_name}.${__json_get_tag}"
-    __json_get_check=$(echo ${__json_get_body} | jq "${__json_get_tag_name}")
+    local __json_get_tag_name="${__json_get_tag_name}.${__json_get_tag}"
+    local __json_get_check=$(echo ${__json_get_body} | jq "${__json_get_tag_name}")
     if [[ ${__json_get_check} == "" || ${__json_get_check} == "null" ]]; then
       return 0
     fi
   done
-  __func_return=$(echo ${__json_get_body} | jq "${__json_get_tag_name}" | jq '.[]')
+  export __func_return=$(echo ${__json_get_body} | jq "${__json_get_tag_name}" | jq '.[]')
   echo ${__func_return}
   return 1
 }
 
 function arrayContains()
 {
-  __inArray_array=(${1})
-  __inArray_arg=${2}
+  local __inArray_array=(${1})
+  local __inArray_arg=${2}
 
   for __inArray_item in "${__inArray_array[@]}"
   do
@@ -1198,8 +1169,9 @@ function nameFormat()
   do
     local __nameFormat_first=$(toUpper ${__nameFormat_arg:0:1})
     local __nameFormat_body=$(toLower ${__nameFormat_arg:1})
-    __nameFormat_output="${__nameFormat_output} ${__nameFormat_first}${__nameFormat_body}"
+    local __nameFormat_output="${__nameFormat_output} ${__nameFormat_first}${__nameFormat_body}"
   done
+  export __func_return=${__nameFormat_output}
   echo ${__nameFormat_output}
   return 1;
 }

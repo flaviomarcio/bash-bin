@@ -53,7 +53,7 @@ function stackMkDir_lib_configure()
     return 1;
   fi
 
-  stackMkDir_lib_configure_dirs=("/data/lib" "/data/lib.dir" "/mnt/storage/lib.dir")
+  local stackMkDir_lib_configure_dirs=("/data/lib" "/data/lib.dir" "/mnt/storage/lib.dir")
   for stackMkDir_lib_configure_dir in "${stackMkDir_lib_configure_dirs[@]}"
   do
     if ! [[ -d ${stackMkDir_lib_configure_dir} ]]; then
@@ -208,11 +208,11 @@ function __private_stackEnvsLoadByStack()
     export __func_return="failt on calling __private_stackEnvsLoadByStack, invalid env \${STACK_PREFIX}"
     return 0
   fi
-  __private_services_names_configure_name=${2}
+  local __private_services_names_configure_name=${2}
 
   export STACK_SERVICE_NAME=$(echo "${STACK_PREFIX}-${STACK_NAME}" | sed 's/_/-/g')
 
-  export __private_stackEnvsLoadByStack_storage=${STACK_TARGET_STORAGE_DIR}/${STACK_SERVICE_NAME}
+  local __private_stackEnvsLoadByStack_storage=${STACK_TARGET_STORAGE_DIR}/${STACK_SERVICE_NAME}
   export STACK_SERVICE_STORAGE_DATA_DIR=${__private_stackEnvsLoadByStack_storage}/data
   export STACK_SERVICE_STORAGE_BACKUP_DIR=${__private_stackEnvsLoadByStack_storage}/backup
 
@@ -269,8 +269,8 @@ function __private_stackEnvsLoadByTarget()
 
 function stackEnvsLoad()
 {
-  __private_stackEnvsLoad_environment=${1}
-  __private_stackEnvsLoad_target=${2}
+  local __private_stackEnvsLoad_environment=${1}
+  local __private_stackEnvsLoad_target=${2}
 
   if [[ ${__private_stackEnvsLoad_environment} == "" ]]; then
     export __func_return="Invalid env: \${__private_stackEnvsLoad_environment}"
