@@ -387,15 +387,17 @@ function envsFileAddIfNotExists()
 
   #se nao for informado o valor da variavel recuperaremos seu valor pelo nome indicado
   if [[ ${__env_file_value} == "" ]]; then
-    local __env_file_value=${!__env_file_name}
+    local __env_file_value="${!__env_file_name}"
   fi
 
+  __env_file_value=$(echo ${__env_file_value} | sed 's/\\$/\\$/g')
 
   local __check=$(echo ${__env_file_value} | grep ' ')
   if [[ ${__check} == "" ]]; then
     local __env_final="${__env_file_name}=${__env_file_value}"
   else
     local __env_file_value=$(echo "${__env_file_value}" | sed 's/"//g' )
+    #local __env_file_value=$(echo "${__env_file_value}" | sed 's/\$/\\$/g' )
     local __env_final="${__env_file_name}=\"${__env_file_value}\""
   fi
 
