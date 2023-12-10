@@ -29,6 +29,7 @@ function __private_script_envs_check()
     echR "Invalid \${SCRIPT_DIR}"
     return 0
   fi
+  mkdir -p ${SCRIPT_DIR}
   if ! [[ -d ${SCRIPT_DIR} ]]; then
     echR "Invalid script dir: ${SCRIPT_DIR}"
     return 0
