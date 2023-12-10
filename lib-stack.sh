@@ -763,9 +763,8 @@ function stackVaultPush(){
 }
 
 function stackVaultMenu(){
-
+  return 0
 }
-
 
 # function __lib_stack_tests()
 # {
