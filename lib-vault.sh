@@ -9,7 +9,7 @@ function __private_vaultGetAndConvertToEnv()
 {
   unset __func_return=
   if ! [[ ${__private_vault_login_ok} == true ]]; then
-    echR "Invalid login sesssion "
+    export __func_return="Invalid vault session"
     return 0;
   fi
 
@@ -18,7 +18,7 @@ function __private_vaultGetAndConvertToEnv()
   local __kv_destine_dir="${3}"
 
   if [[ ${__kv_path} == "" ]]; then
-    echR "Invalid vault path, path is null"
+    export __func_return="Invalid vault path, path is null"
     return 0;
   fi
   vaultKvGet ${__kv_path}
@@ -130,7 +130,7 @@ function vaultLogin()
 
   local __return=$(vault login -method=token -method=${__private_vault_method} -address=${__private_vault_uri} ${__private_vault_token} | jq '.auth.client_token'| sed 's/\"//g')
   if [[ ${__return} != ${__private_vault_token} ]]; then
-    echR "vault unauthorized"
+    export __func_return="vault unauthorized"
     return 0;
   fi
 
@@ -143,7 +143,7 @@ function vaultKvGet()
 {
   unset __func_return
   if ! [[ ${__private_vault_login_ok} == true ]]; then
-    echR "Invalid login sesssion "
+    export __func_return="Invalid vault session"
     return 0;
   fi
   if [[ ${__private_vault_base_path} == "" ]]; then
@@ -159,7 +159,7 @@ function vaultKvPut()
 {
   unset __func_return
   if ! [[ ${__private_vault_login_ok} == true ]]; then
-    export __func_return="Invalid login sesssion "
+    export __func_return="Invalid vault session"
     return 0;
   fi
 
@@ -187,12 +187,6 @@ function vaultKvPut()
   if [[ ${__kv_source} == "" ]]; then
     local __kv_source="{}"
   fi
-
-  # if [[ -d ${__kv_source} ]]; then
-  #   export __func_return="Invalid \${__kv_source}:${__kv_source}"
-  #   return 0 
-  # fi
-
  
   local _tmp_data=/tmp/data_$RANDOM.tmp
   if [[ -f ${__kv_source} ]]; then
@@ -213,7 +207,7 @@ function vaultKvList()
 {
   unset __func_return
   if ! [[ ${__private_vault_login_ok} == true ]]; then
-    echR "Invalid login sesssion "
+    export __func_return="Invalid vault session"
     return 0;
   fi
 
@@ -224,7 +218,7 @@ function vaultKvList()
   fi
 
   if [[ ${__kv_path} == "" ]]; then
-    echR "Invalid vault path, path is null"
+    export __func_return="Invalid vault path, path is null"
     return 0;
   fi
   export __func_return=$(vault kv list -format=json ${__kv_path} | jq '.[]' | sed 's/\"//g')
@@ -237,7 +231,7 @@ function vaultKvPullToDir()
 {
   unset __func_return
   if ! [[ ${__private_vault_login_ok} == true ]]; then
-    echR "Invalid login sesssion "
+    export __func_return="Invalid vault session"
     return 0;
   fi
 
@@ -249,16 +243,16 @@ function vaultKvPullToDir()
   fi
 
   if [[ ${__kv_path} == "" ]]; then
-    echR "Invalid vault path, path is null"
+    export __func_return="Invalid vault path, path is null"
     return 0;
   elif [[ ${__kv_destine_dir} == "" ]]; then
-    echR "Invalid vault export dir. source dir is null"
+    export __func_return="Invalid vault export dir. source dir is null"
     return 0;
   fi
 
   mkdir -p ${__kv_destine_dir}
   if ! [[ -d ${__kv_destine_dir} ]]; then
-    echR "Invalid vault export dir not found, ${__kv_destine_dir}"
+    export __func_return="Invalid vault export dir not found, ${__kv_destine_dir}"
     return 0;
   fi
 
@@ -267,15 +261,17 @@ function vaultKvPullToDir()
       return 0;
   fi
   local __kv_key_names=(${__func_return})
-  for __kv_key_name in "${__kv_key_names[@]}"
+  for __kv_name in "${__kv_key_names[@]}"
   do
-    local __kv_destine_file=${__kv_destine_dir}/${__kv_key_name}.json
-    vaultKvGet "${__kv_key_name}"
+    local __kv_destine_file=${__kv_destine_dir}/${__kv_name}.json
+    vaultKvGet "${__kv_name}"
     if ! [ "$?" -eq 1 ]; then
         return 0;
     fi
     echo ${__func_return} | jq >${__kv_destine_file}
+    local __return="${__return} ${__kv_destine_file}"
   done
+  export __func_return=${__return}
   return 1;
 }
 
@@ -284,7 +280,7 @@ function vaultKvPushFromDir()
 {
   unset __func_return
   if ! [[ ${__private_vault_login_ok} == true ]]; then
-    echR "Invalid login sesssion "
+    export __func_return="Invalid vault session"
     return 0;
   fi
 
@@ -296,13 +292,13 @@ function vaultKvPushFromDir()
   fi
 
   if [[ ${__kv_path} == "" ]]; then
-    echR "Invalid vault path, path is null"
+    export __func_return="Invalid vault path, path is null"
     return 0;
   elif [[ ${__kv_source_dir} == "" ]]; then
-    echR "Invalid vault source dir. source dir is null"
+    export __func_return="Invalid vault source dir. source dir is null"
     return 0;
   elif ! [[ -d ${__kv_source_dir} ]]; then
-    echR "Invalid vault source dir not found, ${__kv_source_dir}"
+    export __func_return="Invalid vault source dir not found, ${__kv_source_dir}"
     return 0;
   fi
  

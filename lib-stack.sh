@@ -785,11 +785,20 @@ function stackVaultPull(){
     return 0;
   fi
   local __kv_paths=(${__func_return})
-  echB "  Importing keys to ${STACK_VAULT_IMPORT}"
-  for __kv_path in "${__kv_paths[@]}"
+  echB "  Importing keys"
+  echC "    - destine: ${STACK_VAULT_IMPORT}"
+  echG "    - commans"
+  echY "      - export DST_DIR=${STACK_VAULT_DIR}"
+  echY ""
+  for __kv_destine in "${__kv_paths[@]}"
   do
-    echY "    - vault kv put --format=json ${__kv_path} -\${SOURCE_BODY}"
-    echG "      - OK"
+    local __kv_file=$(basename ${__kv_destine})
+    local __kv_path="${__private_vault_base_path}/${__kv_file})"
+    local __kv_path=$(echo ${__kv_path} | sed 's/.json//g')
+    local __kv_file="\${DST_DIR}/${__kv_file}"
+    echY "      - export DST_FILE=${__kv_file}"
+    echY "      - vault kv get --format=json ${__kv_path} | jq '.data.data' > \${DST_FILE}"
+    echG "        - OK"
   done
   read
   return 1
