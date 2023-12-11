@@ -779,17 +779,17 @@ function stackVaultList(){
 }
 
 function stackVaultPull(){
+  echB "  Importing keys"
+  echC "    - destine: ${STACK_VAULT_IMPORT}"
+  echG "    - commans"
+  echY "      - export DST_DIR=${STACK_VAULT_DIR}"
+  echY ""
   vaultKvPullToDir "${STACK_VAULT_DIR}"
   if ! [ "$?" -eq 1 ]; then
     export __func_return="fail on calling vaultKvPullToDir: ${__func_return}"
     return 0;
   fi
   local __kv_paths=(${__func_return})
-  echB "  Importing keys"
-  echC "    - destine: ${STACK_VAULT_IMPORT}"
-  echG "    - commans"
-  echY "      - export DST_DIR=${STACK_VAULT_DIR}"
-  echY ""
   for __kv_destine in "${__kv_paths[@]}"
   do
     local __kv_file=$(basename ${__kv_destine})
@@ -800,23 +800,27 @@ function stackVaultPull(){
     echY "      - vault kv get --format=json ${__kv_path} | jq '.data.data' > \${DST_FILE}"
     echG "        - OK"
   done
+  echG "  finished"
   read
   return 1
 }
 
 function stackVaultPush(){
+  echB "  Exporting keys"
+  echC "    - source dir ${STACK_VAULT_IMPORT}"
   vaultKvPushFromDir "${STACK_VAULT_DIR}" "${STACK_VAULT_IMPORT}"
   if ! [ "$?" -eq 1 ]; then
     export __func_return="fail on calling vaultKvPushFromDir: ${__func_return}"
     return 0;
   fi
   local __kv_paths=(${__func_return})
-  echB "  Exporting keys to ${STACK_VAULT_IMPORT}"
   for __kv_path in "${__kv_paths[@]}"
   do
-    echY "    - vault kv put --format=json ${__kv_path} -\${SOURCE_BODY}"
-    echG "      - OK"
+    local __kv_path="${__private_vault_base_path}/${__kv_path})"
+    echY "      - vault kv put --format=json ${__kv_path} -\${SOURCE_BODY}"
+    echG "        - OK"
   done
+  echG "  finished"
   read
   return 1
 }
