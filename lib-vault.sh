@@ -79,7 +79,7 @@ function vaultEnvCheck()
   fi
 
   if [[ ${__private_vault_base_path} == "" ]]; then
-    __private_vault_base_path="/secret"
+    __private_vault_base_path="vault:/kv/${STACK_TARGET}/${STACK_ENVIRONMENT}"
   fi
 
   if [[ ${__private_vault_username} == "" ]]; then
@@ -206,8 +206,7 @@ function vaultKvList()
     echR "Invalid vault path, path is null"
     return 0;
   fi
-
-  export __func_return=$(vault kv list ${__kv_path} | jq '.[]' | sed 's/\"//g')
+  export __func_return=$(vault kv list -format=json ${__kv_path} | jq '.[]' | sed 's/\"//g')
   __func_return=$(echo ${__func_return})
   return 1;
 }

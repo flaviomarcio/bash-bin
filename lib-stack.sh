@@ -16,14 +16,14 @@ fi
 function __private_stackEnvsLoadByStack()
 {
   export STACK_NAME=${1}
-  export STACK_SERVICE_IMAGE=
-  export STACK_SERVICE_NAME=
-  export STACK_SERVICE_HOSTNAME=
-  export STACK_SERVICE_HOSTNAME_PUBLIC=
-  export STACK_SERVICE_STORAGE_DATA_DIR=
-  export STACK_SERVICE_STORAGE_LOG_DIR=
-  export STACK_SERVICE_STORAGE_CONFIG_DIR=
-  export STACK_SERVICE_STORAGE_BACKUP_DIR=
+  unset STACK_SERVICE_IMAGE=
+  unset STACK_SERVICE_NAME=
+  unset STACK_SERVICE_HOSTNAME=
+  unset STACK_SERVICE_HOSTNAME_PUBLIC=
+  unset STACK_SERVICE_STORAGE_DATA_DIR=
+  unset STACK_SERVICE_STORAGE_LOG_DIR=
+  unset STACK_SERVICE_STORAGE_CONFIG_DIR=
+  unset STACK_SERVICE_STORAGE_BACKUP_DIR=
 
   if [[ ${STACK_NAME} == "" ]]; then
     export __func_return="failt on calling __private_stackEnvsLoadByStack, invalid env \${STACK_NAME}"
@@ -142,7 +142,7 @@ function __private_stackEnvsDefaultByStack()
 
   envsSetIfIsEmpty APPLICATION_DEPLOY_VAULT_METHOD "${STACK_VAULT_METHOD}"
   envsSetIfIsEmpty APPLICATION_DEPLOY_VAULT_TOKEN "${STACK_VAULT_TOKEN_DEPLOY}"
-  envsSetIfIsEmpty APPLICATION_DEPLOY_VAULT_URI "${STACK_VAULT_URI}"
+  envsSetIfIsEmpty APPLICATION_DEPLOY_VAULT_URI "${STACK_VAULT_URI}:${STACK_VAULT_PORT}"
   envsSetIfIsEmpty APPLICATION_DEPLOY_VAULT_APP_ROLE_ID "${STACK_VAULT_APP_ROLE_ID}"
   envsSetIfIsEmpty APPLICATION_DEPLOY_VAULT_APP_ROLE_SECRET "${STACK_VAULT_APP_ROLE_SECRET}"
   envsSetIfIsEmpty APPLICATION_DEPLOY_VAULT_ENABLED "${STACK_VAULT_ENABLED}"
@@ -273,12 +273,7 @@ function stackInitTargetEnvFile()
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_PROXY_PORT_HTTP
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_PROXY_PORT_HTTPS
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_PROXY_LOG_LEVEL
-  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_VAULT_URI
-  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_VAULT_METHOD
-  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_VAULT_TOKEN
-  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_VAULT_TOKEN_DEPLOY
-  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_VAULT_APP_ROLE_ID
-  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_VAULT_APP_ROLE_SECRET
+
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_CPU_DEFAULT
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_MEMORY_DEFAULT
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_REPLICAS
@@ -326,7 +321,14 @@ function stackInitTargetEnvFile()
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} POSTGRES_DATABASE
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} POSTGRES_PORT
 
-
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_VAULT_PORT
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_VAULT_URI
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_VAULT_METHOD
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_VAULT_TOKEN
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_VAULT_TOKEN_DEPLOY
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_VAULT_APP_ROLE_ID
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_VAULT_APP_ROLE_SECRET
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_VAULT_IMPORT
 
   echo $(chmod +x ${PUBLIC_STACK_TARGET_ENVS_FILE})&>/dev/null
   return 1
@@ -362,6 +364,7 @@ function stackEnvsLoad()
   export ROOT_APPLICATIONS_DIR="${STACK_ROOT_DIR}/applications"
   export ROOT_ENVIRONMENT_DIR=${ROOT_APPLICATIONS_DIR}/${STACK_ENVIRONMENT}
   export STACK_CERT_DEFAULT_DIR="${ROOT_APPLICATIONS_DIR}/certs"
+  export STACK_VAULT_SECRET_DIR=${STACK_APPLICATIONS_DATA_VAULT}/${STACK_ENVIRONMENT}
   export PUBLIC_STACK_TARGETS_FILE="${ROOT_APPLICATIONS_DIR}/stack_targets.env"
   export PUBLIC_STACK_ENVIRONMENTS_FILE="${ROOT_APPLICATIONS_DIR}/stack_environments.env"
 
@@ -406,7 +409,8 @@ function stackEnvsLoad()
   envsSetIfIsEmpty STACK_PROXY_PORT_HTTP 80
   envsSetIfIsEmpty STACK_PROXY_PORT_HTTPS 443
   
-  envsSetIfIsEmpty STACK_VAULT_URI "http://${STACK_PREFIX}-vault:8200"
+  envsSetIfIsEmpty STACK_VAULT_PORT 8200
+  envsSetIfIsEmpty STACK_VAULT_URI "http://${STACK_PREFIX}-vault"
   envsSetIfIsEmpty STACK_VAULT_METHOD token
   envsSetIfIsEmpty STACK_VAULT_TOKEN "00000000-0000-0000-0000-000000000000"
   envsSetIfIsEmpty STACK_VAULT_TOKEN_DEPLOY "${STACK_VAULT_TOKEN}"
@@ -718,52 +722,79 @@ function stackPublicEnvs()
 
 }
 
-function stackVaultLogin(){
+function stackVaultLogoff(){
+  vaultLogoff
+}
 
-  local __kv_environment=${STACK_ENVIRONMENT}
-  local __kv_base_path=/secret
-  local __kv_method=token
-  local __kv_uri=${STACK_PREFIX}-vault
-  local __kv_token=${STACK_VAULT_TOKEN}
-  local __kv_username=${STACK_VAULT_APP_ROLE_ID}
-  local __kv_password=${STACK_VAULT_APP_ROLE_SECRET}
-  local __kv_app_path=${__kv_base_path}/${STACK_SERVICE_NAME}
-  local __kv_src_dir=${HOME}/temp
-  
-  vaultLogin "${__kv_environment}" "${__kv_base_path}" "${__kv_method}" "${__kv_uri}" "${__kv_token}" "${__kv_username}" "${__kv_password}"
+function stackVaultLogin(){
+ 
+  vaultLogin "${STACK_ENVIRONMENT}" "${STACK_VAULT_IMPORT}" "${STACK_VAULT_METHOD}" "${STACK_VAULT_URI}" "${STACK_VAULT_TOKEN}" "${STACK_VAULT_APP_ROLE_ID}" "${STACK_VAULT_APP_ROLE_SECRET}"
   if ! [ "$?" -eq 1 ]; then
     export __func_return="fail on calling vaultLogin: ${__func_return}"
     return 0;
   fi
-
-  export STACK_VAULT_IMPORT=vault:/kv/${STACK_TARGET}/${STACK_ENVIRONMENT}
-
   return 1;
 }
 
-function stackVaultPull(){
-  stackVaultLogin
+function stackVaultList(){
+  clearTerm
+  local __kv_path=$(echo ${STACK_VAULT_IMPORT} | sed 's/vault\:\///g')
+  vaultKvList "${__kv_path}"
   if ! [ "$?" -eq 1 ]; then
+    export __func_return="fail on calling vaultKvList: ${__func_return}"
     return 0;
   fi
-  #local __kv_destine_dir="${1}"
-  #local __kv_path="${2}"
-  #STACK_VAULT_IMPORT
-  #vaultKvPullToDir ${__kv_destine_dir} ${STACK_VAULT_IMPORT}
-  vaultKvList ${STACK_VAULT_IMPORT}
+
+  if [[ ${__func_return} == "" ]]; then
+    echG "  No Keys"
+    return 0
+  else
+    local __keys=(${__func_return})
+    echB "  Keys"
+    export __options=
+    for __key in "${__keys[@]}"
+    do
+      local __path=${__kv_path}/${__key}
+      echY "    - vault kv get --format=json ${__path}"
+      local __options="${__options} ${__key}"      
+    done
+
+    while :
+    do
+      clearTerm
+      selector "Data keys" "Quit ${__options}" false
+      if [[ ${__selector} == "Quit" ]]; then
+        return 1;
+      else
+         local __path=${__kv_path}/${__selector}
+         clearTerm
+         echB "  Keys ${STACK_VAULT_IMPORT}/${__selector}"
+         echY "   - $(vault kv get -output-curl-string ${__path})"
+         echY "   - vault kv get --format=json ${__path}"
+         vault kv get --format=json ${__path} | jq '.data.data'
+         read
+      fi
+    done
+  fi
+  return 0
+}
+
+function stackVaultPull(){
+  vaultKvPullToDir "${STACK_VAULT_SECRET_DIR}" "${STACK_VAULT_IMPORT}"
+  if ! [ "$?" -eq 1 ]; then
+    export __func_return="fail on calling vaultKvPullToDir: ${__func_return}"
+    return 0;
+  fi
   return 1
 }
 
 function stackVaultPush(){
-  stackVaultLogin
+  vaultKvPushFromDir "${STACK_VAULT_SECRET_DIR}" "${STACK_VAULT_IMPORT}"
   if ! [ "$?" -eq 1 ]; then
+    export __func_return="fail on calling vaultKvPushFromDir: ${__func_return}"
     return 0;
   fi
   return 1
-}
-
-function stackVaultMenu(){
-  return 0
 }
 
 # function __lib_stack_tests()
