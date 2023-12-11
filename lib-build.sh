@@ -257,9 +257,9 @@ function execScript()
   fi
 
   echG "    - command"
-  echY "      - source ./${__src_script_path} --quiet"
+  echY "      - source ${__src_script_path} --quiet"
 
-  source ${__src_script_path}
+  source ${__src_script_path} --quiet
   if [[ ${__func_return} == "" || ${__func_return} == "true" ]]; then
     echG "    Finished"
     return 1;
