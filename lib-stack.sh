@@ -102,7 +102,7 @@ function __private_stackEnvsDefaultByStack()
   local __name=${3}
 
   local __service=${__environment}-${__target}-${__name}
-  export APPLICATION_STACK_NAME=${__service}
+  export APPLICATION_STACK_NAME=${__name}
   export APPLICATION_DEPLOY_NAME=${__service}
   export APPLICATION_DEPLOY_HOSTNAME=${__service}  
 
