@@ -364,7 +364,6 @@ function stackEnvsLoad()
   export ROOT_APPLICATIONS_DIR="${STACK_ROOT_DIR}/applications"
   export ROOT_ENVIRONMENT_DIR=${ROOT_APPLICATIONS_DIR}/${STACK_ENVIRONMENT}
   export STACK_CERT_DEFAULT_DIR="${ROOT_APPLICATIONS_DIR}/certs"
-  export STACK_VAULT_SECRET_DIR=${STACK_APPLICATIONS_DATA_VAULT}/${STACK_ENVIRONMENT}
   export PUBLIC_STACK_TARGETS_FILE="${ROOT_APPLICATIONS_DIR}/stack_targets.env"
   export PUBLIC_STACK_ENVIRONMENTS_FILE="${ROOT_APPLICATIONS_DIR}/stack_environments.env"
 
@@ -738,8 +737,7 @@ function stackVaultLogin(){
 
 function stackVaultList(){
   clearTerm
-  local __kv_path=$(echo ${STACK_VAULT_IMPORT} | sed 's/vault\:\///g')
-  vaultKvList "${__kv_path}"
+  vaultKvList
   if ! [ "$?" -eq 1 ]; then
     export __func_return="fail on calling vaultKvList: ${__func_return}"
     return 0;
@@ -749,6 +747,7 @@ function stackVaultList(){
     echG "  No Keys"
     return 0
   else
+    local __kv_path=$(echo ${STACK_VAULT_IMPORT} | sed 's/vault\:\///g')
     local __keys=(${__func_return})
     echB "  Keys"
     export __options=
@@ -780,20 +779,36 @@ function stackVaultList(){
 }
 
 function stackVaultPull(){
-  vaultKvPullToDir "${STACK_VAULT_SECRET_DIR}" "${STACK_VAULT_IMPORT}"
+  vaultKvPullToDir "${STACK_VAULT_DIR}"
   if ! [ "$?" -eq 1 ]; then
     export __func_return="fail on calling vaultKvPullToDir: ${__func_return}"
     return 0;
   fi
+  local __kv_paths=(${__func_return})
+  echB "  Importing keys to ${STACK_VAULT_IMPORT}"
+  for __kv_path in "${__kv_paths[@]}"
+  do
+    echY "    - vault kv put --format=json ${__kv_path} -\${SOURCE_BODY}"
+    echG "      - OK"
+  done
+  read
   return 1
 }
 
 function stackVaultPush(){
-  vaultKvPushFromDir "${STACK_VAULT_SECRET_DIR}" "${STACK_VAULT_IMPORT}"
+  vaultKvPushFromDir "${STACK_VAULT_DIR}" "${STACK_VAULT_IMPORT}"
   if ! [ "$?" -eq 1 ]; then
     export __func_return="fail on calling vaultKvPushFromDir: ${__func_return}"
     return 0;
   fi
+  local __kv_paths=(${__func_return})
+  echB "  Exporting keys to ${STACK_VAULT_IMPORT}"
+  for __kv_path in "${__kv_paths[@]}"
+  do
+    echY "    - vault kv put --format=json ${__kv_path} -\${SOURCE_BODY}"
+    echG "      - OK"
+  done
+  read
   return 1
 }
 

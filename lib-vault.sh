@@ -7,7 +7,7 @@
 
 function __private_vaultGetAndConvertToEnv()
 {
-  export __return=
+  unset __func_return=
   if ! [[ ${__private_vault_login_ok} == true ]]; then
     echR "Invalid login sesssion "
     return 0;
@@ -63,23 +63,23 @@ function vaultWaitOnLine()
 function vaultEnvCheck()
 {
   if [[ ${__private_vault_uri} == "" ]]; then
-    __private_vault_uri="http://${STACK_ENVIRONMENT}-${STACK_TARGET}-vault"
+    export __private_vault_uri="http://${STACK_ENVIRONMENT}-${STACK_TARGET}-vault"
   fi
 
   if [[ ${__private_vault_port} == "" ]]; then
-    __private_vault_port=80
+    export __private_vault_port=80
   fi
 
   if [[ ${__private_vault_method} == "" ]]; then
-    __private_vault_method=token
+    export __private_vault_method=token
   fi
 
   if [[ ${__private_vault_token} == "" ]]; then
-    __private_vault_token="00000000-0000-0000-0000-000000000000"
+    export __private_vault_token="00000000-0000-0000-0000-000000000000"
   fi
 
   if [[ ${__private_vault_base_path} == "" ]]; then
-    __private_vault_base_path="vault:/kv/${STACK_TARGET}/${STACK_ENVIRONMENT}"
+    export __private_vault_base_path="kv/${STACK_TARGET}/${STACK_ENVIRONMENT}"
   fi
 
   if [[ ${__private_vault_username} == "" ]]; then
@@ -115,14 +115,13 @@ function vaultLogin()
 
   vaultWaitOnLine
 
-  __private_vault_environment="${1}"
-  __private_vault_base_path="${2}"
-  __private_vault_method="${3}"
-  __private_vault_uri="${4}"
-  __private_vault_token="${5}"
-  __private_vault_username="${6}"
-  __private_vault_password="${7}"
-
+  export __private_vault_environment="${1}"
+  export __private_vault_base_path=$(echo ${2} | sed 's/vault\:\///g')
+  export __private_vault_method="${3}"
+  export __private_vault_uri="${4}"
+  export __private_vault_token="${5}"
+  export __private_vault_username="${6}"
+  export __private_vault_password="${7}"
 
   vaultEnvCheck
   if ! [ "$?" -eq 1 ]; then
@@ -142,55 +141,77 @@ function vaultLogin()
 
 function vaultKvGet()
 {
-  export __return=
+  unset __func_return
   if ! [[ ${__private_vault_login_ok} == true ]]; then
     echR "Invalid login sesssion "
     return 0;
   fi
-  local __kv_path=${1}
+  if [[ ${__private_vault_base_path} == "" ]]; then
+    local __kv_path=${1}
+  else
+    local __kv_path=${__private_vault_base_path}/${1}
+  fi  
   export __func_return=$(vault kv get --format=json ${__kv_path} | jq '.data.data')
   return 1;
 }
 
 function vaultKvPut()
 {
-  export __return=
+  unset __func_return
   if ! [[ ${__private_vault_login_ok} == true ]]; then
-    echR "Invalid login sesssion "
+    export __func_return="Invalid login sesssion "
     return 0;
   fi
-  local __kv_path=${1}
+
+  if [[ ${1} == "" || ${2} == "" ]]; then
+    export __func_return="vaultKvPut: Invalid args \${__kv_path}|\${__kv_source}"
+    return 0;
+  fi
+
+  if [[ ${__private_vault_base_path} == "" ]]; then
+    local __kv_path=${1}
+  else
+    local __kv_path=${__private_vault_base_path}/${1}
+  fi  
   local __kv_source=${2}
 
   if [[ ${__kv_path} == "" ]]; then
-    echR "Invalid vault path, path is null"
+    local __kv_path=${__private_vault_base_path}
+  fi
+
+  if [[ ${__kv_path} == "" ]]; then
+    export __func_return="Invalid vault path, \${__kv_path} is null"
     return 0;
   fi
 
   if [[ ${__kv_source} == "" ]]; then
     local __kv_source="{}"
   fi
-  if [[ -d ${__kv_source} ]]; then
-    return 0 
-  fi
-  
-  _tmp_data=/tmp/data_$RANDOM.tmp
+
+  # if [[ -d ${__kv_source} ]]; then
+  #   export __func_return="Invalid \${__kv_source}:${__kv_source}"
+  #   return 0 
+  # fi
+
+ 
+  local _tmp_data=/tmp/data_$RANDOM.tmp
   if [[ -f ${__kv_source} ]]; then
     cat ${__kv_source}>${_tmp_data}
   else
     echo ${__kv_source}>${_tmp_data}
   fi  
   local __return=$(cat ${_tmp_data} | vault kv put --format=json ${__kv_path} -)
-  __return=$(echo ${__return} | jq '.request_id')
+  local __return=$(echo ${__return} | jq '.request_id')
   if [[ ${__return} == "" ]]; then
     return 0
   fi
+  export __func_return="${__kv_path}"
   return 1;
 }
 
 function vaultKvList()
 {
-  export __return=
+  unset __func_return
   if ! [[ ${__private_vault_login_ok} == true ]]; then
     echR "Invalid login sesssion "
     return 0;
@@ -199,7 +220,7 @@ function vaultKvList()
   local __kv_path="${1}"
 
   if [[ ${__kv_path} == "" ]]; then
-    __kv_path=${__private_vault_base_path}
+    local __kv_path=${__private_vault_base_path}
   fi
 
   if [[ ${__kv_path} == "" ]]; then
@@ -214,7 +235,7 @@ function vaultKvList()
 
 function vaultKvPullToDir()
 {
-  export __return=
+  unset __func_return
   if ! [[ ${__private_vault_login_ok} == true ]]; then
     echR "Invalid login sesssion "
     return 0;
@@ -224,7 +245,7 @@ function vaultKvPullToDir()
   local __kv_path="${2}"
 
   if [[ ${__kv_path} == "" ]]; then
-    __kv_path=${__private_vault_base_path}
+    local __kv_path=${__private_vault_base_path}
   fi
 
   if [[ ${__kv_path} == "" ]]; then
@@ -241,13 +262,15 @@ function vaultKvPullToDir()
     return 0;
   fi
 
-  vaultKvList ${__kv_path}
+  vaultKvList "${__kv_path}"
+  if ! [ "$?" -eq 1 ]; then
+      return 0;
+  fi
   local __kv_key_names=(${__func_return})
   for __kv_key_name in "${__kv_key_names[@]}"
   do
     local __kv_destine_file=${__kv_destine_dir}/${__kv_key_name}.json
-    local __kv_path_final=${__kv_path}/${__kv_key_name}
-    vaultKvGet ${__kv_path_final}
+    vaultKvGet "${__kv_key_name}"
     if ! [ "$?" -eq 1 ]; then
         return 0;
     fi
@@ -259,17 +282,17 @@ function vaultKvPullToDir()
 
 function vaultKvPushFromDir()
 {
-  export __return=
+  unset __func_return
   if ! [[ ${__private_vault_login_ok} == true ]]; then
     echR "Invalid login sesssion "
     return 0;
   fi
 
-  local __kv_source_dir="${2}"
-  local __kv_path="${1}"
+  local __kv_source_dir="${1}"
+  local __kv_path="${2}"
 
   if [[ ${__kv_path} == "" ]]; then
-    __kv_path=${__private_vault_base_path}
+    local __kv_path=${__private_vault_base_path}
   fi
 
   if [[ ${__kv_path} == "" ]]; then
@@ -283,23 +306,26 @@ function vaultKvPushFromDir()
     return 0;
   fi
  
+  unset __return=
   local __kv_source_files=($(find ${__kv_source_dir} -name '*.json'))
   for __kv_source_file in "${__kv_source_files[@]}"
   do
     local __kv_name=$(basename ${__kv_source_file})
     local __kv_name=$(echo ${__kv_name} | sed 's/\.json//g')
-    local __kv_path_final=${__kv_path}/${__kv_name}
-    vaultKvPut ${__kv_path_final} ${__kv_source_file}
+    vaultKvPut ${__kv_name} ${__kv_source_file}
     if ! [ "$?" -eq 1 ]; then
         return 0;
     fi
+    local __return="${__return} ${__kv_name}"
   done
+  export __func_return=${__return}
+  
   return 1;
 }
 
 function vaultGetAndConvertToEnvsJava()
 {
-  export __return=
+  unset __func_return
   __private_vaultGetAndConvertToEnv "env" "${1}" "${2}"
   if ! [ "$?" -eq 1 ]; then
     return 0;
@@ -309,7 +335,7 @@ function vaultGetAndConvertToEnvsJava()
 
 function vaultGetAndConvertToEnvsShell()
 {
-  export __return=
+  unset __func_return=
   __private_vaultGetAndConvertToEnv "sh" "${1}" "${2}"
   if ! [ "$?" -eq 1 ]; then
     return 0;
