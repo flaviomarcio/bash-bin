@@ -335,7 +335,6 @@ function dockerBuildCompose()
   cd ${__docker_build_compose_dir}
 
   export APPLICATION_ENV_FILE=${__docker_build_env_file_docker}
-  export APPLICATION_DEPLOY_BINARY_DIR=${__docker_build_builder_dir}
   export APPLICATION_DEPLOY_IMAGE=${__docker_build_image}
   export APPLICATION_DEPLOY_HOSTNAME=${__docker_build_hostname}
   export APPLICATION_DEPLOY_NETWORK_NAME=${__docker_build_network_name}

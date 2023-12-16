@@ -179,7 +179,10 @@ function deploy()
   __deploy_dck_env_tags=
   __deploy_check_build=false
   __deploy_check_deploy=false
-  if [[ ${__deploy_build_option} == "build" ]]; then
+  if [[ ${APPLICATION_ACTION} == "script" ]]; then
+    __deploy_check_build=true
+    __deploy_check_deploy=false
+  elif [[ ${__deploy_build_option} == "build" ]]; then
     __deploy_check_build=false
     __deploy_check_deploy=false
   elif [[ ${__deploy_build_option} == "deploy" ]]; then
@@ -249,7 +252,7 @@ function deploy()
       if ! [ "$?" -eq 1 ]; then
         return 0
       fi
-      __deploy_git_dir=${__func_return}
+      local __deploy_git_dir=${__func_return}
 
       buildCompilerCheck ${__deploy_git_dir}
       if ! [ "$?" -eq 1 ]; then
@@ -262,20 +265,28 @@ function deploy()
         return 0
       fi
 
-      if [[ ${__func_return} == "maven"  ]]; then
-        __deploy_git_project_file="app*.jar"
-        mavenBuild ${__deploy_git_dir} ${__deploy_git_project_file}
+      if [[ ${__func_return} == "script"  ]]; then
+        execScript "${__deploy_git_dir}" "${APPLICATION_ACTION_SCRIPT}"
         if ! [ "$?" -eq 1 ]; then
+          export __func_return="fail on calling execScript: ${__func_return}"
           return 0
         fi
-        __deploy_binary_application=${__deploy_builder_dir}/${__deploy_binary_application}
+      elif [[ ${__func_return} == "maven"  ]]; then
+        local __deploy_git_project_file="app*.jar"
+        mavenBuild ${__deploy_git_dir} ${__deploy_git_project_file}
+        if ! [ "$?" -eq 1 ]; then
+          export __func_return="fail on calling mavenBuild: ${__func_return}"
+          return 0
+        fi
+        local __deploy_binary_application=${__deploy_builder_dir}/${__deploy_binary_application}
         cp -rf ${__func_return} ${__deploy_binary_application}
       elif [[ ${__func_return} == "qmake"  ]]; then
         qtBuild ${__deploy_git_dir} ${__deploy_git_project_file}
         if ! [ "$?" -eq 1 ]; then
+          export __func_return="fail on calling qtBuild: ${__func_return}"
           return 0
         fi
-        __deploy_binary_application=${__deploy_builder_dir}/${__deploy_binary_application}
+        local __deploy_binary_application=${__deploy_builder_dir}/${__deploy_binary_application}
         cp -rf ${__func_return} ${__deploy_binary_application}
       fi
     fi
@@ -295,7 +306,7 @@ function deploy()
       return 0;
     fi
 
-    __deploy_network_name=${__deploy_environment}-${__deploy_target}-inbound
+    local __deploy_network_name=${__deploy_environment}-${__deploy_target}-inbound
     dockerNetworkCreate ${__deploy_network_name}
     if ! [ "$?" -eq 1 ]; then
       echB "    target: ${__deploy_git_dir}"
