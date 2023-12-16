@@ -76,7 +76,7 @@ function stackMkDir_lib_configure()
 
 function stackEnvsIsConfigured()
 {
-  export __func_return=
+  unset __func_return
   if [[ ${PUBLIC_STACK_TARGETS_FILE} == "" ]]; then
     export __func_return="Invalid env \${PUBLIC_STACK_TARGETS_FILE}"
     return 0
@@ -102,7 +102,7 @@ function stackEnvsIsConfigured()
 
 function stackStorageMake()
 {
-  export __func_return=
+  unset __func_return
   #stack dirs
   stackMkDir 755 "${STACK_ROOT_DIR}"
   if ! [ "$?" -eq 1 ]; then
@@ -124,7 +124,7 @@ function stackStorageMake()
 
 function stackInitTargetEnvFile()
 {
-  export __func_return=
+  unset __func_return
   if [[ ${PUBLIC_STACK_TARGET_ENVS_FILE} == "" ]]; then
     export __func_return="env \${PUBLIC_STACK_TARGET_ENVS_FILE} is empty on calling __private_initFilesStack"
     return 0
@@ -242,10 +242,11 @@ function __private_stackEnvsLoadByStack()
 function __private_stackEnvsLoadByTarget()
 {
   export STACK_TARGET=${1}
-  export STACK_INFRA_DIR=
-  export STACK_INFRA_CONF_DIR=
-  export STACK_REGISTRY_DNS_PUBLIC=
-  export PUBLIC_STACK_TARGET_ENVS_FILE=
+  unset STACK_INFRA_DIR
+  unset STACK_INFRA_CERT_DIR
+  unset STACK_INFRA_CONF_DIR
+  unset STACK_REGISTRY_DNS_PUBLIC
+  unset PUBLIC_STACK_TARGET_ENVS_FILE
 
   if [[ ${STACK_TARGET} == "" ]]; then
     export __func_return="failt on calling __private_stackEnvsLoadByTarget, invalid env \${STACK_TARGET}"
@@ -257,10 +258,11 @@ function __private_stackEnvsLoadByTarget()
   export ROOT_TARGET_DIR="${ROOT_ENVIRONMENT_DIR}/${STACK_TARGET}"
   export STACK_INFRA_DIR="${ROOT_TARGET_DIR}/infrastructure"
   export STACK_INFRA_CONF_DIR="${ROOT_TARGET_DIR}/infrastructure/conf"
+  export STACK_INFRA_CERT_DIR="${STACK_INFRA_CONF_DIR}/cert"
   export STACK_TEMPLATES_DIR="${ROOT_TARGET_DIR}/templates"
   export STACK_TARGET_STORAGE_DIR=${ROOT_TARGET_DIR}/storage-data
 
-  stackMkDir 755 "${ROOT_TARGET_DIR} ${STACK_INFRA_DIR} ${STACK_INFRA_CONF_DIR} ${STACK_TARGET_STORAGE_DIR}"
+  stackMkDir 755 "${ROOT_TARGET_DIR} ${STACK_INFRA_CERT_DIR} ${STACK_INFRA_DIR} ${STACK_INFRA_CONF_DIR} ${STACK_TARGET_STORAGE_DIR}"
 
   envsSetIfIsEmpty STACK_NETWORK_DEFAULT "${STACK_ENVIRONMENT}-${STACK_TARGET}-inbound"
   envsSetIfIsEmpty STACK_REGISTRY_DNS_PUBLIC "${STACK_PREFIX}-registry.${STACK_DOMAIN}:5000"
@@ -512,7 +514,6 @@ function __private_stackEnvsDefaultByStack()
 
   export APPLICATION_DEPLOY_NAME=${__service}
   export APPLICATION_DEPLOY_HOSTNAME=$(echo ${__service} | sed 's/_/-/g')
-  
 
   envsSetIfIsEmpty APPLICATION_DEPLOY_CPU "${STACK_DEFAULT_DEPLOY_CPU}"
   envsSetIfIsEmpty APPLICATION_DEPLOY_MEMORY "${STACK_DEFAULT_DEPLOY_MEMORY}"
