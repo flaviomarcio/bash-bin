@@ -356,6 +356,7 @@ function stackInitTargetEnvFile()
 
   #services default images 
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_IMAGE_TRAEFIK
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_IMAGE_REGISTRY
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_IMAGE_POSTGRES
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_IMAGE_INFLUXDB
 
@@ -515,6 +516,7 @@ function stackEnvsLoad()
 
   #services default images
   envsSetIfIsEmpty STACK_SERVICE_IMAGE_TRAEFIK "traefik:v2.9"
+  envsSetIfIsEmpty STACK_SERVICE_IMAGE_REGISTRY "registry:latest"
   envsSetIfIsEmpty STACK_SERVICE_IMAGE_POSTGRES "postgres:16.1-bullseye"
   envsSetIfIsEmpty STACK_SERVICE_IMAGE_INFLUXDB "influxdb:1.8.10"
 
