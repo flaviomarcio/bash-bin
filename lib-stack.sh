@@ -90,6 +90,7 @@ function __private_stackEnvsLoadByTarget()
 
   envsSetIfIsEmpty STACK_NETWORK_DEFAULT "${STACK_ENVIRONMENT}-${STACK_TARGET}-inbound"
   envsSetIfIsEmpty STACK_NETWORK_GRAFANA_LOKI "${STACK_ENVIRONMENT}-${STACK_TARGET}-loki"
+  envsSetIfIsEmpty STACK_NETWORK_GRAFANA_TEMPO "${STACK_ENVIRONMENT}-${STACK_TARGET}-tempo"
   envsSetIfIsEmpty STACK_REGISTRY_DNS_PUBLIC "${STACK_PREFIX}-registry.${STACK_DOMAIN}:5000"
   envsSetIfIsEmpty PUBLIC_STACK_ENVS_FILE "${STACK_ROOT_DIR}/stack_envs.env"
   envsSetIfIsEmpty PUBLIC_STACK_TARGET_ENVS_FILE "${ROOT_TARGET_DIR}/stack_envs.env"
@@ -675,7 +676,7 @@ function stackMakeStructure()
     export __func_return="fail on calling stackStorageMake, ${__func_return}"
     return 0;
   fi
-  dockerNetworkCreate "${STACK_NETWORK_DEFAULT} ${STACK_NETWORK_GRAFANA_LOKI}"
+  dockerNetworkCreate "${STACK_NETWORK_DEFAULT} ${STACK_NETWORK_GRAFANA_LOKI} ${STACK_NETWORK_GRAFANA_TEMPO}"
   if ! [ "$?" -eq 1 ]; then
     export __func_return="fail on calling dockerNetworkCreate, ${__func_return}"
     return 0;
