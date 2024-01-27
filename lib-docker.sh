@@ -22,11 +22,11 @@ function __private_docker_envsubst()
   if [[ ${1} == "" ]]; then
     return 0
   fi
-  __private_docker_envsubst_files=(${1})
+  local __private_docker_envsubst_files=(${1})
   for __private_docker_envsubst_file_src in "${__private_docker_envsubst_files[@]}"
   do
     if [[ -f ${__private_docker_envsubst_file_src} ]]; then
-      __private_docker_envsubst_file_ori=${__private_docker_envsubst_file_src}.ori
+      local __private_docker_envsubst_file_ori=${__private_docker_envsubst_file_src}.ori
       cat ${__private_docker_envsubst_file_src}>${__private_docker_envsubst_file_ori}
       envsubst < ${__private_docker_envsubst_file_ori} > ${__private_docker_envsubst_file_src}
     fi
@@ -53,11 +53,11 @@ function __private_dockerParserHostName()
   if [[ ${1} == "" ]]; then
     return 0;
   fi
-  __docker_parser_name=${1}
-  __docker_parser_tags=("_" "|" "\.")
+  local __docker_parser_name=${1}
+  local __docker_parser_tags=("_" "|" "\.")
   for __docker_parser_tag in "${__docker_parser_tags[@]}"
   do
-    export __docker_parser_name=$(echo ${__docker_parser_name} | sed "s/${__docker_parser_tag}/-/g")
+    local __docker_parser_name=$(echo ${__docker_parser_name} | sed "s/${__docker_parser_tag}/-/g")
   done  
   echo ${__docker_parser_name}
 }
@@ -70,8 +70,8 @@ function dockerSwarmState()
 
 function dockerSwarmIsActive()
 {
-  __docker_swarm_check=$(dockerSwarmState)
-  if [[ ${__docker_swarm_check} == "active" ]]; then
+  local __check=$(dockerSwarmState)
+  if [[ ${__check} == "active" ]]; then
     return 1;
   fi
   return 0;
@@ -93,22 +93,22 @@ function dockerSwarmVerify()
 function dockerCleanup()
 {
   echM "    Docker cleanup"
-  __docker_cleanup_tags=${1}
-  __docker_cleanup_removed=false
+  local __docker_cleanup_tags=${1}
+  local __docker_cleanup_removed=false
   if [[ ${__docker_cleanup_tags} == "" ]]; then
-    __docker_cleanup_tags=($(docker service ls --quiet))
+    local __docker_cleanup_tags=($(docker service ls --quiet))
     for __docker_cleanup_tag in "${__docker_cleanup_tags[@]}"
     do
-      __docker_cleanup_tag=$(docker service inspect ${__docker_cleanup_tag} --format '{{ .Spec.Name }}')
+      local __docker_cleanup_tag=$(docker service inspect ${__docker_cleanup_tag} --format '{{ .Spec.Name }}')
       echR "      Removing service [${__docker_cleanup_tag}]..."
       echo $(docker --log-level ERROR service rm ${__docker_cleanup_tag} )&>/dev/null
-      __docker_cleanup_removed=true
+      local __docker_cleanup_removed=true
     done
   else
-    __docker_cleanup_tags=($(__private_dockerParserServiceName ${__docker_cleanup_tags}))
+    local __docker_cleanup_tags=($(__private_dockerParserServiceName ${__docker_cleanup_tags}))
     for __docker_cleanup_tag in "${__docker_cleanup_tags[@]}"
     do
-      __docker_cleanup_check=$(docker service ls | grep ${__docker_cleanup_tag} | awk '{print $1}')
+      local __docker_cleanup_check=$(docker service ls | grep ${__docker_cleanup_tag} | awk '{print $1}')
       if [[ ${__docker_cleanup_check} != "" ]]; then
         break
       fi
@@ -116,15 +116,15 @@ function dockerCleanup()
 
     for __docker_cleanup_tag in "${__docker_cleanup_tags[@]}"
     do
-      __docker_cleanup_cmd="docker --log-level ERROR service rm \$(docker service ls | grep ${__docker_cleanup_tag} | awk '{print \$1}')"
+      local __docker_cleanup_cmd="docker --log-level ERROR service rm \$(docker service ls | grep ${__docker_cleanup_tag} | awk '{print \$1}')"
       echR "      Removing tag[${__docker_cleanup_tag}]..."
       echY "        - ${__docker_cleanup_cmd}"  
-      __docker_cleanup_check=$(docker service ls | grep ${__docker_cleanup_tag} | awk '{print $1}')
+      local __docker_cleanup_check=$(docker service ls | grep ${__docker_cleanup_tag} | awk '{print $1}')
       if [[ ${__docker_cleanup_check} == "" ]]; then
         continue
       fi
       echo $(docker --log-level ERROR service rm $(docker service ls | grep ${__docker_cleanup_tag} | awk '{print $1}') )&>/dev/null
-      __docker_cleanup_removed=true
+      local __docker_cleanup_removed=true
     done
 
   fi
@@ -139,15 +139,15 @@ function dockerCleanup()
 
 function dockerPrune()
 {
-  local __docker_prune_cmd="docker --log-level ERROR system prune --all --volumes --force"
+  local __cmd="docker --log-level ERROR system prune --all --volumes --force"
   echM "    Docker prune"
   echR "      Removing ..."
-  echY "        - ${__docker_prune_cmd}"
+  echY "        - ${__cmd}"
   sleep 2
   for i in {1..5}
   do
     echB "        - step: ${i}"
-    echo $(${__docker_prune_cmd_01})&>/dev/null
+    echo $(${__cmd})&>/dev/null
     sleep 1
   done
   echG "    Finished"
@@ -180,7 +180,7 @@ function dockerReset()
   echY "  =============================  "
   echo ""
   selectorWaitSeconds 10 "" "${COLOR_YELLOW_B}"
-  __docker_reset_tags=${1}
+  # local __docker_reset_tags=${1}
   echG "  Docker reset"
   dockerCleanup
   dockerPrune
@@ -202,11 +202,10 @@ function dockerList()
 
 function dockerSwarmInit()
 {
-  __docker_swarm_action=${1}
-  __docker_swarm_ip=${2}
-
-  __docker_swarm_cmd="docker swarm init --advertise-addr ${__docker_swarm_ip}"
-  if [[ ${__docker_swarm_action} == true ]]; then
+  local __action=${1}
+  local __swarm_ip=${2}
+  local __cmd="docker swarm init --advertise-addr ${__swarm_ip}"
+  if [[ ${__action} == true ]]; then
     clearTerm
     echB "  Docker swarm não está instalado"
     echG ""
@@ -214,9 +213,9 @@ function dockerSwarmInit()
     echG ""
     read
     echB "  Action: [Swam-Init]"
-    echY "    - ${__docker_swarm_cmd}"
+    echY "    - ${__cmd}"
     echB "  Executing ..."
-    echo $(${__docker_swarm_cmd})
+    echo $(${__cmd})
     dockerSwarmIsActive
     if [ "$?" -eq 1 ]; then
       echG "    - Successfull"
@@ -229,22 +228,22 @@ function dockerSwarmInit()
     echG ""
     read
   else
-    echo ${__docker_swarm_cmd}
+    echo ${__cmd}
   fi  
   return 1
 }
 
 function dockerSwarmLeave()
 {
-  __docker_swarm_cmd="docker swarm leave --force"
-  if [[ ${__docker_swarm_action} == true ]]; then
+  local __cmd="docker swarm leave --force"
+  if [[ ${__action} == true ]]; then
     echB "  Action: [Swam-Leave]"
-    echY "    - ${__docker_swarm_cmd}"
+    echY "    - ${__cmd}"
     echB "  Executing ..."
-    echo $(${__docker_swarm_cmd})
+    echo $(${__cmd})
     echG "  Finished"
   else
-    echo ${__docker_swarm_cmd}
+    echo ${__cmd}
   fi
   return 1
 }
@@ -254,21 +253,21 @@ function dockerConfigure()
   clearTerm
   echM $'\n'"Docker configure"$'\n'
   PS3=$'\n'"Choose a option: "
-  options=(Back Swarm-Init Swarm-Leave)
+  local options=(Back Swarm-Init Swarm-Leave)
   select opt in "${options[@]}"
   do
-    __docker_configure_cmd=
+    unset __cmd
     if [[ ${opt} == "Back" ]]; then
       return 1
     elif [[ ${opt} == "Swarm-Init" ]]; then
-      __docker_configure_cmd=$(dockerSwarmInit)
+      local __cmd=$(dockerSwarmInit)
     elif [[ ${opt} == "Swarm-Leave" ]]; then
-      __docker_configure_cmd=$(dockerSwarmLeave)
+      local __cmd=$(dockerSwarmLeave)
     fi
-    echB "    Action: [${__docker_configure_cmd}]"
-    echY "      - ${__docker_configure_cmd}"
+    echB "    Action: [${__cmd}]"
+    echY "      - ${__cmd}"
     echB "      Executing ..."
-    echo $(${__docker_configure_cmd})
+    echo $(${__cmd})
     echG "    Finished"
     break
   done
@@ -276,25 +275,25 @@ function dockerConfigure()
 
 function dockerNetworkCreate()
 {
-  __docker_network_names=${1}
-  if [[ ${__docker_network_names} == "" ]]; then
-    echo "Invalid \${__docker_network_names}"
+  local __names=${1}
+  if [[ ${__names} == "" ]]; then
+    echo "Invalid \${__names}"
     return 0
   fi
-  __docker_network_names=(${__docker_network_names})
+  local __names=(${__names})
   
-  for __docker_network_name in "${__docker_network_names[@]}"
+  for __name in "${__names[@]}"
   do
-    __docker_network_check=$(docker network ls | grep ${__docker_network_name})
-    if [[ ${__docker_network_check} != "" ]]; then
+    __check=$(docker network ls | grep ${__name})
+    if [[ ${__check} != "" ]]; then
       continue
     fi
-    __docker_network_cmd="docker --log-level ERROR network create --driver=overlay ${__docker_network_name}"
-    echo $(${__docker_network_cmd})&>/dev/null
+    __cmd="docker --log-level ERROR network create --driver=overlay ${__name}"
+    echo $(${__cmd})&>/dev/null
 
-    __docker_network_check=$(docker network ls | grep ${__docker_network_name})
-    if [[ ${__docker_network_check} == "" ]]; then
-      export __func_return="fail on create netweork \${__docker_network_name}: ${__docker_network_name}"
+    __check=$(docker network ls | grep ${__name})
+    if [[ ${__check} == "" ]]; then
+      export __func_return="fail on create netweork \${__name}: ${__name}"
       return 0
     fi
   done
@@ -303,14 +302,14 @@ function dockerNetworkCreate()
 
 function dockerBuildCompose()
 {
-  __docker_build_name=${1}
-  __docker_build_image=${2}
-  __docker_build_dockerfile=${3}
-  __docker_build_compose_file=${4}
-  __docker_build_env_file=${5}
-  __docker_build_builder_dir=${6}
-  __docker_build_binary_name=${7}
-  __docker_build_network_name=${8}
+  local __docker_build_name=${1}
+  local __docker_build_image=${2}
+  local __docker_build_dockerfile=${3}
+  local __docker_build_compose_file=${4}
+  local __docker_build_env_file=${5}
+  local __docker_build_builder_dir=${6}
+  local __docker_build_binary_name=${7}
+  local __docker_build_network_name=${8}
 
   echM "    Docker containers create"  
   if ! [[ -f  ${__docker_build_compose_file} ]]; then
@@ -323,14 +322,14 @@ function dockerBuildCompose()
     return 0;
   fi
 
-  __docker_build_compose_dir=$(dirname ${__docker_build_compose_file})
-  __docker_build_service=$(__private_dockerParserServiceName ${__docker_build_name})  
-  __docker_build_hostname=$(__private_dockerParserHostName ${__docker_build_name})  
-  __docker_build_env_file_static=${__docker_build_builder_dir}/${__docker_build_service}-static.env
-  __docker_build_env_file_export=${__docker_build_builder_dir}/${__docker_build_service}-run.env
-  __docker_build_env_file_docker=${__docker_build_builder_dir}/${__docker_build_service}.env
-  __docker_build_compose_sh_file=${__docker_build_builder_dir}/${__docker_build_service}.sh
-  __docker_build_binary_file=${__docker_build_builder_dir}/${__docker_build_binary_name}
+  local __docker_build_compose_dir=$(dirname ${__docker_build_compose_file})
+  local __docker_build_service=$(__private_dockerParserServiceName ${__docker_build_name})  
+  local __docker_build_hostname=$(__private_dockerParserHostName ${__docker_build_name})  
+  local __docker_build_env_file_static=${__docker_build_builder_dir}/${__docker_build_service}-static.env
+  local __docker_build_env_file_export=${__docker_build_builder_dir}/${__docker_build_service}-run.env
+  local __docker_build_env_file_docker=${__docker_build_builder_dir}/${__docker_build_service}.env
+  local __docker_build_compose_sh_file=${__docker_build_builder_dir}/${__docker_build_service}.sh
+  local __docker_build_binary_file=${__docker_build_builder_dir}/${__docker_build_binary_name}
 
   cd ${__docker_build_compose_dir}
 
@@ -354,24 +353,24 @@ function dockerBuildCompose()
 
   # ref https://docs.docker.com/compose/environment-variables/envvars/
 
-  __docker_build_old_file=${__docker_build_dockerfile}
+  local __docker_build_old_file=${__docker_build_dockerfile}
   if [[ -f ${__docker_build_old_file} ]]; then
-    __docker_build_dockerfile=${__docker_build_builder_dir}/${__docker_build_service}.dockerfile
+    local __docker_build_dockerfile=${__docker_build_builder_dir}/${__docker_build_service}.dockerfile
     mv ${__docker_build_old_file} ${__docker_build_dockerfile}
   fi
 
-  __docker_build_old_file=${__docker_build_compose_file}
+  local __docker_build_old_file=${__docker_build_compose_file}
   if [[ -f ${__docker_build_old_file} ]]; then
-    __docker_build_compose_file=${__docker_build_builder_dir}/${__docker_build_service}.yml
+    local __docker_build_compose_file=${__docker_build_builder_dir}/${__docker_build_service}.yml
     mv ${__docker_build_old_file} ${__docker_build_compose_file}
   fi
 
-  __docker_build_old_file=${__docker_build_builder_dir}/env_file-static.env
+  local __docker_build_old_file=${__docker_build_builder_dir}/env_file-static.env
   if [[ -f ${__docker_build_old_file} ]]; then    
     mv ${__docker_build_old_file} ${__docker_build_env_file_static}
   fi
 
-  __docker_build_old_file=${__docker_build_env_file}
+  local __docker_build_old_file=${__docker_build_env_file}
   if [[ -f ${__docker_build_old_file} ]]; then    
     mv ${__docker_build_old_file} ${__docker_build_env_file_docker}
     envsFileConvertToExport ${__docker_build_env_file_docker} ${__docker_build_env_file_export}
@@ -381,12 +380,12 @@ function dockerBuildCompose()
   envsFileAddIfNotExists ${__export_file} COMPOSE_CONVERT_WINDOWS_PATHS
   envsFileAddIfNotExists ${__export_file} COMPOSE_HTTP_TIMEOUT
 
-  __docker_build_cmd_1="docker --log-level ERROR build --quiet --file $(basename ${__docker_build_dockerfile}) -t ${__docker_build_service} ."
-  __docker_build_cmd_2="docker --log-level ERROR image tag ${__docker_build_service} ${__docker_build_image}"
-  __docker_build_cmd_3="docker --log-level ERROR push ${__docker_build_image}"
-  __docker_build_cmd_4="docker --log-level ERROR stack rm ${__docker_build_service}"
-  __docker_build_cmd_5="docker --log-level ERROR stack deploy --compose-file $(basename ${__docker_build_compose_file}) ${__docker_build_service}"
-  __docker_build_cmd_6="docker service logs -f ${__docker_build_service}"
+  local __docker_build_cmd_1="docker --log-level ERROR build --quiet --file $(basename ${__docker_build_dockerfile}) -t ${__docker_build_service} ."
+  local __docker_build_cmd_2="docker --log-level ERROR image tag ${__docker_build_service} ${__docker_build_image}"
+  local __docker_build_cmd_3="docker --log-level ERROR push ${__docker_build_image}"
+  local __docker_build_cmd_4="docker --log-level ERROR stack rm ${__docker_build_service}"
+  local __docker_build_cmd_5="docker --log-level ERROR stack deploy --compose-file $(basename ${__docker_build_compose_file}) ${__docker_build_service}"
+  local __docker_build_cmd_6="docker service logs -f ${__docker_build_service}"
   
   echB "      Information"
   echC "        - Path: ${PWD}"
@@ -458,10 +457,10 @@ function dockerBuildCompose()
   echo $(${__docker_build_cmd_3})&>/dev/null
   echY "        - ${__docker_build_cmd_5}"
   echo $(${__docker_build_cmd_5})&>/dev/null
-  __docker_build_check=$(docker service ls | grep ${__docker_build_service})
+  local __check=$(docker service ls | grep ${__docker_build_service})
 
   export COMPOSE_HTTP_TIMEOUT=$(parserTime 1y)
-  if [[ ${__docker_build_check} == "" ]]; then
+  if [[ ${__check} == "" ]]; then
   echR "    [FAIL]Service not found:${__docker_build_service}"
     return 0
   fi
@@ -472,9 +471,9 @@ function dockerBuildCompose()
 
 function dockerRegistryImageCheck()
 {
-  export __dockerRegistryImageCheckImage=${1}
-  __dockerRegistryImageCheck=$(curl -s -H "Accept: application/vnd.docker.distribution.manifest.v2+json" -X GET "http://${STACK_REGISTRY_DNS_PUBLIC}/v2/${__dockerRegistryImageCheckImage}/manifests/latest" | jq '.config.mediaType')
-  if [[ ${__dockerRegistryImageCheck} == "" || ${__dockerRegistryImageCheck} == "null" ]]; then
+  local __image=${1}
+  local __check=$(curl -s -H "Accept: application/vnd.docker.distribution.manifest.v2+json" -X GET "http://${STACK_REGISTRY_DNS_PUBLIC}/v2/${__image}/manifests/latest" | jq '.config.mediaType')
+  if [[ ${__check} == "" || ${__check} == "null" ]]; then
     return 0;
   fi
   __func_return=1  
