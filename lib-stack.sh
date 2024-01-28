@@ -25,7 +25,9 @@ function __private_stackEnvsLoadByStack()
   unset STACK_SERVICE_STORAGE_LOG_DIR
   unset STACK_SERVICE_STORAGE_CONFIG_DIR
   unset STACK_SERVICE_STORAGE_BACKUP_DIR
-
+  unset STACK_SERVICE_STORAGE_EXTENSION_DIR
+  unset STACK_SERVICE_STORAGE_PLUGIN_DIR
+  
   if [[ ${STACK_NAME} == "" ]]; then
     export __func_return="failt on calling __private_stackEnvsLoadByStack, invalid env \${STACK_NAME}"
     return 0
@@ -44,17 +46,27 @@ function __private_stackEnvsLoadByStack()
   export STACK_SERVICE_STORAGE_LOG_DIR=${__private_stackEnvsLoadByStack_storage}/log
   export STACK_SERVICE_STORAGE_CONFIG_DIR=${__private_stackEnvsLoadByStack_storage}/config
   export STACK_SERVICE_STORAGE_BACKUP_DIR=${__private_stackEnvsLoadByStack_storage}/backup
-
+  export STACK_SERVICE_STORAGE_EXTENSION_DIR=${__private_stackEnvsLoadByStack_storage}/extension
+  export STACK_SERVICE_STORAGE_PLUGIN_DIR=${__private_stackEnvsLoadByStack_storage}/plugin
+  
   export STACK_SERVICE_IMAGE="${STACK_SERVICE_NAME}"
   export STACK_SERVICE_IMAGE_URL="${STACK_REGISTRY_DNS_PUBLIC}/${STACK_SERVICE_IMAGE}"
 
   export STACK_SERVICE_HOSTNAME=${STACK_SERVICE_NAME}
   export STACK_SERVICE_HOSTNAME_PUBLIC=${STACK_SERVICE_HOSTNAME}.${STACK_DOMAIN}
 
-  stackMkDir 777 "${STACK_SERVICE_STORAGE_DATA_DIR} ${STACK_SERVICE_STORAGE_DB_DIR} ${STACK_SERVICE_STORAGE_LOG_DIR}" ${STACK_SERVICE_STORAGE_CONFIG_DIR}" ${STACK_SERVICE_STORAGE_BACKUP_DIR}"
+  unset __dirs
+  local __dirs="${__dirs} ${STACK_SERVICE_STORAGE_DATA_DIR}"
+  local __dirs="${__dirs} ${STACK_SERVICE_STORAGE_DB_DIR}"
+  local __dirs="${__dirs} ${STACK_SERVICE_STORAGE_LOG_DIR}"
+  local __dirs="${__dirs} ${STACK_SERVICE_STORAGE_CONFIG_DIR}"
+  local __dirs="${__dirs} ${STACK_SERVICE_STORAGE_BACKUP_DIR}"
+  local __dirs="${__dirs} ${STACK_SERVICE_STORAGE_EXTENSION_DIR}"
+  local __dirs="${__dirs} ${STACK_SERVICE_STORAGE_PLUGIN_DIR}"
+
+  stackMkDir 777 "${__dirs}"
 
   #load envs DNS
-
   stackMakeStructure
   if ! [ "$?" -eq 1 ]; then
     export __func_return="fail on calling stackMakeStructure, ${__func_return}"
