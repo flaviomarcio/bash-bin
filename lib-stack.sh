@@ -372,6 +372,8 @@ function stackInitTargetEnvFile()
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_IMAGE_REGISTRY
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_IMAGE_POSTGRES
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_IMAGE_INFLUXDB
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_IMAGE_MARIADB
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_IMAGE_MYSQL
 
 
   echo $(chmod +x ${PUBLIC_STACK_TARGET_ENVS_FILE})&>/dev/null
@@ -534,6 +536,8 @@ function stackEnvsLoad()
   envsSetIfIsEmpty STACK_SERVICE_IMAGE_REGISTRY "registry:latest"
   envsSetIfIsEmpty STACK_SERVICE_IMAGE_POSTGRES "postgres:16.1-bullseye"
   envsSetIfIsEmpty STACK_SERVICE_IMAGE_INFLUXDB "influxdb:1.8.10"
+  envsSetIfIsEmpty STACK_SERVICE_IMAGE_MARIADB "lscr.io/linuxserver/mariadb"
+  envsSetIfIsEmpty STACK_SERVICE_IMAGE_MYSQL "mysql:8.0.36-debian"
 
   stackInitTargetEnvFile
   if ! [ "$?" -eq 1 ]; then
