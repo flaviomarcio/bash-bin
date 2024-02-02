@@ -27,6 +27,8 @@ function __private_stackEnvsLoadByStack()
   unset STACK_SERVICE_STORAGE_BACKUP_DIR
   unset STACK_SERVICE_STORAGE_EXTENSION_DIR
   unset STACK_SERVICE_STORAGE_PLUGIN_DIR
+  unset STACK_SERVICE_STORAGE_IMPORT_DIR
+  unset STACK_SERVICE_STORAGE_PROVIDER_DIR
   
   if [[ ${STACK_NAME} == "" ]]; then
     export __func_return="failt on calling __private_stackEnvsLoadByStack, invalid env \${STACK_NAME}"
@@ -48,6 +50,8 @@ function __private_stackEnvsLoadByStack()
   export STACK_SERVICE_STORAGE_BACKUP_DIR=${__private_stackEnvsLoadByStack_storage}/backup
   export STACK_SERVICE_STORAGE_EXTENSION_DIR=${__private_stackEnvsLoadByStack_storage}/extension
   export STACK_SERVICE_STORAGE_PLUGIN_DIR=${__private_stackEnvsLoadByStack_storage}/plugin
+  export STACK_SERVICE_STORAGE_IMPORT_DIR=${__private_stackEnvsLoadByStack_storage}/import
+  export STACK_SERVICE_STORAGE_PROVIDER_DIR=${__private_stackEnvsLoadByStack_storage}/provider
   
   export STACK_SERVICE_IMAGE="${STACK_SERVICE_NAME}"
   export STACK_SERVICE_IMAGE_URL="${STACK_REGISTRY_DNS_PUBLIC}/${STACK_SERVICE_IMAGE}"
@@ -63,6 +67,8 @@ function __private_stackEnvsLoadByStack()
   local __dirs="${__dirs} ${STACK_SERVICE_STORAGE_BACKUP_DIR}"
   local __dirs="${__dirs} ${STACK_SERVICE_STORAGE_EXTENSION_DIR}"
   local __dirs="${__dirs} ${STACK_SERVICE_STORAGE_PLUGIN_DIR}"
+  local __dirs="${__dirs} ${STACK_SERVICE_STORAGE_IMPORT_DIR}"
+  local __dirs="${__dirs} ${STACK_SERVICE_STORAGE_PROVIDER_DIR}"
 
   stackMkDir 777 "${__dirs}"
 
