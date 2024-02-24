@@ -204,7 +204,13 @@ function dockerSwarmInit()
 {
   local __action=${1}
   local __swarm_ip=${2}
-  local __cmd="docker swarm init --advertise-addr ${__swarm_ip}"
+
+  if [[ ${STACK_DNS_SERVER_ENABLE} == true ]]; then
+    local __cmd="docker swarm init --dns ${STACK_PREFIX}-dnsserver --advertise-addr ${__swarm_ip}"
+  else
+    local __cmd="docker swarm init --advertise-addr ${__swarm_ip}"
+  fi
+
   if [[ ${__action} == true ]]; then
     clearTerm
     echB "  Docker swarm não está instalado"
@@ -282,16 +288,24 @@ function dockerNetworkCreate()
   fi
   local __names=(${__names})
   
+
   for __name in "${__names[@]}"
   do
-    __check=$(docker network ls | grep ${__name})
+    local __check=$(docker network ls | grep ${__name})
     if [[ ${__check} != "" ]]; then
       continue
     fi
-    __cmd="docker --log-level ERROR network create --driver=overlay ${__name}"
+
+    if [[ ${STACK_DNS_SERVER_ENABLE} == true ]]; then
+      #docker --log-level ERROR network create --driver overlay --attachable --opt com.docker.network.bridge.name=my_network --opt com.docker.network.bridge.enable_icc=true --opt com.docker.network.bridge.enable_ip_masquerade=true --opt com.docker.network.bridge.host_binding_ipv4=0.0.0.0 --opt com.docker.network.driver.mtu=1500 --subnet=10.0.0.0/24 --gateway=10.0.0.1 --aux-address=\"host=10.0.0.254\" --aux-address=\"dhcp=10.0.0.253\" --dns=10.0.0.2 my_custom_network
+      local __cmd="docker --log-level ERROR network create --driver overlay --attachable --opt --opt com.docker.network.driver.mtu=1500 --subnet=10.0.0.0/24 --gateway=10.0.0.1 --aux-address=\"host=10.0.0.254\" --aux-address=\"dhcp=10.0.0.253\" --dns=10.0.0.2 my_custom_network"
+    else
+      local __cmd="docker --log-level ERROR network create --driver=overlay ${__name}"
+    fi
+
     echo $(${__cmd})&>/dev/null
 
-    __check=$(docker network ls | grep ${__name})
+    local __check=$(docker network ls | grep ${__name})
     if [[ ${__check} == "" ]]; then
       export __func_return="fail on create netweork \${__name}: ${__name}"
       return 0
