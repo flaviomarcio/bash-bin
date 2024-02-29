@@ -292,7 +292,7 @@ function utilInitialize()
     local __utilInitialize_envs+=("....Log verbose is enabled")
   fi
   if [[ ${STACK_LOG} == 1 ]]; then
-    local __utilInitialize_envs+=("....-Log is enabled")
+    local __utilInitialize_envs+=("....Log is enabled")
   fi
   if [[ ${PUBLIC_RUNNER_TEST} == true ]]; then
     local __utilInitialize_envs+=("....-Runner mode: ${PUBLIC_RUNNER_MODE}")
