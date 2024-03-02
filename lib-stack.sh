@@ -487,6 +487,8 @@ function stackEnvsLoad()
 
   #primary default envs
   envsSetIfIsEmpty STACK_DNS_SERVER_ENABLE false
+  envsSetIfIsEmpty STACK_ADMIN_USERNAME services
+  envsSetIfIsEmpty STACK_ADMIN_EMAIL services@services.com
   envsSetIfIsEmpty STACK_DEFAULT_TOKEN "00000000-0000-0000-0000-000000000000"
   envsSetIfIsEmpty STACK_DEFAULT_USERNAME services
   envsSetIfIsEmpty STACK_DEFAULT_PASSWORD services
