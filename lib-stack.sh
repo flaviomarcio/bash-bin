@@ -301,6 +301,8 @@ function stackInitTargetEnvFile()
   fi
 
   #primary default envs
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_ADMIN_USERNAME
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_ADMIN_EMAIL
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_TZ
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DOMAIN
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DNS_SERVER_ENABLE
@@ -486,9 +488,9 @@ function stackEnvsLoad()
   fi
 
   #primary default envs
-  envsSetIfIsEmpty STACK_DNS_SERVER_ENABLE false
   envsSetIfIsEmpty STACK_ADMIN_USERNAME services
   envsSetIfIsEmpty STACK_ADMIN_EMAIL services@services.com
+  envsSetIfIsEmpty STACK_DNS_SERVER_ENABLE false
   envsSetIfIsEmpty STACK_DEFAULT_TOKEN "00000000-0000-0000-0000-000000000000"
   envsSetIfIsEmpty STACK_DEFAULT_USERNAME services
   envsSetIfIsEmpty STACK_DEFAULT_PASSWORD services
