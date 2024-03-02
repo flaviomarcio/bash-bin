@@ -548,6 +548,13 @@ function stackEnvsLoad()
   envsSetIfIsEmpty STACK_SERVICE_IMAGE_INFLUXDB "influxdb:1.8.10"
   envsSetIfIsEmpty STACK_SERVICE_IMAGE_MARIADB "lscr.io/linuxserver/mariadb"
   envsSetIfIsEmpty STACK_SERVICE_IMAGE_MYSQL "mysql:8.0.36-debian"
+  
+
+  #temp
+  envsSetIfIsEmpty CUR_DATE "$(date +'%Y-%m-%d')"
+  envsSetIfIsEmpty CUR_TIME "$(date +'%H:%M:%S')"
+  envsSetIfIsEmpty CUR_DATETIME "$(date +'%Y-%m-%d')T$(date +'%H:%M:%S')"
+
 
   stackInitTargetEnvFile
   if ! [ "$?" -eq 1 ]; then
