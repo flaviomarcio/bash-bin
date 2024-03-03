@@ -83,7 +83,7 @@ function dockerSwarmVerify()
   if [ "$?" -eq 1 ]; then
     return 1
   fi
-  dockerSwarmInit true
+  dockerSwarmInit true "${PUBLIC_HOST_IPv4}"
   if [ "$?" -eq 1 ]; then
     return 1
   fi

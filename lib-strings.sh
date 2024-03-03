@@ -839,6 +839,12 @@ function echR()
   echoColor ${COLOR_RED} "$@"
 }
 
+
+function echE()
+{
+  echoColor ${COLOR_RED} "$@"
+}
+
 function echG()
 {
   echoColor ${COLOR_GREEN} "$@"
