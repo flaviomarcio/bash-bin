@@ -254,7 +254,7 @@ function dockerSwarmLeave()
   return 1
 }
 
-function dockerConfigure()
+function dockerSwarmConfigure()
 {
   clearTerm
   echM $'\n'"Docker configure"$'\n'
