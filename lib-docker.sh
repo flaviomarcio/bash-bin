@@ -442,12 +442,6 @@ function dockerBuildCompose()
   echo "echo \"${__docker_build_cmd_2}\""                                               >>${__docker_build_compose_sh_file}
   echo ${__docker_build_cmd_2}                                                          >>${__docker_build_compose_sh_file}
   echo ""                                                                               >>${__docker_build_compose_sh_file}
-  echo "echo \"${__docker_build_cmd_3}\""                                               >>${__docker_build_compose_sh_file}
-  echo ${__docker_build_cmd_3}                                                          >>${__docker_build_compose_sh_file}
-  echo ""                                                                               >>${__docker_build_compose_sh_file}
-  echo "echo \"${__docker_build_cmd_4}\""                                               >>${__docker_build_compose_sh_file}
-  echo ${__docker_build_cmd_4}                                                          >>${__docker_build_compose_sh_file}
-  echo ""                                                                               >>${__docker_build_compose_sh_file}
   echo "echo \"${__docker_build_cmd_5}\""                                               >>${__docker_build_compose_sh_file}
   echo ${__docker_build_cmd_5}                                                          >>${__docker_build_compose_sh_file}
   echo ""                                                                               >>${__docker_build_compose_sh_file}

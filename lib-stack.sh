@@ -109,6 +109,7 @@ function __private_stackEnvsLoadByTarget()
   envsSetIfIsEmpty STACK_NETWORK_PREFIX "${STACK_ENVIRONMENT}-${STACK_TARGET}"
   envsSetIfIsEmpty STACK_NETWORK_DEFAULT "${STACK_NETWORK_PREFIX}-inbound"
   envsSetIfIsEmpty STACK_NETWORK_SECURITY "${STACK_NETWORK_PREFIX}-security"
+  envsSetIfIsEmpty STACK_NETWORK_CAMUNDA "${STACK_NETWORK_PREFIX}-camunda"
   envsSetIfIsEmpty STACK_NETWORK_SRE "${STACK_NETWORK_PREFIX}-sre"
   envsSetIfIsEmpty STACK_NETWORK_GRAFANA_LOKI "${STACK_NETWORK_PREFIX}-grafana-loki"
   envsSetIfIsEmpty STACK_NETWORK_GRAFANA_TEMPO "${STACK_NETWORK_PREFIX}-grafana-tempo"
@@ -302,6 +303,7 @@ function stackInitTargetEnvFile()
 
   #primary default envs
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_ADMIN_USERNAME
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_ADMIN_PASSWORD
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_ADMIN_EMAIL
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_TZ
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DOMAIN
@@ -491,13 +493,14 @@ function stackEnvsLoad()
 
   #primary default envs
   envsSetIfIsEmpty STACK_ADMIN_USERNAME services
+  envsSetIfIsEmpty STACK_ADMIN_PASSWORD services
   envsSetIfIsEmpty STACK_ADMIN_EMAIL services@services.com
   envsSetIfIsEmpty STACK_DNS_SERVER_ENABLE false
   envsSetIfIsEmpty STACK_DEFAULT_TOKEN "00000000-0000-0000-0000-000000000000"
-  envsSetIfIsEmpty STACK_DEFAULT_USERNAME services
-  envsSetIfIsEmpty STACK_DEFAULT_PASSWORD services
-  envsSetIfIsEmpty STACK_DEFAULT_EMAIL "services@${STACK_DOMAIN}"
-  envsSetIfIsEmpty STACK_DEFAULT_DATABASE services
+  envsSetIfIsEmpty STACK_DEFAULT_USERNAME "${STACK_ADMIN_USERNAME}"
+  envsSetIfIsEmpty STACK_DEFAULT_PASSWORD "${STACK_ADMIN_PASSWORD}"
+  envsSetIfIsEmpty STACK_DEFAULT_EMAIL "${STACK_DEFAULT_USERNAME}@${STACK_DOMAIN}"
+  envsSetIfIsEmpty STACK_DEFAULT_DATABASE ${STACK_DEFAULT_USERNAME}
   envsSetIfIsEmpty STACK_DEFAULT_CONTEXT_PATH "/"
   envsSetIfIsEmpty STACK_DEFAULT_PORT 8080
   envsSetIfIsEmpty STACK_DEFAULT_LOG_LEVEL INFO
@@ -741,7 +744,7 @@ function stackMakeStructure()
     export __func_return="fail on calling stackStorageMake, ${__func_return}"
     return 0;
   fi
-  dockerNetworkCreate "${STACK_NETWORK_DEFAULT} ${STACK_NETWORK_SECURITY} ${STACK_NETWORK_SRE} ${STACK_NETWORK_GRAFANA_LOKI} ${STACK_NETWORK_GRAFANA_TEMPO} ${STACK_NETWORK_GRAFANA_K6} ${STACK_NETWORK_KONG}"
+  dockerNetworkCreate "${STACK_NETWORK_DEFAULT} ${STACK_NETWORK_SECURITY} ${STACK_NETWORK_SRE} ${STACK_NETWORK_GRAFANA_LOKI} ${STACK_NETWORK_GRAFANA_TEMPO} ${STACK_NETWORK_GRAFANA_K6} ${STACK_NETWORK_KONG} ${STACK_NETWORK_CAMUNDA}"
   if ! [ "$?" -eq 1 ]; then
     export __func_return="fail on calling dockerNetworkCreate, ${__func_return}"
     return 0;
