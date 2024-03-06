@@ -29,6 +29,7 @@ function __private_stackEnvsLoadByStack()
   unset STACK_SERVICE_STORAGE_PLUGIN_DIR
   unset STACK_SERVICE_STORAGE_IMPORT_DIR
   unset STACK_SERVICE_STORAGE_PROVIDER_DIR
+  unset STACK_SERVICE_STORAGE_CERT_DIR
   
   if [[ ${STACK_NAME} == "" ]]; then
     export __func_return="failt on calling __private_stackEnvsLoadByStack, invalid env \${STACK_NAME}"
@@ -52,6 +53,7 @@ function __private_stackEnvsLoadByStack()
   export STACK_SERVICE_STORAGE_PLUGIN_DIR=${__private_stackEnvsLoadByStack_storage}/plugin
   export STACK_SERVICE_STORAGE_IMPORT_DIR=${__private_stackEnvsLoadByStack_storage}/import
   export STACK_SERVICE_STORAGE_PROVIDER_DIR=${__private_stackEnvsLoadByStack_storage}/provider
+  export STACK_SERVICE_STORAGE_CERT_DIR=${__private_stackEnvsLoadByStack_storage}/certificates
   
   export STACK_SERVICE_IMAGE="${STACK_SERVICE_NAME}"
   export STACK_SERVICE_IMAGE_URL="${STACK_REGISTRY_DNS_PUBLIC}/${STACK_SERVICE_IMAGE}"
@@ -69,6 +71,7 @@ function __private_stackEnvsLoadByStack()
   local __dirs="${__dirs} ${STACK_SERVICE_STORAGE_PLUGIN_DIR}"
   local __dirs="${__dirs} ${STACK_SERVICE_STORAGE_IMPORT_DIR}"
   local __dirs="${__dirs} ${STACK_SERVICE_STORAGE_PROVIDER_DIR}"
+  local __dirs="${__dirs} ${STACK_SERVICE_STORAGE_CERT_DIR}"
 
   stackMkDir 777 "${__dirs}"
 
@@ -386,6 +389,7 @@ function stackInitTargetEnvFile()
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_IMAGE_MARIADB
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_IMAGE_MYSQL
   envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_IMAGE_REDIS
+  envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_IMAGE_MSSQL
 
 
 
@@ -558,6 +562,7 @@ function stackEnvsLoad()
   envsSetIfIsEmpty STACK_SERVICE_IMAGE_MARIADB "lscr.io/linuxserver/mariadb"
   envsSetIfIsEmpty STACK_SERVICE_IMAGE_MYSQL "mysql:8.0.36-debian"
   envsSetIfIsEmpty STACK_SERVICE_IMAGE_REDIS "redis:bookworm"
+  envsSetIfIsEmpty STACK_SERVICE_IMAGE_MSSQL "mcr.microsoft.com/mssql/server"
 
   
 
