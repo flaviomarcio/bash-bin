@@ -1,4 +1,4 @@
 #!/bin/bash
-source gitGo
+source ./gitGo
 git checkout $(cat ./git-branch-release.txt)
 git pull origin $(cat ./git-branch-release.txt)
