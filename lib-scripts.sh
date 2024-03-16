@@ -39,7 +39,7 @@ function __private_script_envs_check()
 
 function __private_script_scan_files()
 {
-  export __func_return=
+  unset __func_return
   __private_script_scan_files_target_dir=${1}
   __private_script_scan_files_filters="${2}"
 

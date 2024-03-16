@@ -303,7 +303,7 @@ function selectorDNSOption()
 
 function __private_selectorInitTargets()
 {
-  export __func_return=
+  unset __func_return
   clearTerm
   export __selector_dir=/data/applications
   mkdir -p ${__selector_dir}

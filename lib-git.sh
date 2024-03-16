@@ -13,7 +13,7 @@ fi
 
 function gitIsValid()
 {
-  export __func_return=
+  unset __func_return
   __gitIsValidPWD=${PWD}
   __gitIsValid=${1}
   if [[ ${__gitIsValid} != "" ]]; then
@@ -32,7 +32,7 @@ function gitIsValid()
 
 function gitBranch()
 {
-  export __func_return=
+  unset __func_return
   gitIsValid
   if ! [ "$?" -eq 1 ]; then
     return 0
@@ -44,7 +44,7 @@ function gitBranch()
 
 function gitBranchList()
 {
-  export __func_return=
+  unset __func_return
   gitIsValid
   if ! [ "$?" -eq 1 ]; then
     return 0
@@ -85,7 +85,7 @@ function gitCheckOut()
 
 function gitClone()
 {
-  export __func_return=
+  unset __func_return
   echM "  Git cloning repository"
 
   __git_check=$(which git)

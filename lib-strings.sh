@@ -264,6 +264,7 @@ function utilInitialize()
   for PARAM in "$@"
   do
     if [[ ${PARAM} == "-d" || ${PARAM} == "--debug" ]]; then
+      export PUBLIC_RUNNER_MODE=debug
       export PUBLIC_LOG_LEVEL=true
       export STACK_LOG=1            
       export STACK_LOG_VERBOSE=1    
@@ -328,7 +329,7 @@ function utilInitialize()
 
 function envsOS()
 {
-  export __func_return=
+  unset __func_return
   local __envsOS_destine=${1}
   local __envsOS="/tmp/env_file_envsOS_${RANDOM}.env"
   printenv | sort > ${__envsOS}
@@ -418,7 +419,7 @@ function envsFileAddIfNotExists()
 
 function envsExtractStatic()
 {
-  export __func_return=
+  unset __func_return
   local __file=${1}
   local __file_out=${2}
   if [[ ${__file} == "" ]]; then
@@ -445,7 +446,7 @@ function envsExtractStatic()
 
 function runSource()
 {
-  export __func_return=
+  unset __func_return
   local __file_name="${1}"
   local __file_params="${2}"
   if [[ ${__file_name} == "" ]]; then
@@ -463,7 +464,7 @@ function runSource()
 
 function envsPrepareFile()
 {
-  export __func_return=
+  unset __func_return
   local __target=${1}
   local __target_output=${2}
   if ! [[ -f ${__target} ]]; then
@@ -532,7 +533,7 @@ function envsPrepareFile()
 
 function envsFileConvertToExport()
 {
-  export __func_return=
+  unset __func_return
   local __file="${1}"
   local __file_out="${2}"
 
@@ -552,7 +553,7 @@ function envsFileConvertToExport()
 
   envsPrepareFile ${__file_out}
 
-  export __func_return=
+  unset __func_return
   #incluindo prefixo no artquivo
   sed -i 's/^/export /' ${__file_out}
   export __func_return=${__file_out} 
@@ -637,7 +638,7 @@ function clearTerm()
 
 function strExtractFilePath()
 {
-  export __func_return=
+  unset __func_return
   local __str_file="${1}"
   if [[ ${__str_file} == "" ]]; then
     return 0
@@ -679,7 +680,7 @@ function strExtractFileExtension()
 
 function strArg()
 {
-  export __func_return=
+  unset __func_return
   local __strArg_index="${1}"
   local __strArg_args="${2}"
   local __strArg_ifs="${3}"
@@ -707,7 +708,7 @@ function strSplit()
 {
   local __strSplitText="${1}"
   local __strSplitSepatator="${2}"
-  export __func_return=
+  unset __func_return
 
   if [[ ${__strSplitText} == ""  ]]; then
     return 0
@@ -1112,7 +1113,7 @@ function echFail()
 
 function jsonGet()
 {
-  export __func_return=
+  unset __func_return
   local __json_get_body=${1}
   local __json_get_tags=${2}
 
