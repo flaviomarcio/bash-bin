@@ -41,7 +41,7 @@ function __private_stackEnvsLoadByStack()
   fi
   local __private_services_names_configure_name=${2}
 
-  export STACK_SERVICE_NAME=$(echo "${STACK_PREFIX}-${STACK_NAME}" | sed 's/_/-/g')
+  export STACK_SERVICE_NAME=$(echo "${STACK_PREFIX_HOST}${STACK_NAME}" | sed 's/_/-/g')
 
   local __private_stackEnvsLoadByStack_storage=${STACK_TARGET_STORAGE_DIR}/${STACK_SERVICE_NAME}
   export STACK_SERVICE_STORAGE_DATA_DIR=${__private_stackEnvsLoadByStack_storage}/data
@@ -98,7 +98,6 @@ function __private_stackEnvsLoadByTarget()
     return 0
   fi
 
-  export STACK_PREFIX="${STACK_ENVIRONMENT}-${STACK_TARGET}"
   #dirs
   export ROOT_TARGET_DIR="${ROOT_ENVIRONMENT_DIR}/${STACK_TARGET}"
   export STACK_INFRA_DIR="${ROOT_TARGET_DIR}/infrastructure"
@@ -120,7 +119,7 @@ function __private_stackEnvsLoadByTarget()
   envsSetIfIsEmpty STACK_NETWORK_KONG "${STACK_NETWORK_PREFIX}-kong-net"
   
 
-  envsSetIfIsEmpty STACK_REGISTRY_DNS_PUBLIC "${STACK_PREFIX}-registry.${STACK_DOMAIN}:5000"
+  envsSetIfIsEmpty STACK_REGISTRY_DNS_PUBLIC "${STACK_PREFIX_HOST}registry.${STACK_DOMAIN}:5000"
   envsSetIfIsEmpty PUBLIC_STACK_ENVS_FILE "${STACK_ROOT_DIR}/stack_envs.env"
   envsSetIfIsEmpty PUBLIC_STACK_TARGET_ENVS_FILE "${ROOT_TARGET_DIR}/stack_envs.env"
   if [[ -f ${PUBLIC_STACK_TARGET_ENVS_FILE} ]]; then
@@ -417,8 +416,10 @@ function stackEnvsLoad()
 
   if [[ ${STACK_ENVIRONMENT} != "" && ${STACK_TARGET} != "" ]]; then
     export STACK_PREFIX="${STACK_ENVIRONMENT}-${STACK_TARGET}"
+    export STACK_PREFIX_HOST="${STACK_PREFIX}-"
   fi
   export STACK_PREFIX_NAME=$(echo ${STACK_PREFIX} | sed 's/-/_/g')
+
 
   envsSetIfIsEmpty STACK_ROOT_DIR "${HOME}"
   #remove barra no final
@@ -472,7 +473,7 @@ function stackEnvsLoad()
   envsSetIfIsEmpty STACK_PROXY_PORT_HTTPS 443
   
   envsSetIfIsEmpty STACK_VAULT_PORT 8200
-  envsSetIfIsEmpty STACK_VAULT_URI "http://${STACK_PREFIX}-vault"
+  envsSetIfIsEmpty STACK_VAULT_URI "http://${STACK_PREFIX_HOST}vault"
   envsSetIfIsEmpty STACK_VAULT_METHOD token
   envsSetIfIsEmpty STACK_VAULT_TOKEN "${STACK_SERVICE_DEFAULT_TOKEN}"
   envsSetIfIsEmpty STACK_VAULT_TOKEN_DEPLOY "${STACK_VAULT_TOKEN}"
@@ -510,14 +511,14 @@ function stackEnvsLoad()
   envsSetIfIsEmpty STACK_DEFAULT_LOG_LEVEL INFO
 
   #database envs
-  envsSetIfIsEmpty STACK_DEFAULT_DB_HOST_PG ${STACK_PREFIX}-postgres
-  envsSetIfIsEmpty STACK_DEFAULT_DB_HOST_PG_9 ${STACK_PREFIX}-postgres-9
+  envsSetIfIsEmpty STACK_DEFAULT_DB_HOST_PG ${STACK_PREFIX_HOST}postgres
+  envsSetIfIsEmpty STACK_DEFAULT_DB_HOST_PG_9 ${STACK_PREFIX_HOST}postgres-9
   envsSetIfIsEmpty STACK_DEFAULT_DB_PORT 5432
   envsSetIfIsEmpty STACK_DEFAULT_DB_NAME ${STACK_DEFAULT_DATABASE}
   envsSetIfIsEmpty STACK_DEFAULT_DB_USERNAME ${STACK_DEFAULT_USERNAME}
   envsSetIfIsEmpty STACK_DEFAULT_DB_PASSWORD ${STACK_DEFAULT_PASSWORD}
   envsSetIfIsEmpty STACK_DEFAULT_DB_SCHEMA
-  envsSetIfIsEmpty STACK_DEFAULT_DB_URL "jdbc:postgresql://${STACK_PREFIX}-postgres:${STACK_DEFAULT_DB_PORT}/${STACK_DEFAULT_DB_NAME}"
+  envsSetIfIsEmpty STACK_DEFAULT_DB_URL "jdbc:postgresql://${STACK_PREFIX_HOST}postgres:${STACK_DEFAULT_DB_PORT}/${STACK_DEFAULT_DB_NAME}"
 
   #postgres envs
   envsSetIfIsEmpty POSTGRES_URL ${STACK_DEFAULT_DB_URL}

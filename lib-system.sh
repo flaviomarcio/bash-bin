@@ -76,9 +76,9 @@ function systemDNSList()
   __systemDNSList_dns_out=
   for __systemDNSList_dns in "${__systemDNSList_dns_list[@]}"
   do
-    __systemDNSList_dns_out="${__systemDNSList_dns_out} ${STACK_PREFIX}-${__systemDNSList_dns}"
+    __systemDNSList_dns_out="${__systemDNSList_dns_out} ${STACK_PREFIX_HOST}${__systemDNSList_dns}"
     if [[ ${__systemDNSList_inc_pub} == true ]]; then
-      __systemDNSList_dns_out="${__systemDNSList_dns_out} ${STACK_PREFIX}-${__systemDNSList_dns}.${STACK_DOMAIN}"
+      __systemDNSList_dns_out="${__systemDNSList_dns_out} ${STACK_PREFIX_HOST}${__systemDNSList_dns}.${STACK_DOMAIN}"
     fi
   done
   echo ${__systemDNSList_dns_out}

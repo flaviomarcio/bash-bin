@@ -206,7 +206,7 @@ function dockerSwarmInit()
   local __swarm_ip=${2}
 
   if [[ ${STACK_DNS_SERVER_ENABLE} == true ]]; then
-    local __cmd="docker swarm init --dns ${STACK_PREFIX}-dnsserver --advertise-addr ${__swarm_ip}"
+    local __cmd="docker swarm init --dns ${STACK_PREFIX_HOST}dnsserver --advertise-addr ${__swarm_ip}"
   else
     local __cmd="docker swarm init --advertise-addr ${__swarm_ip}"
   fi
