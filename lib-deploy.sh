@@ -216,6 +216,7 @@ function deploy()
   fi
 
   local __deploy_service_name=${__deploy_environment}-${__deploy_target}-${__deploy_name}
+  local __deploy_host_name="${STACK_PREFIX_HOST}${__deploy_name}"
 
   mkdir -p ${__deploy_builder_dir}
   for __deploy_dependency in "${__deploy_dependency_dir[@]}"
@@ -325,6 +326,7 @@ function deploy()
         "${__deploy_dck_env_file}" \
         "${__deploy_builder_dir}" \
         "${__deploy_binary_application}" \
+        "${__deploy_host_name}" \
         "${__deploy_network_name}"
 
     if ! [ "$?" -eq 1 ]; then
