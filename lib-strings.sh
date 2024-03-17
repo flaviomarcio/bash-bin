@@ -284,46 +284,46 @@ function utilInitialize()
     fi
   done
 
-  local __utilInitialize_envs=()
-  local __utilInitialize_envs+=("..information")
-  if [[ ${PUBLIC_LOG_LEVEL} == true ]]; then
-    local __utilInitialize_envs+=("....Debug mode is enabled")
-  fi
-  if [[ ${STACK_LOG_VERBOSE} == 1 ]]; then
-    local __utilInitialize_envs+=("....Log verbose is enabled")
-  fi
-  if [[ ${STACK_LOG} == 1 ]]; then
-    local __utilInitialize_envs+=("....Log is enabled")
-  fi
-  if [[ ${PUBLIC_RUNNER_TEST} == true ]]; then
-    local __utilInitialize_envs+=("....-Runner mode: ${PUBLIC_RUNNER_MODE}")
-  fi
-  local __utilInitialize_envs+=("..args:")
-  export DOCKER_ARGS_DEFAULT="--quiet --log-level ERROR"
-  local __utilInitialize_envs+=("....-docker: ${DOCKER_ARGS_DEFAULT}")
-  export MAVEN_ARGS_DEFAULT="--quiet"
-  local __utilInitialize_envs+=("....-maven: ${MAVEN_ARGS_DEFAULT}")
-  if [[ ${STACK_LOG} == 0 ]]; then    
-    export GIT_ARGS_DEFAULT="--quiet"
-    local __utilInitialize_envs+=("....-git: ${GIT_ARGS_DEFAULT}")
-  fi
+  # local __utilInitialize_envs=()
+  # local __utilInitialize_envs+=("..information")
+  # if [[ ${PUBLIC_LOG_LEVEL} == true ]]; then
+  #   local __utilInitialize_envs+=("....Debug mode is enabled")
+  # fi
+  # if [[ ${STACK_LOG_VERBOSE} == 1 ]]; then
+  #   local __utilInitialize_envs+=("....Log verbose is enabled")
+  # fi
+  # if [[ ${STACK_LOG} == 1 ]]; then
+  #   local __utilInitialize_envs+=("....Log is enabled")
+  # fi
+  # if [[ ${PUBLIC_RUNNER_TEST} == true ]]; then
+  #   local __utilInitialize_envs+=("....-Runner mode: ${PUBLIC_RUNNER_MODE}")
+  # fi
+  # local __utilInitialize_envs+=("..args:")
+  # export DOCKER_ARGS_DEFAULT="--quiet --log-level ERROR"
+  # local __utilInitialize_envs+=("....-docker: ${DOCKER_ARGS_DEFAULT}")
+  # export MAVEN_ARGS_DEFAULT="--quiet"
+  # local __utilInitialize_envs+=("....-maven: ${MAVEN_ARGS_DEFAULT}")
+  # if [[ ${STACK_LOG} == 0 ]]; then    
+  #   export GIT_ARGS_DEFAULT="--quiet"
+  #   local __utilInitialize_envs+=("....-git: ${GIT_ARGS_DEFAULT}")
+  # fi
 
-  if [[ ${__utilInitialize_envs} != "" ]]; then
-    echG "Initialization"
-    for __utilInitialize_env in "${__utilInitialize_envs[@]}"
-    do
-      local __utilInitialize_msg=$(echo ${__utilInitialize_env} | sed 's/\./ /g')
-      if [[ ${__utilInitialize_env} == "......"*  ]]; then
-        echY "${__utilInitialize_msg}"
-      elif [[ ${__utilInitialize_env} == "...."*  ]]; then
-        echC "${__utilInitialize_msg}"
-      elif [[ ${__utilInitialize_env} == ".."*  ]]; then
-        echM "${__utilInitialize_msg}"
-      else
-        echR "${__utilInitialize_msg}"
-      fi
-    done
-  fi
+  # if [[ ${__utilInitialize_envs} != "" ]]; then
+  #   echG "Initialization"
+  #   for __utilInitialize_env in "${__utilInitialize_envs[@]}"
+  #   do
+  #     local __utilInitialize_msg=$(echo ${__utilInitialize_env} | sed 's/\./ /g')
+  #     if [[ ${__utilInitialize_env} == "......"*  ]]; then
+  #       echY "${__utilInitialize_msg}"
+  #     elif [[ ${__utilInitialize_env} == "...."*  ]]; then
+  #       echC "${__utilInitialize_msg}"
+  #     elif [[ ${__utilInitialize_env} == ".."*  ]]; then
+  #       echM "${__utilInitialize_msg}"
+  #     else
+  #       echR "${__utilInitialize_msg}"
+  #     fi
+  #   done
+  # fi
 
 }
 
@@ -367,16 +367,27 @@ function envsSetIfIsEmpty()
 
 function envsFileAddIfNotExists()
 {
-  local __env_file=${1}
-  local __env_file_name=${2}
-  local __env_file_value=${3}
+  unset __env_file
+  local __env_file_names=
 
-  if [[ ${__env_file} == "" || ${__env_file_name} == "" ]]; then
+  local __i=0
+  for __arg in "$@"
+  do
+    if [[ ${__i} == 0 ]]; then
+      local __env_file=${__arg}
+    else
+      __env_file_names="${__env_file_names} ${__arg}"
+    fi
+    local __i=1
+  done
+  local __env_file_names=(${__env_file_names})
+
+  if [[ ${__env_file} == "" ]]; then
     return 0
   fi
 
   if ! [[ -f ${__env_file} ]]; then
-    __env_file_dir=$(dirname ${__env_file})
+    local __env_file_dir=$(dirname ${__env_file})
     mkdir -p ${__env_file_dir}
     if ! [[ -d ${__env_file_dir} ]];then
       echR "No create env dir: ${__env_file_dir}"
@@ -386,31 +397,37 @@ function envsFileAddIfNotExists()
     echo "#!/bin/bash">${__env_file}
   fi
 
-  #se nao for informado o valor da variavel recuperaremos seu valor pelo nome indicado
-  if [[ ${__env_file_value} == "" ]]; then
-    local __env_file_value="${!__env_file_name}"
-  fi
 
-  __env_file_value=$(echo ${__env_file_value} | sed 's/\\$/\\$/g')
-
-  local __check=$(echo ${__env_file_value} | grep ' ')
-  if [[ ${__check} == "" ]]; then
-    local __env_final="${__env_file_name}=${__env_file_value}"
-  else
-    local __env_file_value=$(echo "${__env_file_value}" | sed 's/"//g' )
-    #local __env_file_value=$(echo "${__env_file_value}" | sed 's/\$/\\$/g' )
-    local __env_final="${__env_file_name}=\"${__env_file_value}\""
-  fi
-
-  local __check_value=$(echo ${__env_final} | sed 's/\*/\\\*/g')
-  local __check=$(cat ${__env_file} | grep "${__check_value}")
-  if [[ ${__check} != "" ]]; then
-    return 1;
-  fi
   local __env_file_temp="/tmp/envsFileAddIfNotExists_${RANDOM}.env"
   cat ${__env_file}>${__env_file_temp}
   sed -i "/${__env_file_name}=/d" ${__env_file_temp}
-  echo "export ${__env_final}">>${__env_file_temp}
+  #remover apenas linhas com apenas "export"
+  sed -i '/^\s*export\s*$/d' ${__env_file_temp}
+
+  for __env_file_name in "${__env_file_names[@]}"
+  do
+    if [[ ${__env_file_name} == "" ]]; then
+      continue
+    fi
+    local __env_file_value=$(echo ${!__env_file_name} | sed 's/\\$/\\$/g')
+
+    local __check=$(echo ${__env_file_value} | grep ' ')
+    if [[ ${__check} == "" ]]; then
+      local __env_final="${__env_file_name}=${__env_file_value}"
+    else
+      local __env_file_value=$(echo "${__env_file_value}" | sed 's/"//g' )
+      local __env_final="${__env_file_name}=\"${__env_file_value}\""
+    fi
+
+    local __check_value=$(echo ${__env_final} | sed 's/\*/\\\*/g')
+    local __check=$(cat ${__env_file} | grep "${__check_value}")
+    if [[ ${__check} != "" ]]; then
+      return 1;
+    fi
+
+    echo "export ${__env_final}">>${__env_file_temp}
+  done
+
   sort -u ${__env_file_temp} -o ${__env_file}
   rm -rf ${__env_file_temp}
   return 1;
