@@ -38,12 +38,12 @@ function __private_db_envs_check()
 
 function __private_db_cleanup_sql()
 {
-  __private_db_cleanup_sql_file=${1}
+  local __private_db_cleanup_sql_file=${1}
   if ! [[ -f ${__private_db_cleanup_sql_file} ]]; then
     return 0;
   fi
   sed -i '/^$/d' ${__private_db_cleanup_sql_file}
-  __private_db_cleanup_sql_envs=(DROP drop TRUNCATE truncate DELETE delete CASCADE cascade)
+  local __private_db_cleanup_sql_envs=(DROP drop TRUNCATE truncate DELETE delete CASCADE cascade)
   for __private_db_cleanup_sql_env in ${__private_db_cleanup_sql_envs[*]}; do 
     sed -i "/${__private_db_cleanup_sql_env}/d" ${__private_db_cleanup_sql_file}
   done
@@ -52,45 +52,45 @@ function __private_db_cleanup_sql()
 
 function __private_db_scan_files()
 {
-  DB_SCAN_RETURN=
-  DB_SCAN_DIR=${1}
-  __private_db_scan_files_filters="${2}"
+  unset __func_return
+  local DB_SCAN_DIR=${1}
+  local __private_db_scan_files_filters="${2}"
 
   if ! [[ -d ${DB_SCAN_DIR} ]]; then
     return 0;
   fi
 
   if [[ ${DATABASE_ENVIRONMENT} == "production" ]]; then
-    DB_SCAN_FILTERS=$(echo ${__private_db_scan_files_filters} | sed 's/drops//g' | sed 's/drop//g' | sed 's/fakedata//g')
+    local DB_SCAN_FILTERS=$(echo ${__private_db_scan_files_filters} | sed 's/drops//g' | sed 's/drop//g' | sed 's/fakedata//g')
   elif [[ ${DATABASE_ENVIRONMENT} == "testing" || ${DATABASE_ENVIRONMENT} == "development"  || ${DATABASE_ENVIRONMENT} == "stating" ]]; then
-    DB_SCAN_FILTERS=${__private_db_scan_files_filters}
+    local DB_SCAN_FILTERS=${__private_db_scan_files_filters}
   else
-    DB_SCAN_FILTERS=
+    local DB_SCAN_FILTERS=
   fi 
 
-  DB_SCAN_FILTERS=(${DB_SCAN_FILTERS})
-  DB_SCAN_STEP_DIRS=($(ls ${DB_SCAN_DIR}))
+  local DB_SCAN_FILTERS=(${DB_SCAN_FILTERS})
+  local DB_SCAN_STEP_DIRS=($(ls ${DB_SCAN_DIR}))
   for DB_SCAN_STEP_DIR in ${DB_SCAN_STEP_DIRS[*]}; 
   do
-    DB_SCAN_STEP_FILES=
+    unset DB_SCAN_STEP_FILES
     for DB_SCAN_FILTER in ${DB_SCAN_FILTERS[*]}; 
     do
       if [[ $(echo ${DB_SCAN_FILTER} | grep sql) == "" ]]; then
-        DB_SCAN_FILTER="${DB_SCAN_FILTER}*.sql"
+        local DB_SCAN_FILTER="${DB_SCAN_FILTER}*.sql"
       fi
-      DB_SCAN_DIR_STEP="${DB_SCAN_DIR}/${DB_SCAN_STEP_DIR}"
-      DB_SCAN_FILES=($(echo $(find ${DB_SCAN_DIR}/${DB_SCAN_STEP_DIR} -iname ${DB_SCAN_FILTER} | sort)))
+      local DB_SCAN_DIR_STEP="${DB_SCAN_DIR}/${DB_SCAN_STEP_DIR}"
+      local DB_SCAN_FILES=($(echo $(find ${DB_SCAN_DIR}/${DB_SCAN_STEP_DIR} -iname ${DB_SCAN_FILTER} | sort)))
       for DB_SCAN_FILE in ${DB_SCAN_FILES[*]};
       do
-        DB_SCAN_STEP_FILES="${DB_SCAN_STEP_FILES} ${DB_SCAN_FILE}"
+        local DB_SCAN_STEP_FILES="${DB_SCAN_STEP_FILES} ${DB_SCAN_FILE}"
       done
     done
     if [[ ${DB_SCAN_STEP_FILES} != "" ]]; then
-      DB_SCAN_RETURN="${DB_SCAN_RETURN} [${DB_SCAN_STEP_DIR}] ${DB_SCAN_STEP_FILES}"
+      export __func_return="${__func_return} [${DB_SCAN_STEP_DIR}] ${DB_SCAN_STEP_FILES}"
     fi
   done
 
-  echo ${DB_SCAN_RETURN}
+  echo ${__func_return}
   return 1  
 }
 
@@ -111,16 +111,16 @@ function __private_db_scan_files_for_local()
     return 0;       
   fi
   if [[ ${DATABASE_ENVIRONMENT} == "production" ]]; then
-    __private_db_scan_files_for_local_filter="tables constraints.sql constraints-pk constraints-fk constraints-check indexes initdata view"
+    local __filter="tables constraints.sql constraints-pk constraints-fk constraints-check indexes initdata view"
   elif [[ ${DATABASE_ENVIRONMENT} == "testing" || ${DATABASE_ENVIRONMENT} == "development"  || ${DATABASE_ENVIRONMENT} == "stating" ]]; then
-    __private_db_scan_files_for_local_filter="drops tables constraints.sql constraints-pk constraints-fk constraints-check indexes initdata view fakedata"
+    local __filter="drops tables constraints.sql constraints-pk constraints-fk constraints-check indexes initdata view fakedata"
   else
-    __private_db_scan_files_for_local_filter=
+    local __filter=
   fi  
-  if [[ ${__private_db_scan_files_for_local_filter} == "" ]]; then
+  if [[ ${__filter} == "" ]]; then
     return 0;
   fi
-  __private_db_scan_files "${1}" "${__private_db_scan_files_for_local_filter}"
+  __private_db_scan_files "${1}" "${__filter}"
   if ! [ "$?" -eq 1 ]; then
     return 0;       
   fi
@@ -134,17 +134,17 @@ function __private_db_scan_files_for_ddl()
     return 0;       
   fi
   if [[ ${DATABASE_ENVIRONMENT} == "production" ]]; then
-    __private_db_scan_files_for_ddl_filter="tables constraints.sql constraints-pk constraints-fk constraints-check indexes initdata view"
+    local __filter="tables constraints.sql constraints-pk constraints-fk constraints-check indexes initdata view"
   elif [[ ${DATABASE_ENVIRONMENT} == "testing" || ${DATABASE_ENVIRONMENT} == "development"  || ${DATABASE_ENVIRONMENT} == "stating" ]]; then
-    __private_db_scan_files_for_ddl_filter="tables constraints.sql constraints-pk constraints-fk constraints-check indexes initdata view fakedata"
+    local __filter="tables constraints.sql constraints-pk constraints-fk constraints-check indexes initdata view fakedata"
   else
-    __private_db_scan_files_for_ddl_filter=
+    local __filter=
   fi  
-  if [[ ${__private_db_scan_files_for_ddl_filter} == "" ]]; then
+  if [[ ${__filter} == "" ]]; then
     return 0;
   fi
 
-  __private_db_scan_files "${1}" "${__private_db_scan_files_for_ddl_filter}"
+  __private_db_scan_files "${1}" "${__filter}"
   if ! [ "$?" -eq 1 ]; then
     return 0;       
   fi
@@ -153,16 +153,17 @@ function __private_db_scan_files_for_ddl()
 
 function __private_db_ddl_apply_scan()
 {
-  __private_db_ddl_apply_scan_taget=${1}
-  if ! [ -d ${__private_db_ddl_apply_scan_taget} ]; then
+  unset __func_return
+  local __target=${1}
+  if ! [ -d ${__target} ]; then
     return 0;       
   fi
-  __private_db_ddl_apply_scan_files=($(__private_db_scan_files_for_local "${__private_db_ddl_apply_scan_taget}"))
-  for __private_db_ddl_apply_scan_file in ${__private_db_ddl_apply_scan_files[*]};
+  local __files=($(__private_db_scan_files_for_local "${__target}"))
+  for __file in ${__files[*]};
   do    
-    __private_db_ddl_apply_scan_return="${__private_db_ddl_apply_scan_return} ${__private_db_ddl_apply_scan_file}"
+    local __func_return="${__func_return} ${__file}"
   done
-  echo ${__private_db_ddl_apply_scan_return}
+  echo ${__func_return}
   return 1
 }
 
@@ -184,17 +185,17 @@ function __private_pg_envs_check()
 
 function __private_pg_script_exec()
 {
-  __private_pg_script_exec_file=${1}
-  if ! [[ -f ${__private_pg_script_exec_file} ]]; then
+  local __file=${1}
+  if ! [[ -f ${__file} ]]; then
     return 0;
   fi
 
-  sed -i '/^$/d' ${__private_pg_script_exec_file}
+  sed -i '/^$/d' ${__file}
   local __check=$(which qsql)
   if [[ ${__check} != "" ]]; then
-    qsql --action=exec --format= --quiet --hostname=${POSTGRES_HOST} --username=${POSTGRES_USER} --password=${POSTGRES_PASSWORD} --port=${POSTGRES_PORT} --database=${POSTGRES_DATABASE} --command=${__private_pg_script_exec_file}
+    qsql --action=exec --format= --quiet --hostname=${POSTGRES_HOST} --username=${POSTGRES_USER} --password=${POSTGRES_PASSWORD} --port=${POSTGRES_PORT} --database=${POSTGRES_DATABASE} --command=${__file}
   else
-    echo $(psql -q -h ${POSTGRES_HOST} -U ${POSTGRES_USER} -p ${POSTGRES_PORT} -d ${POSTGRES_DATABASE} -a -f ${__private_pg_script_exec_file})&>/dev/null
+    echo $(psql -q -h ${POSTGRES_HOST} -U ${POSTGRES_USER} -p ${POSTGRES_PORT} -d ${POSTGRES_DATABASE} -a -f ${__file})&>/dev/null
   fi
   return 1
 }
@@ -203,7 +204,7 @@ function __private_pg_pass_apply()
 {
   #postgres
   export POSTGRES_PGPASS=${HOME}/.pgpass
-  AUTH="${POSTGRES_HOST}:${POSTGRES_PORT}:${POSTGRES_DATABASE}:${POSTGRES_USER}:${POSTGRES_PASSWORD}">${POSTGRES_PGPASS}
+  local AUTH="${POSTGRES_HOST}:${POSTGRES_PORT}:${POSTGRES_DATABASE}:${POSTGRES_USER}:${POSTGRES_PASSWORD}">${POSTGRES_PGPASS}
   if [[ -f ${POSTGRES_PGPASS} ]];then
       echo ${AUTH} >> ${POSTGRES_PGPASS}
   else
@@ -243,7 +244,7 @@ function databaseUpdateExec()
   fi
   echB "      -Executing"
   
-  EXEC_FILES=$(__private_db_ddl_apply_scan ${DATABASE_DIR})
+  local EXEC_FILES=$(__private_db_ddl_apply_scan ${DATABASE_DIR})
   if [[ ${EXEC_FILES} == "" ]]; then
     echR "        - No files found"
   else
@@ -252,11 +253,11 @@ function databaseUpdateExec()
       if [[ ${EXEC_FILE} == "["* ]] ; then
         echG "        -Executing ${EXEC_FILE}"     
       else
-        BASE1=$(basename ${EXEC_FILE})
-        BASE2=$(dirname ${EXEC_FILE})
-        BASE3=$(dirname ${BASE2})
-        BASE2=$(basename ${BASE2})
-        BASE3=$(basename ${BASE3})
+        local BASE1=$(basename ${EXEC_FILE})
+        local BASE2=$(dirname ${EXEC_FILE})
+        local BASE3=$(dirname ${BASE2})
+        local BASE2=$(basename ${BASE2})
+        local BASE3=$(basename ${BASE3})
         echC "          - ${BASE1} from ${BASE2}"
 
         local DB_DDL_FILE_TMP="/tmp/ddl_file_$RANDOM.sql"
@@ -273,6 +274,8 @@ function databaseUpdateExec()
 
 function databaseDDLMakerExec()
 {
+  local __db_dir=${DATABASE_DIR}
+  local __db_ddl_file=${DATABASE_DDL_FILE}
   echG "  DDL Maker"
   echC "    - DDL File: ${DATABASE_DDL_FILE}"  
   __private_db_envs_check
@@ -280,61 +283,61 @@ function databaseDDLMakerExec()
     return 0;       
   fi
 
-  __database_ddl_file_dir=$(dirname ${DATABASE_DDL_FILE})
-  __database_ddl_files_extra=($(__private_db_scan_files_filters))
+  local __db_ddl_file_dir=$(dirname ${__db_ddl_file})
+  local __db_ddl_files_extra=($(__private_db_scan_files_filters))
   echB "    Cleanup files..."
-  echC "      - Local: ${__database_ddl_file_dir}"
+  echC "      - Local: ${__db_ddl_file_dir}"
   echR "    Removing..."
-  for ENV in ${__database_ddl_files_extra[*]};
+  for ENV in ${__db_ddl_files_extra[*]};
   do
-    __database_file="${__database_ddl_file_dir}/initdb-${ENV}*.sql"
-  echY "      rm -rf $(basename ${__database_file})"
+    local __database_file="${__db_ddl_file_dir}/initdb-${ENV}*.sql"
+    echY "      rm -rf $(basename ${__database_file})"
     rm -rf ${__database_file}
   done
   echG "    Finished"
   echB "    Making..."
-  echo "">${DATABASE_DDL_FILE}
-  DDL_MAKE_FILES=$(__private_db_ddl_apply_scan ${DATABASE_DIR})
-  __database_maked_files=()
-  for DDL_MAKE_FILE in ${DDL_MAKE_FILES[*]};
+  echo "">${__db_ddl_file}
+  local __ddl_files=$(__private_db_ddl_apply_scan ${__db_dir})
+  local __files=()
+  for __ddl_file in ${__ddl_files[*]};
   do
-    if ! [[ -f ${DDL_MAKE_FILE} ]]; then
-      echG "      Context: ${DDL_MAKE_FILE}"
-      echo "-- ${DDL_MAKE_FILE}">>${DATABASE_DDL_FILE};
+    if ! [[ -f ${__ddl_file} ]]; then
+      echG "      Context: ${__ddl_file}"
+      echo "-- ${__ddl_file}">>${__db_ddl_file};
     else
-      BASE1=$(basename ${DDL_MAKE_FILE})
-      BASE2=$(dirname ${DDL_MAKE_FILE})
-      BASE3=$(dirname ${BASE2})
-      BASE2=$(basename ${BASE2})
-      BASE3=$(basename ${BASE3})
+      local BASE1=$(basename ${__ddl_file})
+      local BASE2=$(dirname ${__ddl_file})
+      local BASE3=$(dirname ${BASE2})
+      local BASE2=$(basename ${BASE2})
+      local BASE3=$(basename ${BASE3})
       echC "        - ${BASE1} from ${BASE2}"
-      cat ${DDL_MAKE_FILE}>>${DATABASE_DDL_FILE};
+      cat ${__ddl_file}>>${__db_ddl_file};
     fi
   done
   echB "    Finished"
-  __database_maked_files=(${DATABASE_DDL_FILE})
+  local __files=(${__db_ddl_file})
   echB "    Cleanup maked files..."
-  for __database_maked_file in ${__database_maked_files[*]};
+  for __file in ${__files[*]};
   do
-    __private_db_cleanup_sql ${__database_maked_file}
-    echC "      - $(basename ${__database_maked_file})"    
+    __private_db_cleanup_sql ${__file}
+    echC "      - $(basename ${__file})"    
   done
   echB "    Finished"
   echB "  Finished"  
 
   echG ""
   echG "Deseja ver o aquivo?"
-  echC "  - ${DATABASE_DDL_FILE}"
-  options=(Back dbeaver code subl kate)
+  echC "  - ${__db_ddl_file}"
+  local options=(Back dbeaver code subl kate)
   PS3=$'\n'"Choose option:"
   select opt in "${options[@]}"
   do
     if [[ ${opt} == "Back" ]]; then
       break
     else
-      CMD="${opt} ${DATABASE_DDL_FILE}"
-      echY "      - ${CMD}"
-      echo $(${CMD})&>/dev/null
+      local __cmd="${opt} ${__db_ddl_file}"
+      echY "      - ${__cmd}"
+      echo $(${__cmd})&>/dev/null
     fi
     break
   done

@@ -3,12 +3,14 @@
 . ${BASH_BIN}/lib-strings.sh
 . ${BASH_BIN}/lib-system.sh
 
-function dnsToAddress(){
+function dnsToAddress()
+{
   echo $(ping -c 1 localhost | grep PING | awk '{print $3}' | tr -d '()')
 }
 
 
-function hostIsAvailable(){
+function hostIsAvailable()
+{
   local __host=${1}
   local __port=${2}
   if [[ ${__host} == "" ]] ; then
@@ -30,7 +32,8 @@ function hostIsAvailable(){
   return 1;  
 }
 
-function hostWaitAvailable(){
+function hostWaitAvailable()
+{
   local __host=${1}
   local __port=${2}
   local __seconds=${3}

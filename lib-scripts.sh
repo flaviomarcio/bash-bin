@@ -15,7 +15,7 @@ fi
 
 function __private_script_envs_clear()
 {
-  export SCRIPT_DIR=
+  unset SCRIPT_DIR
 }
 
 function __private_script_envs_check()
@@ -40,22 +40,22 @@ function __private_script_envs_check()
 function __private_script_scan_files()
 {
   unset __func_return
-  __private_script_scan_files_target_dir=${1}
-  __private_script_scan_files_filters="${2}"
+  local __private_script_scan_files_target_dir=${1}
+  local __private_script_scan_files_filters="${2}"
 
   if ! [[ -d ${__private_script_scan_files_target_dir} ]]; then
     return 0;
   fi
 
 
-  __private_script_scan_files_dirs=($(ls ${__private_script_scan_files_target_dir}))
+  local __private_script_scan_files_dirs=($(ls ${__private_script_scan_files_target_dir}))
   for __private_script_scan_files_dir in ${__private_script_scan_files_dirs[*]}; 
   do
-    __private_script_scan_files_files=
+    local __private_script_scan_files_files=
     if [[ $(echo ${__private_script_scan_files_filter} | grep sl) == "" ]]; then
-      __private_script_scan_files_filter="*.sh"
+      local __private_script_scan_files_filter="*.sh"
     fi
-    __private_script_scan_find_files=($(echo $(find ${__private_script_scan_files_target_dir}/${__private_script_scan_files_dir} -iname '*.sh' | sort)))
+    local __private_script_scan_find_files=($(echo $(find ${__private_script_scan_files_target_dir}/${__private_script_scan_files_dir} -iname '*.sh' | sort)))
     for __private_script_scan_find_file in ${__private_script_scan_find_files[*]};
     do
       export __func_return="${__func_return} ${__private_script_scan_find_file}"
@@ -77,7 +77,7 @@ function scriptsExecute()
   echB "      -Target dir: ${SCRIPT_DIR}"
   echB "      -Executing"
 
-  __scriptsExecute_files=($(__private_script_scan_files "${SCRIPT_DIR}"))
+  local __scriptsExecute_files=($(__private_script_scan_files "${SCRIPT_DIR}"))
 
   if [[ ${__scriptsExecute_files} == "" ]]; then
     echR "        - No files found"

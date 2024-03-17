@@ -20,11 +20,11 @@ function __private_deploy_envsubst()
   if [[ ${1} == "" ]]; then
     return 0
   fi
-  __private_deploy_envsubst_files=(${1})
+  local __private_deploy_envsubst_files=(${1})
   for __private_deploy_envsubst_file_src in "${__private_deploy_envsubst_files[@]}"
   do
     if [[ -f ${__private_deploy_envsubst_file_src} ]]; then
-      __private_deploy_envsubst_file_ori=${__private_deploy_envsubst_file_src}.ori
+      local __private_deploy_envsubst_file_ori=${__private_deploy_envsubst_file_src}.ori
       cat ${__private_deploy_envsubst_file_src}>${__private_deploy_envsubst_file_ori}
       envsubst < ${__private_deploy_envsubst_file_ori} > ${__private_deploy_envsubst_file_src}
     fi

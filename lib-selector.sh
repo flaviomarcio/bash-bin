@@ -27,13 +27,13 @@ function __private_print_os_information()
 
 function __private_project_tags()
 {
-  __private_project_tags=
+  unset __private_project_tags
   if ! [[ ${PUBLIC_SERVICES_NAME} == "" ]]; then
-    __private_project_tags=$(echo ${PUBLIC_SERVICES_NAME} | sed 's/-/ /g' | sort)
-    __private_project_tags=$(echo ${PUBLIC_SERVICES_NAME} | sed 's/_/ /g' | sort)
+    local __private_project_tags=$(echo ${PUBLIC_SERVICES_NAME} | sed 's/-/ /g' | sort)
+    local __private_project_tags=$(echo ${PUBLIC_SERVICES_NAME} | sed 's/_/ /g' | sort)
   fi
-  GIT_TAGS="${GIT_TAGS} ${__private_project_tags}"
-  GIT_TAGS="${GIT_TAGS} ${__selector_environments}"
+  # GIT_TAGS="${GIT_TAGS} ${__private_project_tags}"
+  # GIT_TAGS="${GIT_TAGS} ${__selector_environments}"
   echo ${__private_project_tags}
   return 1
 }
@@ -43,19 +43,19 @@ function __private_project_tags()
 # return all all list
 function __private_project_names()
 {
-  __pvt_project_filter=${1}
-  __pvt_project_target=
+  local __pvt_project_filter=${1}
+  local __pvt_project_target=
   if [[ ${PUBLIC_SERVICES_PREFIX} != "" ]]; then
-    __pvt_project_list=(${PUBLIC_SERVICES_PREFIX})
-    __pvt_project_target=
+    local __pvt_project_list=(${PUBLIC_SERVICES_PREFIX})
+    unset __pvt_project_target
     for __pvt_project_name in "${__pvt_project_list[@]}"
     do
-      __pvt_project_check=$(echo ${__pvt_project_name} | grep ${__pvt_project_filter});
+      local __pvt_project_check=$(echo ${__pvt_project_name} | grep ${__pvt_project_filter});
       if [[ ${__pvt_project_check} != "" ]]; then
-        __pvt_project_target="${__pvt_project_target} ${__pvt_project_name}" 
+        local __pvt_project_target="${__pvt_project_target} ${__pvt_project_name}" 
       fi
     done
-    __pvt_project_list=
+    unset __pvt_project_list
   fi
 
   echo ${__pvt_project_target}
@@ -172,7 +172,7 @@ function selectorDNS()
   echC "      sudo echo \"${PUBLIC_HOST_IP} srv-vault.local\">>\${ETC_HOST}"
   echC ""
   echG "    # append dns for micro services"
-  LST=( $(__private_project_names) )
+  local LST=( $(__private_project_names) )
   for ENV in "${LST[@]}"
   do
   echC "      sudo echo \"${PUBLIC_HOST_IP} mcs-${ENV}.local\">>\${ETC_HOST}"
@@ -186,8 +186,8 @@ function selectorDNS()
 
 function selectorProjectTags()
 {
-  export __selector=
-  options=(Back $(__private_project_tags))
+  unset __selector
+  local options=(Back $(__private_project_tags))
   clearTerm
   __private_print_os_information
   echG $'\n'"Stack project tags menu"$'\n'
@@ -209,10 +209,10 @@ function selectorProjectTags()
 
 function selectorProjects()
 {
-  export __selector=
+  unset __selector
   clearTerm
   __private_print_os_information
-  options=(Back All Tag $(__private_project_names))
+  local options=(Back All Tag $(__private_project_names))
   echG $'\n'"Project menu"$'\n'
   PS3=$'\n'"Choose option: "
   select opt in "${options[@]}"
@@ -239,7 +239,7 @@ function selectorDockerOption()
   return 1
   echG $'\n'"Docker option menu"$'\n'
   PS3=$'\n'"Choose option: "
-  options=(Back Docker-Stack Docker-Compose)
+  local options=(Back Docker-Stack Docker-Compose)
   select opt in "${options[@]}"
   do
     export __selector=${opt}
@@ -260,8 +260,8 @@ function selectorDockerOption()
 
 function selectorBuildOption()
 {
-  export __selector=
-  options=(Back build-and-deploy build deploy)
+  unset __selector
+  local options=(Back build-and-deploy build deploy)
   echG $'\n'"Docker build option menu"$'\n'
   PS3=$'\n'"Choose option: "
   select opt in "${options[@]}"
@@ -281,9 +281,9 @@ function selectorBuildOption()
 
 function selectorDNSOption()
 {
-  export __selector=
+  unset __selector
   clearTerm
-  options=(Back etc-hosts print)
+  local options=(Back etc-hosts print)
   echG $'\n'"DNS options"$'\n'
   PS3=$'\n'"Choose option: "
   select opt in "${options[@]}"
@@ -322,7 +322,7 @@ function __private_selectorInitTargets()
 
   while :
   do
-    __selector_values=
+    unset __selector_values
     echY "Uninitialized targets"
     echG    "   Target file: ${__selector_values}"
     echG    "   Set target names: ex: name1 name2 name3"
@@ -341,7 +341,7 @@ function __private_selectorInitTargets()
 
 function selectorCustomer()
 {
-  export __selector=
+  unset __selector
   __private_selectorInitTargets
   if ! [ "$?" -eq 1 ]; then
     return 0;       
@@ -352,9 +352,9 @@ function selectorCustomer()
     read
     return 0;
   fi
-  options=$(cat ${__selector_file})
-  options="quit ${options}"
-  options=(${options})
+  local options=$(cat ${__selector_file})
+  local options="quit ${options}"
+  local options=(${options})
 
   clearTerm
   __private_print_os_information
@@ -373,13 +373,13 @@ function selectorCustomer()
 
 function selectorEnvironment()
 {
-  export __selector=
+  unset __selector
   clearTerm
   __private_print_os_information
   echM $'\n'"Environment menu"$'\n'
   PS3=$'\n'"Choose a option: "
   
-  options=(${__selector_environments})
+  local options=(${__selector_environments})
 
   select opt in "${options[@]}"
   do
@@ -408,12 +408,12 @@ function selectorEnvironment()
 
 function selectorDeployOption()
 {
-  export __selector=
+  unset __selector
   clearTerm
   echM $'\n'"Stack deploy mode"$'\n'
   PS3=$'\n'"Choose a option: "
 
-  options=(Back all build deploy)
+  local options=(Back all build deploy)
 
   select opt in "${options[@]}"
   do
@@ -430,15 +430,15 @@ function selectorDeployOption()
 
 function selector()
 {
-  export __selector=
-  __selector_title=${1}
-  __selector_args=${2}
-  __selector_clear=${3}
+  unset __selector
+  local __selector_title=${1}
+  local __selector_args=${2}
+  local __selector_clear=${3}
   if [[ ${__selector_args} == "" ]]; then
     return 0
   fi
   if [[ ${__selector_clear} == "" ]]; then
-    __selector_clear=true
+    local __selector_clear=true
   fi
 
   if [[ ${__selector_clear} == true ]]; then
@@ -452,7 +452,7 @@ function selector()
     __private_print_os_information
     echM $'\n'"${__selector_title}"$'\n'
     PS3=$'\n'"Choose a option: "
-    options=(${__selector_args})
+    local options=(${__selector_args})
     select opt in "${options[@]}"
     do
       arrayContains "${__selector_args}" "${opt}"
@@ -476,7 +476,7 @@ function selector()
 
 function selectorYesNo()
 {
-  __selector_title=${1}
+  local __selector_title=${1}
   selector "${__selector_title}" "Yes No"
   if [[ ${__selector} == "Yes" ]]; then
     return 1;
@@ -486,20 +486,20 @@ function selectorYesNo()
 
 function selectorWaitSeconds()
 {
-  __selectorWaitSeconds_seconds=${1}
-  __selectorWaitSeconds_title=${2}
-  __selectorWaitSeconds_color=${2}
+  local __selectorWaitSeconds_seconds=${1}
+  local __selectorWaitSeconds_title=${2}
+  local __selectorWaitSeconds_color=${2}
 
   if [[ ${__selectorWaitSeconds_seconds} == "" ]]; then
-    __selectorWaitSeconds_seconds=10
+    local __selectorWaitSeconds_seconds=10
   fi
 
   if [[ ${__selectorWaitSeconds_title} == "" ]]; then
-    __selectorWaitSeconds_title="Wainting ${__selectorWaitSeconds_seconds} seconds, use [CTRL+C] to abort..."
+    local __selectorWaitSeconds_title="Wainting ${__selectorWaitSeconds_seconds} seconds, use [CTRL+C] to abort..."
   fi
 
   if [[ ${__selectorWaitSeconds_color} == "" ]]; then
-    __selectorWaitSeconds_color=${COLOR_BLUE_B}
+    local __selectorWaitSeconds_color=${COLOR_BLUE_B}
   fi
 
   echo -e "${__selectorWaitSeconds_color}${__selectorWaitSeconds_title}${COLOR_OFF}"
@@ -510,8 +510,8 @@ function selectorWaitSeconds()
 
 function selectorBack()
 {
-  __selector_title=${1}
-  __selector_args=${2} 
+  local __selector_title=${1}
+  local __selector_args=${2} 
   
   if [[ ${__selector_args} == "" ]]; then
     return 0
@@ -522,8 +522,8 @@ function selectorBack()
 
 function selectorQuit()
 {
-  __selector_title=${1}
-  __selector_args=${2} 
+  local __selector_title=${1}
+  local __selector_args=${2} 
   
   if [[ ${__selector_args} == "" ]]; then
     return 0

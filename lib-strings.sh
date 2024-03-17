@@ -182,12 +182,12 @@ function logFinished()
 
 function cdDir()
 { 
-  local __cdDir_NEW_DIR="${1}"
-  if ! [[ -d ${__cdDir_NEW_DIR} ]]; then
+  local __NEW_DIR="${1}"
+  if ! [[ -d ${__NEW_DIR} ]]; then
     return 0;
   fi
-  cd ${__cdDir_NEW_DIR}
-  if [[ ${PWD} != ${__cdDir_NEW_DIR} ]]; then
+  cd ${__NEW_DIR}
+  if [[ ${PWD} != ${__NEW_DIR} ]]; then
     return 0;
   fi
   return 1;
@@ -195,17 +195,17 @@ function cdDir()
 
 function copyFile()
 {
-  local __copyFile_SRC="${1}"
-  local __copyFile_DST="${2}"
+  local __SRC="${1}"
+  local __DST="${2}"
 
-  if [[ -f ${__copyFile_SRC} ]]; then
+  if [[ -f ${__SRC} ]]; then
     return 0;
   fi
-  if [[ -f ${__copyFile_DST} ]]; then
+  if [[ -f ${__DST} ]]; then
     return 0
   fi
-  cp -rf ${__copyFile_SRC} ${__copyFile_DST}
-  if [[ -f ${__copyFile_DST} ]]; then
+  cp -rf ${__SRC} ${__DST}
+  if [[ -f ${__DST} ]]; then
     return 1
   fi
   return 0
@@ -330,16 +330,16 @@ function utilInitialize()
 function envsOS()
 {
   unset __func_return
-  local __envsOS_destine=${1}
+  local __destine=${1}
   local __envsOS="/tmp/env_file_envsOS_${RANDOM}.env"
   printenv | sort > ${__envsOS}
-  local __envsOS_Remove=(_ __ CLUTTER_IM_MODULE KUBE LOGNAME KONSOLE GPG SHELL SHLVL GTK HIST S_COLORS XDG printenv shell XCURSOR XCURSOR WINDOWID PWD PATH OLDPWD KDE LD_ LANG COLOR DESKTOP DISPLAY DBUS HOME TERM XAUTHORITY XMODIFIERS USER DOCKER_ARGS_DEFAULT)
-  for __envsOS_env in "${__envsOS_Remove[@]}"
+  local __Remove=(_ __ CLUTTER_IM_MODULE KUBE LOGNAME KONSOLE GPG SHELL SHLVL GTK HIST S_COLORS XDG printenv shell XCURSOR XCURSOR WINDOWID PWD PATH OLDPWD KDE LD_ LANG COLOR DESKTOP DISPLAY DBUS HOME TERM XAUTHORITY XMODIFIERS USER DOCKER_ARGS_DEFAULT)
+  for __env in "${__Remove[@]}"
   do
-    sed -i "/^${__envsOS_env}/d" ${__envsOS}
+    sed -i "/^${__env}/d" ${__envsOS}
   done
-  if [[ ${__envsOS_destine} != "" ]]; then
-    cat ${__envsOS}>${__envsOS_destine}
+  if [[ ${__destine} != "" ]]; then
+    cat ${__envsOS}>${__destine}
   else
     export __func_return=$(cat ${__envsOS})
     echo ${__func_return}

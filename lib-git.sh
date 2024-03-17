@@ -14,8 +14,8 @@ fi
 function gitIsValid()
 {
   unset __func_return
-  __gitIsValidPWD=${PWD}
-  __gitIsValid=${1}
+  local __gitIsValidPWD=${PWD}
+  local __gitIsValid=${1}
   if [[ ${__gitIsValid} != "" ]]; then
     if ! [[ -d ${__gitIsValid} ]]; then
       return 0;
@@ -37,7 +37,7 @@ function gitBranch()
   if ! [ "$?" -eq 1 ]; then
     return 0
   fi
-  __func_return=$(git rev-parse --abbrev-ref HEAD)
+  export __func_return=$(git rev-parse --abbrev-ref HEAD)
   echo ${__func_return}
   return 1
 }
@@ -49,7 +49,7 @@ function gitBranchList()
   if ! [ "$?" -eq 1 ]; then
     return 0
   fi
-  __func_return=$(echo "$(git branch --list)" | sed 's/*//g' | sed 's/ //g' | sort)
+  export __func_return=$(echo "$(git branch --list)" | sed 's/*//g' | sed 's/ //g' | sort)
   echo ${__func_return}
   return 1
 }
@@ -60,12 +60,12 @@ function gitBranchExists()
   if ! [ "$?" -eq 1 ]; then
     return 0
   fi
-  __git_branch_exists_name=${1}
+  local __git_branch_exists_name=${1}
   if [[ ${__git_branch_exists_name} == "" ]]; then
     return 0
   fi
   
-  __git_branch_exists_name=$( echo "$(git branch -a --list)" | sed 's/remotes\/origin\///g' | sed 's/*//g' | sed 's/ //g' | grep ${__git_branch_exists_name})
+  local __git_branch_exists_name=$( echo "$(git branch -a --list)" | sed 's/remotes\/origin\///g' | sed 's/*//g' | sed 's/ //g' | grep ${__git_branch_exists_name})
   if [[ ${__git_branch_exists_name} == "" ]]; then
     return 0
   fi
@@ -74,7 +74,7 @@ function gitBranchExists()
 
 function gitCheckOut()
 {
-  __git_check_branch=${1}
+  local __git_check_branch=${1}
   gitBranchExists ${__git_check_branch}
   if ! [ "$?" -eq 1 ]; then
     return 0
@@ -88,7 +88,7 @@ function gitClone()
   unset __func_return
   echM "  Git cloning repository"
 
-  __git_check=$(which git)
+  local __git_check=$(which git)
   if [[ ${__git_check} == ""  ]]; then
     echR "  ==============================  "
     echR "      **********************      "
@@ -98,10 +98,10 @@ function gitClone()
     return 0
   fi
 
-  __git_clone_repository=${1}
-  __git_clone_branch=${2}
-  __git_clone_dir=${3}
-  __git_clone_name=${4}
+  local __git_clone_repository=${1}
+  local __git_clone_branch=${2}
+  local __git_clone_dir=${3}
+  local __git_clone_name=${4}
 
   if [[ ${__git_clone_name} == "" ]]; then
     __git_clone_name="src"
@@ -129,9 +129,9 @@ function gitClone()
   fi
 
   cd ${__git_clone_dir}
-  __git_clone_src_dir=${__git_clone_dir}/${__git_clone_name}
+  local __git_clone_src_dir=${__git_clone_dir}/${__git_clone_name}
   rm -rf ${__git_clone_src_dir};
-  __git_clone_src_cmd="git clone -q ${__git_clone_repository} ${__git_clone_name}"
+  local __git_clone_src_cmd="git clone -q ${__git_clone_repository} ${__git_clone_name}"
   echC "    - ${__git_clone_repository}"
   echC "    - Branch: ${__git_clone_branch}"
   echY "    - ${__git_clone_src_cmd}"
@@ -161,6 +161,6 @@ function gitClone()
     echY "          now: $(gitBranch)"
   fi
   echG "  Finished"
-  __func_return=${__git_clone_src_dir}
+  export __func_return=${__git_clone_src_dir}
   return 1
 }

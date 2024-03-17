@@ -32,33 +32,33 @@ function systemIPvPrepare()
 
 function systemDNSEssentialList()
 {
-  __func_return=
-  __func_return="${__func_return} activemq"
-  __func_return="${__func_return} admin"
-  __func_return="${__func_return} cadvisor"
-  __func_return="${__func_return} cadvisorZFS"
-  __func_return="${__func_return} grafana"
-  __func_return="${__func_return} haproxy"
-  __func_return="${__func_return} jenkins"
-  __func_return="${__func_return} keycloak"
-  __func_return="${__func_return} loki"
-  __func_return="${__func_return} minio"
-  __func_return="${__func_return} mysql"
-  __func_return="${__func_return} nexus"
-  __func_return="${__func_return} opentelemetry"
-  __func_return="${__func_return} portainer"
-  __func_return="${__func_return} postgres-admin"
-  __func_return="${__func_return} postgres"
-  __func_return="${__func_return} prometheus"
-  __func_return="${__func_return} promtail"
-  __func_return="${__func_return} rabbitmq"
-  __func_return="${__func_return} redis"
-  __func_return="${__func_return} registry"
-  __func_return="${__func_return} tempo"
-  __func_return="${__func_return} traefik"
-  __func_return="${__func_return} vault"
-  __func_return="${__func_return} wikijs"
-  __func_return="${__func_return} wireguard"
+  unset __func_return
+  local __func_return="${__func_return} activemq"
+  local __func_return="${__func_return} admin"
+  local __func_return="${__func_return} cadvisor"
+  local __func_return="${__func_return} cadvisorZFS"
+  local __func_return="${__func_return} grafana"
+  local __func_return="${__func_return} haproxy"
+  local __func_return="${__func_return} jenkins"
+  local __func_return="${__func_return} keycloak"
+  local __func_return="${__func_return} loki"
+  local __func_return="${__func_return} minio"
+  local __func_return="${__func_return} mysql"
+  local __func_return="${__func_return} nexus"
+  local __func_return="${__func_return} opentelemetry"
+  local __func_return="${__func_return} portainer"
+  local __func_return="${__func_return} postgres-admin"
+  local __func_return="${__func_return} postgres"
+  local __func_return="${__func_return} prometheus"
+  local __func_return="${__func_return} promtail"
+  local __func_return="${__func_return} rabbitmq"
+  local __func_return="${__func_return} redis"
+  local __func_return="${__func_return} registry"
+  local __func_return="${__func_return} tempo"
+  local __func_return="${__func_return} traefik"
+  local __func_return="${__func_return} vault"
+  local __func_return="${__func_return} wikijs"
+  local __func_return="${__func_return} wireguard"
   echo ${__func_return}
   return 1
 
@@ -66,19 +66,19 @@ function systemDNSEssentialList()
 
 function systemDNSList()
 {
-  __systemDNSList_inc_pub=${1}
+  local __systemDNSList_inc_pub=${1}
   if [[ ${STACK_PREFIX} == "" ]]; then
     return 0
   fi
-  __systemDNSList_dns_list=" $(systemDNSEssentialList) ${STACK_DNS_LIST} "
-  __systemDNSList_dns_list=$(echo ${__systemDNSList_dns_list} | sort)
-  __systemDNSList_dns_list=(${__systemDNSList_dns_list})
-  __systemDNSList_dns_out=
+  local __systemDNSList_dns_list=" $(systemDNSEssentialList) ${STACK_DNS_LIST} "
+  local __systemDNSList_dns_list=$(echo ${__systemDNSList_dns_list} | sort)
+  local __systemDNSList_dns_list=(${__systemDNSList_dns_list})
+  local __systemDNSList_dns_out=
   for __systemDNSList_dns in "${__systemDNSList_dns_list[@]}"
   do
-    __systemDNSList_dns_out="${__systemDNSList_dns_out} ${STACK_PREFIX_HOST}${__systemDNSList_dns}"
+    local __systemDNSList_dns_out="${__systemDNSList_dns_out} ${STACK_PREFIX_HOST}${__systemDNSList_dns}"
     if [[ ${__systemDNSList_inc_pub} == true ]]; then
-      __systemDNSList_dns_out="${__systemDNSList_dns_out} ${STACK_PREFIX_HOST}${__systemDNSList_dns}.${STACK_DOMAIN}"
+      local __systemDNSList_dns_out="${__systemDNSList_dns_out} ${STACK_PREFIX_HOST}${__systemDNSList_dns}.${STACK_DOMAIN}"
     fi
   done
   echo ${__systemDNSList_dns_out}
@@ -87,14 +87,15 @@ function systemDNSList()
 
 function systemETCHostApply()
 {
-  __systemETCHostApply_tag=${1}
+  return 1
+  local __systemETCHostApply_tag=${1}
   if [[ ${ROOT_APPLICATIONS_DIR} == "" ]]; then
     return 0;
   fi
   if [[ ${__systemETCHostApply_tag} == "" ]]; then
     return 0;
   fi
-  __systemETCHostApply_dns_list=( $(systemDNSList true) )
+  local __systemETCHostApply_dns_list=( $(systemDNSList true) )
   export __systemETCHostApply_hosts=/etc/hosts
   export __systemETCHostApply_hosts_BKP=${ROOT_APPLICATIONS_DIR}/hosts.backup
   export __systemETCHostApply_hosts_TMP=${ROOT_APPLICATIONS_DIR}/hosts.temp
@@ -180,24 +181,24 @@ function systemETCHostApply()
 
 function systemETCHostRemove()
 {
-  __systemETCHostRemove_tag=${1}
+  local __tag=${1}
   if [[ ${ROOT_APPLICATIONS_DIR} == "" ]]; then
     return 0;
   fi
-  if [[ ${__systemETCHostRemove_tag} == "" ]]; then
+  if [[ ${__tag} == "" ]]; then
     return 0;
   fi
-  __systemETCHostRemove_dns_list=( $(systemDNSList) )
-  export __systemETCHostRemove_hosts=/etc/hosts
-  export __systemETCHostRemove_hosts_BKP=${ROOT_APPLICATIONS_DIR}/hosts.backup
-  export __systemETCHostRemove_hosts_TMP=${ROOT_APPLICATIONS_DIR}/hosts.temp
+  local __dns_list=( $(systemDNSList) )
+  export __hosts=/etc/hosts
+  export __hosts_BKP=${ROOT_APPLICATIONS_DIR}/hosts.backup
+  export __hosts_TMP=${ROOT_APPLICATIONS_DIR}/hosts.temp
 
-  cp -rf ${__systemETCHostRemove_hosts} ${__systemETCHostRemove_hosts_BKP}
-  cp -rf ${__systemETCHostRemove_hosts} ${__systemETCHostRemove_hosts_TMP}
+  cp -rf ${__hosts} ${__hosts_BKP}
+  cp -rf ${__hosts} ${__hosts_TMP}
 
-  sed -i "/${__systemETCHostRemove_tag}/d" ${__systemETCHostRemove_hosts_TMP}
+  sed -i "/${__tag}/d" ${__hosts_TMP}
 
-  if ! [[ -f ${__systemETCHostRemove_hosts_BKP} ]]; then
+  if ! [[ -f ${__hosts_BKP} ]]; then
     echR "    +===========================+"
     echR "    +        ***********        +"
     echR "    +********Backup Fail********+"
@@ -208,11 +209,11 @@ function systemETCHostRemove()
   fi
 
   echM "  DNS inserting"
-  echC "    - Target: ${__systemETCHostRemove_hosts_TMP}"
-  echC "    - Backup: ${__systemETCHostRemove_hosts_BKP}"
+  echC "    - Target: ${__hosts_TMP}"
+  echC "    - Backup: ${__hosts_BKP}"
   echB "    Prepare"
-  echY "      - cp -rf ${__systemETCHostRemove_hosts} ${__systemETCHostRemove_hosts_TMP}"
-  echY "      - cp -rf ${__systemETCHostRemove_hosts} ${__systemETCHostRemove_hosts_BKP}"
+  echY "      - cp -rf ${__hosts} ${__hosts_TMP}"
+  echY "      - cp -rf ${__hosts} ${__hosts_BKP}"
   echG "    Finished"
   echo ""
   echB "    SUDO request"
@@ -237,16 +238,16 @@ function systemETCHostRemove()
   fi
 
   echB "    DNS Change"
-  echC "      - Target: ${__systemETCHostRemove_hosts_TMP}"
+  echC "      - Target: ${__hosts_TMP}"
   echB "      Cleanup"
-  echY "        - sed -i '/${__systemETCHostRemove_tag}/d' ${__systemETCHostRemove_hosts_TMP}"
+  echY "        - sed -i '/${__tag}/d' ${__hosts_TMP}"
   echB "    DNS Apply"
-  echC "      - Target: ${__systemETCHostRemove_hosts}"
-  echC "      - Source: ${__systemETCHostRemove_hosts_TMP}"
-  echC "      - Backup: ${__systemETCHostRemove_hosts_BKP}"
+  echC "      - Target: ${__hosts}"
+  echC "      - Source: ${__hosts_TMP}"
+  echC "      - Backup: ${__hosts_BKP}"
   echC "      Action"
-  echY "        - sudo cp -rf ${__systemETCHostRemove_hosts_TMP} ${__systemETCHostRemove_hosts}"
-  sudo cp -rf ${__systemETCHostRemove_hosts_TMP} ${__systemETCHostRemove_hosts}
+  echY "        - sudo cp -rf ${__hosts_TMP} ${__hosts}"
+  sudo cp -rf ${__hosts_TMP} ${__hosts}
   echG "    Finished"
 
   echo ""
@@ -258,8 +259,8 @@ function systemETCHostRemove()
 function systemETCHostPrint()
 {
   export __systemETCHostApply_hosts=/etc/hosts
-  __systemETCHostPrint_dns_list=$(systemDNSList)
-  __systemETCHostPrint_dns_list=(${__systemETCHostPrint_dns_list})
+  local __systemETCHostPrint_dns_list=$(systemDNSList)
+  local __systemETCHostPrint_dns_list=(${__systemETCHostPrint_dns_list})
   echM "  DNS Print"
   echB "    DNS list"
   for __systemETCHostPrint_dns in "${__systemETCHostPrint_dns_list[@]}"

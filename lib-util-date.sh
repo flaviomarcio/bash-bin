@@ -14,35 +14,35 @@ fi
 
 function parserTime()
 {
-  local __parserTime_args=($@)
-  local __parserTime_out=
-  for __parserTime_arg in "${__parserTime_args[@]}"
+  local __args=($@)
+  local __out=
+  for __arg in "${__args[@]}"
   do
-    __parserTime_arg=$(toLower ${__parserTime_arg})
-    local __parserTime_type=${__parserTime_arg: -1}
-    if [[ ${__parserTime_type} == "s" || ${__parserTime_type} == "m" || ${__parserTime_type} == "h" || ${__parserTime_type} == "d" || ${__parserTime_type} == "m" || ${__parserTime_type} == "y" ]]; then
-      local __parserTime_time=${__parserTime_arg:0:-1}
+    __arg=$(toLower ${__arg})
+    local __type=${__arg: -1}
+    if [[ ${__type} == "s" || ${__type} == "m" || ${__type} == "h" || ${__type} == "d" || ${__type} == "m" || ${__type} == "y" ]]; then
+      local __time=${__arg:0:-1}
     else
-      local __parserTime_time=${__parserTime_arg}
+      local __time=${__arg}
     fi
-    local __parserTime_time=$((${__parserTime_time} * 1)) #check error
+    local __time=$((${__time} * 1)) #check error
 
-    if [[ ${__parserTime_type} == "s" ]]; then
-      __parserTime_time=$((1000 * ${__parserTime_time}))
-    elif [[ ${__parserTime_type} == "m" ]]; then
-      __parserTime_time=$((1000 * ${__parserTime_time} * 60 ))
-    elif [[ ${__parserTime_type} == "h" ]]; then
-      __parserTime_time=$((1000 * ${__parserTime_time} * 60 * 60 ))
-    elif [[ ${__parserTime_type} == "d" ]]; then
-      __parserTime_time=$((1000 * ${__parserTime_time} * 60 * 60 * 24))
-    elif [[ ${__parserTime_type} == "y" ]]; then
-      __parserTime_time=$((1000 * ${__parserTime_time} * 60 * 60 * 24 * 365))
+    if [[ ${__type} == "s" ]]; then
+      __time=$((1000 * ${__time}))
+    elif [[ ${__type} == "m" ]]; then
+      __time=$((1000 * ${__time} * 60 ))
+    elif [[ ${__type} == "h" ]]; then
+      __time=$((1000 * ${__time} * 60 * 60 ))
+    elif [[ ${__type} == "d" ]]; then
+      __time=$((1000 * ${__time} * 60 * 60 * 24))
+    elif [[ ${__type} == "y" ]]; then
+      __time=$((1000 * ${__time} * 60 * 60 * 24 * 365))
     else
-      __parserTime_time=${__parserTime_time}
+      __time=${__time}
     fi
-    __parserTime_out="${__parserTime_out} ${__parserTime_time}"
+    __out="${__out} ${__time}"
 
   done
 
-  echo ${__parserTime_out}
+  echo ${__out}
 }
