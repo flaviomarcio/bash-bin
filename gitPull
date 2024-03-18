@@ -1,4 +1,4 @@
 #!/bin/bash
-git submodule foreach gitPull
+git submodule foreach ./gitPull
 source ./gitGo
 git pull origin $(git branch --show-current)
