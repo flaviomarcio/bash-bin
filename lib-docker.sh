@@ -55,6 +55,7 @@ function __private_dockerParserHostName()
   fi
   local __name=${1}
   local __tags=("_" "|" "\.")
+  local __tag=
   for __tag in "${__tags[@]}"
   do
     local __name=$(echo ${__name} | sed "s/${__tag}/-/g")
@@ -97,6 +98,7 @@ function dockerCleanup()
   local __removed=false
   if [[ ${__tags} == "" ]]; then
     local __tags=($(docker service ls --quiet))
+    local __tag=
     for __tag in "${__tags[@]}"
     do
       local __tag=$(docker service inspect ${__tag} --format '{{ .Spec.Name }}')
@@ -106,6 +108,7 @@ function dockerCleanup()
     done
   else
     local __tags=($(__private_dockerParserServiceName ${__tags}))
+    local __tag=
     for __tag in "${__tags[@]}"
     do
       local __check=$(docker service ls | grep ${__tag} | awk '{print $1}')
@@ -114,6 +117,7 @@ function dockerCleanup()
       fi
     done
 
+    local __tag=
     for __tag in "${__tags[@]}"
     do
       local __cmd="docker --log-level ERROR service rm \$(docker service ls | grep ${__tag} | awk '{print \$1}')"
@@ -144,6 +148,7 @@ function dockerPrune()
   echR "      Removing ..."
   echY "        - ${__cmd}"
   sleep 2
+  local i=
   for i in {1..5}
   do
     echB "        - step: ${i}"
@@ -290,7 +295,7 @@ function dockerNetworkCreate()
   fi
   local __names=(${__names})
   
-
+  local __name=
   for __name in "${__names[@]}"
   do
     local __check=$(docker network ls | grep ${__name})
