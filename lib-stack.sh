@@ -15,6 +15,7 @@ fi
 
 function __private_stackEnvsLoadByStack()
 {
+  unset __func_return
   export STACK_NAME=${1}
   unset STACK_SERVICE_IMAGE
   unset STACK_SERVICE_NAME
@@ -41,25 +42,31 @@ function __private_stackEnvsLoadByStack()
   fi
   local __private_services_names_configure_name=${2}
 
-  export STACK_SERVICE_NAME=$(echo "${STACK_PREFIX_HOST}${STACK_NAME}" | sed 's/_/-/g')
+  local __stack_name_parser=$(echo ${STACK_NAME} | sed 's/_/-/g')
 
-  local __private_stackEnvsLoadByStack_storage=${STACK_TARGET_STORAGE_DIR}/${STACK_SERVICE_NAME}
-  export STACK_SERVICE_STORAGE_DATA_DIR=${__private_stackEnvsLoadByStack_storage}/data
-  export STACK_SERVICE_STORAGE_DB_DIR=${__private_stackEnvsLoadByStack_storage}/db
-  export STACK_SERVICE_STORAGE_LOG_DIR=${__private_stackEnvsLoadByStack_storage}/log
-  export STACK_SERVICE_STORAGE_CONFIG_DIR=${__private_stackEnvsLoadByStack_storage}/config
-  export STACK_SERVICE_STORAGE_BACKUP_DIR=${__private_stackEnvsLoadByStack_storage}/backup
-  export STACK_SERVICE_STORAGE_EXTENSION_DIR=${__private_stackEnvsLoadByStack_storage}/extension
-  export STACK_SERVICE_STORAGE_PLUGIN_DIR=${__private_stackEnvsLoadByStack_storage}/plugin
-  export STACK_SERVICE_STORAGE_IMPORT_DIR=${__private_stackEnvsLoadByStack_storage}/import
-  export STACK_SERVICE_STORAGE_PROVIDER_DIR=${__private_stackEnvsLoadByStack_storage}/provider
-  export STACK_SERVICE_STORAGE_CERT_DIR=${__private_stackEnvsLoadByStack_storage}/certificates
-  
+  export STACK_SERVICE_NAME=${STACK_PREFIX}-${__stack_name_parser}
+
+  #hostnames
+  export STACK_SERVICE_HOSTNAME="${STACK_PREFIX_HOST}${__stack_name_parser}"
+  export STACK_SERVICE_HOSTNAME_PROXY=${STACK_SERVICE_NAME}
+  export STACK_SERVICE_HOSTNAME_PUBLIC=${STACK_SERVICE_NAME}.${STACK_DOMAIN}
+
+  local __storage=${STACK_TARGET_STORAGE_DIR}/${STACK_SERVICE_NAME}
+  #stograge
+  export STACK_SERVICE_STORAGE_DATA_DIR=${__storage}/data
+  export STACK_SERVICE_STORAGE_DB_DIR=${__storage}/db
+  export STACK_SERVICE_STORAGE_LOG_DIR=${__storage}/log
+  export STACK_SERVICE_STORAGE_CONFIG_DIR=${__storage}/config
+  export STACK_SERVICE_STORAGE_BACKUP_DIR=${__storage}/backup
+  export STACK_SERVICE_STORAGE_EXTENSION_DIR=${__storage}/extension
+  export STACK_SERVICE_STORAGE_PLUGIN_DIR=${__storage}/plugin
+  export STACK_SERVICE_STORAGE_IMPORT_DIR=${__storage}/import
+  export STACK_SERVICE_STORAGE_PROVIDER_DIR=${__storage}/provider
+  export STACK_SERVICE_STORAGE_CERT_DIR=${__storage}/certificates
+  #image
   export STACK_SERVICE_IMAGE="${STACK_SERVICE_NAME}"
   export STACK_SERVICE_IMAGE_URL="${STACK_REGISTRY_DNS_PUBLIC}/${STACK_SERVICE_IMAGE}"
 
-  export STACK_SERVICE_HOSTNAME=${STACK_SERVICE_NAME}
-  export STACK_SERVICE_HOSTNAME_PUBLIC=${STACK_SERVICE_HOSTNAME}.${STACK_DOMAIN}
 
   unset __dirs
   local __dirs="${__dirs} ${STACK_SERVICE_STORAGE_DATA_DIR}"
@@ -86,6 +93,7 @@ function __private_stackEnvsLoadByStack()
 
 function __private_stackEnvsLoadByTarget()
 {
+  unset __func_return
   export STACK_TARGET=${1}
   unset STACK_INFRA_DIR
   unset STACK_INFRA_CERT_DIR
@@ -132,6 +140,7 @@ function __private_stackEnvsLoadByTarget()
 
 function __private_stackEnvsDefaultByStack()
 {
+  unset __func_return
   local __environment=${1}
   local __target=${2}
   local __name=${3}
@@ -188,8 +197,9 @@ function __private_stackEnvsDefaultByStack()
   envsSetIfIsEmpty APPLICATION_DEPLOY_VAULT_ENABLED "${STACK_VAULT_ENABLED}"
 }
 
-function __private_stackMkDir_lib_configure()
+function __configure()
 {
+  unset __func_return
   envsSetIfIsEmpty STACK_LIB_DIR "${ROOT_APPLICATIONS_DIR}/lib"
   if [[ ${STACK_LIB_DIR} == "" ]]; then
     export __func_return="invalid env \${STACK_LIB_DIR}"
@@ -200,13 +210,13 @@ function __private_stackMkDir_lib_configure()
     return 1;
   fi
 
-  local __private_stackMkDir_lib_configure_dirs=("/data/lib" "/data/lib.dir" "/mnt/storage/lib.dir")
-  for __private_stackMkDir_lib_configure_dir in "${__private_stackMkDir_lib_configure_dirs[@]}"
+  local __configure_dirs=("/data/lib" "/data/lib.dir" "/mnt/storage/lib.dir")
+  for __configure_dir in "${__configure_dirs[@]}"
   do
-    if ! [[ -d ${__private_stackMkDir_lib_configure_dir} ]]; then
+    if ! [[ -d ${__configure_dir} ]]; then
       continue;
     fi
-    echo $(ln -s ${__private_stackMkDir_lib_configure_dir} ${STACK_LIB_DIR})&>/dev/null
+    echo $(ln -s ${__configure_dir} ${STACK_LIB_DIR})&>/dev/null
     break;
   done
   if ! [[ -d ${STACK_LIB_DIR} ]]; then
@@ -223,25 +233,26 @@ function __private_stackMkDir_lib_configure()
 
 function stackMkDir()
 {
-  stackMkDir_permission=${1}
-  stackMkDir_dirs=${2}
+  unset __func_return
+  local __permission=${1}
+  local __dirs=${2}
   
-  if [[ ${stackMkDir_dirs} == "" ]]; then
-    export __func_return="No valid dir: env \${stackMkDir_dirs}: ${stackMkDir_dirs}"
+  if [[ ${__dirs} == "" ]]; then
+    export __func_return="No valid dir: env \${__dirs}: ${__dirs}"
     return 0
   fi
 
-  stackMkDir_dirs=(${stackMkDir_dirs})
-
-  for stackMkDir_dir in ${stackMkDir_dirs[*]}; 
+  local __dirs=(${__dirs})
+  local __dir=
+  for __dir in ${__dirs[*]}; 
   do
-    if [[ -d ${stackMkDir_dir} ]]; then
+    if [[ -d ${__dir} ]]; then
       continue
     fi
-    mkdir -p ${stackMkDir_dir}
-    chmod ${stackMkDir_permission} ${stackMkDir_dir}
-    if ! [[ -d ${stackMkDir_dir} ]]; then
-      export __func_return="No create dir: env \${stackMkDir_dir}:${stackMkDir_dir}"
+    mkdir -p ${__dir}
+    chmod ${__permission} ${__dir}
+    if ! [[ -d ${__dir} ]]; then
+      export __func_return="No create dir: env \${__dir}:${__dir}"
       return 0
     fi    
   done 
@@ -289,15 +300,15 @@ function stackStorageMake()
   stackMkDir 777 "${STORAGE_SERVICE_DIR}"
 
 
-  __private_stackMkDir_lib_configure
+  __configure
   if ! [ "$?" -eq 1 ]; then
-    export __func_return="fail on calling __private_stackMkDir_lib_configure: ${__func_return}"
+    export __func_return="fail on calling __configure: ${__func_return}"
     return 0;
   fi
   return 1
 }
 
-function __private_stackInitTargetEnvFile()
+function stackInitTargetEnvFile()
 {
   unset __func_return
   if [[ ${PUBLIC_STACK_TARGET_ENVS_FILE} == "" ]]; then
@@ -305,8 +316,8 @@ function __private_stackInitTargetEnvFile()
     return 0
   fi
 
-  local __local_add=()
   #primary default envs
+  local __local_add=()
   local __local_add+=(STACK_ADMIN_USERNAME)
   local __local_add+=(STACK_ADMIN_PASSWORD)
   local __local_add+=(STACK_ADMIN_EMAIL)
@@ -315,6 +326,7 @@ function __private_stackInitTargetEnvFile()
   local __local_add+=(STACK_DNS_SERVER_ENABLE)
   local __local_add+=(STACK_PROXY_PORT_HTTP)
   local __local_add+=(STACK_PROXY_PORT_HTTPS)
+  local __local_add+=(STACK_PREFIX_HOST_ENABLED)
   local __local_add+=(STACK_PROXY_LOG_LEVEL)
   local __local_add+=(STACK_VAULT_TOKEN)
   local __local_add+=(STACK_VAULT_TOKEN_DEPLOY)
@@ -393,95 +405,8 @@ function __private_stackInitTargetEnvFile()
   local __local_add+=(STACK_SERVICE_IMAGE_REDIS)
   local __local_add+=(STACK_SERVICE_IMAGE_MSSQL)
 
+  # save envs
   envsFileAddIfNotExists "${PUBLIC_STACK_TARGET_ENVS_FILE}" "${__local_add[@]}"
-
-  # #primary default envs
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_ADMIN_USERNAME
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_ADMIN_PASSWORD
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_ADMIN_EMAIL
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_TZ
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DOMAIN
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DNS_SERVER_ENABLE
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_PROXY_PORT_HTTP
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_PROXY_PORT_HTTPS
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_PROXY_LOG_LEVEL
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_VAULT_TOKEN
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_VAULT_TOKEN_DEPLOY
-
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DEFAULT_USERNAME
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DEFAULT_PASSWORD
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DEFAULT_DATABASE
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DEFAULT_CONTEXT_PATH
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DEFAULT_PORT
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DEFAULT_LOG_LEVEL
-
-  # #database envs
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DEFAULT_DB_HOST_PG
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DEFAULT_DB_HOST_PG_9
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DEFAULT_DB_PORT
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DEFAULT_DB_NAME
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DEFAULT_DB_USERNAME
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DEFAULT_DB_PASSWORD
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DEFAULT_DB_SCHEMA
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_DEFAULT_DB_URL
-
-  # #
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_DEFAULT_LOG_LEVEL
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_DEFAULT_NODE_GLOBAL
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_DEFAULT_NODE_DB
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_DEFAULT_NODE_MODE
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_DEFAULT_NODE_SERVICES
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_DEFAULT_NODE_FW
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_DEFAULT_NODE_TOOL
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_DEFAULT_TOKEN
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_DEFAULT_USER
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_DEFAULT_PASS
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_DEFAULT_EMAIL
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_DEFAULT_DATABASE
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_DEFAULT_CONTEXT_PATH
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_DEFAULT_PORT
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_DEFAULT_SHELF_LIFE
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_HEALTH_CHECK_INTERVAL
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_HEALTH_CHECK_TIMEOUT
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_HEALTH_CHECK_RETRIES
-
-  # #postgres envs
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} POSTGRES_URL
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} POSTGRES_HOST
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} POSTGRES_USER
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} POSTGRES_PASSWORD
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} POSTGRES_DATABASE
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} POSTGRES_PORT
-
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_VAULT_PORT
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_VAULT_URI
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_VAULT_METHOD
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_VAULT_TOKEN
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_VAULT_TOKEN_DEPLOY
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_VAULT_APP_ROLE_ID
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_VAULT_APP_ROLE_SECRET
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_VAULT_IMPORT
-
-  # #gocd
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_GOCD_REGISTER_KEY
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_GOCD_WEB_HOOK_SECRET
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_GOCD_SERVER_ID
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_GOCD_GIT_REPOSITORY
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_GOCD_GIT_BRANCH
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_GOCD_AGENT_REPLICAS
-
-  # #services default images 
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_IMAGE_DNSMASQ
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_IMAGE_TRAEFIK
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_IMAGE_REGISTRY
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_IMAGE_POSTGRES
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_IMAGE_POSTGRES_9
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_IMAGE_INFLUXDB
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_IMAGE_MARIADB
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_IMAGE_MYSQL
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_IMAGE_REDIS
-  # envsFileAddIfNotExists ${PUBLIC_STACK_TARGET_ENVS_FILE} STACK_SERVICE_IMAGE_MSSQL
-
 
   echo $(chmod +x ${PUBLIC_STACK_TARGET_ENVS_FILE})&>/dev/null
   return 1
@@ -489,6 +414,7 @@ function __private_stackInitTargetEnvFile()
 
 function stackEnvsLoad()
 {
+  unset __func_return
   local __private_stackEnvsLoad_environment=${1}
   local __private_stackEnvsLoad_target=${2}
 
@@ -502,14 +428,17 @@ function stackEnvsLoad()
 
   unset PUBLIC_STACK_TARGETS_FILE
   unset PUBLIC_STACK_TARGET_ENVS_FILE
-  unset STACK_ENVIRONMENTS
-  export STACK_ENVIRONMENT="${__private_stackEnvsLoad_environment}"
 
+  export STACK_ENVIRONMENT="${__private_stackEnvsLoad_environment}"
   if [[ ${STACK_ENVIRONMENT} != "" && ${STACK_TARGET} != "" ]]; then
     export STACK_PREFIX="${STACK_ENVIRONMENT}-${STACK_TARGET}"
-    #export STACK_PREFIX_HOST="${STACK_PREFIX}-"
   fi
   export STACK_PREFIX_NAME=$(echo ${STACK_PREFIX} | sed 's/-/_/g')
+  if [[ ${STACK_PREFIX_HOST_ENABLED} == true ]]; then
+    export STACK_PREFIX_HOST="${STACK_PREFIX}-"
+  else
+    export STACK_PREFIX_HOST="int-"
+  fi
 
   envsSetIfIsEmpty STACK_ROOT_DIR "${HOME}"
   #remove barra no final
@@ -559,6 +488,7 @@ function stackEnvsLoad()
   envsSetIfIsEmpty STACK_PROTOCOL http
   envsSetIfIsEmpty STACK_PROXY_PORT_HTTP 80
   envsSetIfIsEmpty STACK_PROXY_PORT_HTTPS 443
+  envsSetIfIsEmpty STACK_PREFIX_HOST_ENABLED false
   
   envsSetIfIsEmpty STACK_VAULT_PORT 8200
   envsSetIfIsEmpty STACK_VAULT_URI "http://${STACK_PREFIX_HOST}vault"
@@ -661,9 +591,9 @@ function stackEnvsLoad()
   envsSetIfIsEmpty CUR_DATETIME "$(date +'%Y-%m-%d')T$(date +'%H:%M:%S')"
 
 
-  __private_stackInitTargetEnvFile
+  stackInitTargetEnvFile
   if ! [ "$?" -eq 1 ]; then
-    export __func_return="fail on calling __private_stackInitTargetEnvFile"
+    export __func_return="fail on calling stackInitTargetEnvFile"
     return 0;
   fi
 
@@ -672,52 +602,57 @@ function stackEnvsLoad()
 
 function stackEnvsByStackExportToFile()
 {
-  envsFileAddIfNotExists "${1}" APPLICATION_ACTION
-  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_BACKUP_DIR
-  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_CPU
-  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_DATA_DIR
-  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_DNS
-  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_DNS_3RDPARTY
-  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_DNS_3RDPARTY_PATH
-  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_DNS_PATH
-  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_DNS_PUBLIC
-  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_DNS_PUBLIC_PATH
-  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_HEALTH_CHECK_INTERVAL
-  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_HEALTH_CHECK_RETRIES
-  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_HEALTH_CHECK_TIMEOUT
-  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_HOSTNAME
-  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_IMAGE
-  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_MEMORY
-  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_MODE
-  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_NETWORK_NAME
-  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_NODE
-  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_NODE_DB
-  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_NODE_FW
-  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_NODE_SERVICES
-  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_NODE_TOOL
-  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_PORT
-  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_REPLICAS
-  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_SHELF_LIFE
-  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_FILE
-  envsFileAddIfNotExists "${1}" APPLICATION_ENV_FILE
-  envsFileAddIfNotExists "${1}" APPLICATION_ENV_TAGS
-  envsFileAddIfNotExists "${1}" APPLICATION_GIT
-  envsFileAddIfNotExists "${1}" APPLICATION_GIT_BRANCH
-  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_NAME
-  envsFileAddIfNotExists "${1}" APPLICATION_STACK
-  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_VAULT_IMPORT
-  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_VAULT_METHOD
-  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_VAULT_TOKEN
-  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_VAULT_URI
-  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_VAULT_APP_ROLE_ID
-  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_VAULT_APP_ROLE_SECRET
-  envsFileAddIfNotExists "${1}" APPLICATION_DEPLOY_VAULT_ENABLED
+  unset __func_return
+  local __local_add=()
+  local __local_add+=(APPLICATION_ACTION)
+  local __local_add+=(APPLICATION_DEPLOY_BACKUP_DIR)
+  local __local_add+=(APPLICATION_DEPLOY_CPU)
+  local __local_add+=(APPLICATION_DEPLOY_DATA_DIR)
+  local __local_add+=(APPLICATION_DEPLOY_DNS)
+  local __local_add+=(APPLICATION_DEPLOY_DNS_3RDPARTY)
+  local __local_add+=(APPLICATION_DEPLOY_DNS_3RDPARTY_PATH)
+  local __local_add+=(APPLICATION_DEPLOY_DNS_PATH)
+  local __local_add+=(APPLICATION_DEPLOY_DNS_PUBLIC)
+  local __local_add+=(APPLICATION_DEPLOY_DNS_PUBLIC_PATH)
+  local __local_add+=(APPLICATION_DEPLOY_HEALTH_CHECK_INTERVAL)
+  local __local_add+=(APPLICATION_DEPLOY_HEALTH_CHECK_RETRIES)
+  local __local_add+=(APPLICATION_DEPLOY_HEALTH_CHECK_TIMEOUT)
+  local __local_add+=(APPLICATION_DEPLOY_HOSTNAME)
+  local __local_add+=(APPLICATION_DEPLOY_IMAGE)
+  local __local_add+=(APPLICATION_DEPLOY_MEMORY)
+  local __local_add+=(APPLICATION_DEPLOY_MODE)
+  local __local_add+=(APPLICATION_DEPLOY_NETWORK_NAME)
+  local __local_add+=(APPLICATION_DEPLOY_NODE)
+  local __local_add+=(APPLICATION_DEPLOY_NODE_DB)
+  local __local_add+=(APPLICATION_DEPLOY_NODE_FW)
+  local __local_add+=(APPLICATION_DEPLOY_NODE_SERVICES)
+  local __local_add+=(APPLICATION_DEPLOY_NODE_TOOL)
+  local __local_add+=(APPLICATION_DEPLOY_PORT)
+  local __local_add+=(APPLICATION_DEPLOY_REPLICAS)
+  local __local_add+=(APPLICATION_DEPLOY_SHELF_LIFE)
+  local __local_add+=(APPLICATION_DEPLOY_FILE)
+  local __local_add+=(APPLICATION_ENV_FILE)
+  local __local_add+=(APPLICATION_ENV_TAGS)
+  local __local_add+=(APPLICATION_GIT)
+  local __local_add+=(APPLICATION_GIT_BRANCH)
+  local __local_add+=(APPLICATION_DEPLOY_NAME)
+  local __local_add+=(APPLICATION_STACK)
+  local __local_add+=(APPLICATION_DEPLOY_VAULT_IMPORT)
+  local __local_add+=(APPLICATION_DEPLOY_VAULT_METHOD)
+  local __local_add+=(APPLICATION_DEPLOY_VAULT_TOKEN)
+  local __local_add+=(APPLICATION_DEPLOY_VAULT_URI)
+  local __local_add+=(APPLICATION_DEPLOY_VAULT_APP_ROLE_ID)
+  local __local_add+=(APPLICATION_DEPLOY_VAULT_APP_ROLE_SECRET)
+  local __local_add+=(APPLICATION_DEPLOY_VAULT_ENABLED)
+
+  envsFileAddIfNotExists "${1}" "${__local_add[@]}"  
   
   return 1
 }
 
 function stackEnvsClearByStack()
 {
+  unset __func_return
   unset APPLICATION_ACTION
   unset APPLICATION_ACTION_SCRIPT
   unset APPLICATION_DEPLOY_BACKUP_DIR
@@ -766,22 +701,23 @@ function stackEnvsClearByStack()
 
 function stackEnvsLoadByStack()
 {
-  local __private_stackEnvsLoadByStack_environment=${1}
-  local __private_stackEnvsLoadByStack_target=${2}
-  local __private_stackEnvsLoadByStack_stack_name=${3}
+  unset __func_return
+  local __environment=${1}
+  local __target=${2}
+  local __stack_name=${3}
 
-  if [[ ${__private_stackEnvsLoadByStack_environment} == "" ]]; then
-    export __func_return="Invaid env: \${__private_stackEnvsLoadByStack_environment}"
+  if [[ ${__environment} == "" ]]; then
+    export __func_return="Invaid env: \${__environment}"
     return 0;
-  elif [[ ${__private_stackEnvsLoadByStack_target} == "" ]]; then
-    export __func_return="Invaid env: \${__private_stackEnvsLoadByStack_target}"
+  elif [[ ${__target} == "" ]]; then
+    export __func_return="Invaid env: \${__target}"
     return 0;
-  elif [[ ${__private_stackEnvsLoadByStack_stack_name} == "" ]]; then
-    export __func_return="Invaid env: \${__private_stackEnvsLoadByStack_stack_name}"
+  elif [[ ${__stack_name} == "" ]]; then
+    export __func_return="Invaid env: \${__stack_name}"
     return 0;
   fi
 
-  stackEnvsLoad "${__private_stackEnvsLoadByStack_environment}" "${__private_stackEnvsLoadByStack_target}"
+  stackEnvsLoad "${__environment}" "${__target}"
   if [[ ${STACK_ENVIRONMENT} == "" ]]; then
     export __func_return="fail on calling stackEnvsLoad: env: \${STACK_ENVIRONMENT}"
     return 0;
@@ -792,8 +728,8 @@ function stackEnvsLoadByStack()
     return 0;
   fi
 
-  __private_stackEnvsLoadByStack "${__private_stackEnvsLoadByStack_stack_name}"
-  __private_stackEnvsDefaultByStack ${__private_stackEnvsLoadByStack_environment} ${__private_stackEnvsLoadByStack_target} ${__private_stackEnvsLoadByStack_stack_name}
+  __private_stackEnvsLoadByStack "${__stack_name}"
+  __private_stackEnvsDefaultByStack ${__environment} ${__target} ${__stack_name}
   if ! [ "$?" -eq 1 ]; then
     export __func_return="fail on calling __private_stackEnvsLoadByStack, ${__func_return}"
     return 0;
@@ -833,6 +769,7 @@ function stackEnvsLoadByStack()
 
 function stackMakeStructure()
 {
+  unset __func_return
   stackStorageMake
   if ! [ "$?" -eq 1 ]; then
     export __func_return="fail on calling stackStorageMake, ${__func_return}"
@@ -848,22 +785,24 @@ function stackMakeStructure()
 
 function stackPublicEnvsConfigure()
 {
-  __stackPublicEnvs_bashrc="${HOME}/.bashrc"
-  __stackPublicEnvs_envFile=$(basename ${PUBLIC_STACK_ENVS_FILE})
-  __stackPublicEnvs_envs_args="STACK_TARGET STACK_ENVIRONMENT STACK_ROOT_DIR QT_VERSION"
-  __stackPublicEnvs_envs=(${__stackPublicEnvs_envs_args})
+  unset __func_return
+  local __bashrc="${HOME}/.bashrc"
+  local __envFile=$(basename ${PUBLIC_STACK_ENVS_FILE})
+  local __envs_args="STACK_TARGET STACK_ENVIRONMENT STACK_ROOT_DIR QT_VERSION"
+  local __envs=(${__envs_args})
   if ! [[ -f ${PUBLIC_STACK_ENVS_FILE} ]]; then
     echo "#!/bin/bash">${PUBLIC_STACK_ENVS_FILE}
   fi
-  for __stackPublicEnvs_env in ${__stackPublicEnvs_envs[*]}; 
+  local __env=
+  for __env in ${__envs[*]}; 
   do
-    sed -i "/${__stackPublicEnvs_env}/d" ${__stackPublicEnvs_bashrc}
-    sed -i "/${__stackPublicEnvs_env}/d" ${PUBLIC_STACK_ENVS_FILE}
-    echo "export ${__stackPublicEnvs_env}=${!__stackPublicEnvs_env}">>${PUBLIC_STACK_ENVS_FILE}
+    sed -i "/${__env}/d" ${__bashrc}
+    sed -i "/${__env}/d" ${PUBLIC_STACK_ENVS_FILE}
+    echo "export ${__env}=${!__env}">>${PUBLIC_STACK_ENVS_FILE}
   done
 
-  sed -i "/${__stackPublicEnvs_envFile}/d" ${__stackPublicEnvs_bashrc}
-  echo "source ${PUBLIC_STACK_ENVS_FILE}">>${__stackPublicEnvs_bashrc}
+  sed -i "/${__envFile}/d" ${__bashrc}
+  echo "source ${PUBLIC_STACK_ENVS_FILE}">>${__bashrc}
   chmod +x ${PUBLIC_STACK_ENVS_FILE}
   source ${PUBLIC_STACK_ENVS_FILE}
   utilPrepareInit "${STACK_ENVIRONMENT}" "${STACK_TARGET}"
@@ -871,6 +810,7 @@ function stackPublicEnvsConfigure()
 
 function stackPublicEnvs()
 {
+  unset __func_return
   clearTerm
 
   stackPublicEnvsConfigure
@@ -879,18 +819,18 @@ function stackPublicEnvs()
     clearTerm
     __private_print_os_information
     echM "Current public envs values"
-    
-    for __stackPublicEnvs_env in ${__stackPublicEnvs_envs[*]}; 
+    local __env=
+    for __env in ${__envs[*]}; 
     do
-      echY "  - ${__stackPublicEnvs_env}: ${!__stackPublicEnvs_env}"
+      echY "  - ${__env}: ${!__env}"
     done
-    selector "Select env to edit" "Back ${__stackPublicEnvs_envs_args}" false
+    selector "Select env to edit" "Back ${__envs_args}" false
     if [[ ${__selector} == "Back" ]]; then
       return 1;
     else
       printf "set ${__selector}: "
-      read __stackPublicEnvs_env_value
-      export ${__selector}=${__stackPublicEnvs_env_value}
+      read __env_value
+      export ${__selector}=${__env_value}
       stackPublicEnvsConfigure
     fi
   done
@@ -899,12 +839,15 @@ function stackPublicEnvs()
 
 }
 
-function stackVaultLogoff(){
+function stackVaultLogoff()
+{
+  unset __func_return
   vaultLogoff
 }
 
-function stackVaultLogin(){
- 
+function stackVaultLogin()
+{
+  unset __func_return 
   vaultLogin "${STACK_ENVIRONMENT}" "${STACK_VAULT_IMPORT}" "${STACK_VAULT_METHOD}" "${STACK_VAULT_URI}" "${STACK_VAULT_TOKEN}" "${STACK_VAULT_APP_ROLE_ID}" "${STACK_VAULT_APP_ROLE_SECRET}"
   if ! [ "$?" -eq 1 ]; then
     export __func_return="fail on calling vaultLogin: ${__func_return}"
@@ -913,7 +856,9 @@ function stackVaultLogin(){
   return 1;
 }
 
-function stackVaultList(){
+function stackVaultList()
+{
+  unset __func_return
   clearTerm
   vaultKvList
   if ! [ "$?" -eq 1 ]; then
@@ -929,6 +874,7 @@ function stackVaultList(){
     local __keys=(${__func_return})
     echB "  Keys"
     export __options=
+    local __key=
     for __key in "${__keys[@]}"
     do
       local __path=${__kv_path}/${__key}
@@ -956,7 +902,9 @@ function stackVaultList(){
   return 0
 }
 
-function stackVaultPull(){
+function stackVaultPull()
+{
+  unset __func_return
   echB "  Importing keys"
   echC "    - destine: ${STACK_VAULT_IMPORT}"
   echG "    - commans"
@@ -983,7 +931,9 @@ function stackVaultPull(){
   return 1
 }
 
-function stackVaultPush(){
+function stackVaultPush()
+{
+  unset __func_return
   echB "  Exporting keys"
   echC "    - source dir ${STACK_VAULT_IMPORT}"
   vaultKvPushFromDir "${STACK_VAULT_DIR}" "${STACK_VAULT_IMPORT}"
@@ -1002,14 +952,3 @@ function stackVaultPush(){
   read
   return 1
 }
-
-# function __lib_stack_tests()
-# {
-#   stackEnvsLoad development company
-#   echo "stackEnvsLoad::${__func_return}"
-#   stackEnvsLoadByStack development company appTest
-#   echo "stackEnvsLoadByStack::${__func_return}"
-#   return 1;
-# }
-
-# #__lib_stack_tests

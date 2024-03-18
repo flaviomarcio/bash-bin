@@ -218,6 +218,7 @@ function fileDedupliceLines()
   fi
   
   local __files=(${1})
+  local __file=
   for __file in "${__files[@]}"
   do
     if [[ -f ${__file} ]]; then
@@ -260,7 +261,7 @@ function utilInitialize()
   export PUBLIC_LOG_LEVEL=false
   export PUBLIC_RUNNER_MODE=runner
   export PUBLIC_RUNNER_TEST=false
-
+  local PARAM=
   for PARAM in "$@"
   do
     if [[ ${PARAM} == "-d" || ${PARAM} == "--debug" ]]; then
@@ -334,6 +335,7 @@ function envsOS()
   local __envsOS="/tmp/env_file_envsOS_${RANDOM}.env"
   printenv | sort > ${__envsOS}
   local __Remove=(_ __ CLUTTER_IM_MODULE KUBE LOGNAME KONSOLE GPG SHELL SHLVL GTK HIST S_COLORS XDG printenv shell XCURSOR XCURSOR WINDOWID PWD PATH OLDPWD KDE LD_ LANG COLOR DESKTOP DISPLAY DBUS HOME TERM XAUTHORITY XMODIFIERS USER DOCKER_ARGS_DEFAULT)
+  local __env=
   for __env in "${__Remove[@]}"
   do
     sed -i "/^${__env}/d" ${__envsOS}
@@ -371,6 +373,7 @@ function envsFileAddIfNotExists()
   local __env_file_names=
 
   local __i=0
+  local __arg=
   for __arg in "$@"
   do
     if [[ ${__i} == 0 ]]; then
@@ -404,6 +407,7 @@ function envsFileAddIfNotExists()
   #remover apenas linhas com apenas "export"
   sed -i '/^\s*export\s*$/d' ${__env_file_temp}
 
+  local __env_file_name=
   for __env_file_name in "${__env_file_names[@]}"
   do
     if [[ ${__env_file_name} == "" ]]; then
@@ -589,6 +593,7 @@ function envsReplaceFile()
 
   local __file_envs=($(envsOS))
   sed -i 's/\${/\[\#\#\]{/g' ${__file}  
+  local __file_env=
   for __file_env in "${__file_envs[@]}"
   do
     local __file_env=(${__file_env//=/ })
@@ -636,6 +641,7 @@ function envsParserDir()
   if [[ ${__DIR} == "" || ${__EXT} == "" ]]; then
     if [[ -d ${__DIR} ]]; then
       local __TARGETS=($(find ${__DIR} -name ${__EXT}))
+      local __TARGET=
       for __TARGET in "${__TARGETS[@]}"
       do
         envsParserFile ${__TARGET}
@@ -744,9 +750,10 @@ function strSplit()
 
   # restore IFS
   IFS=${OLD_IFS}
-  for env in "${__strSplitArray[@]}";
+  local __env=
+  for __env in "${__strSplitArray[@]}";
   do
-    export __func_return="${__func_return} ${env}"
+    export __func_return="${__func_return} ${__env}"
   done
   echo ${__func_return}
 }
@@ -770,6 +777,7 @@ function strAlign()
   fi
 
   local __s_j_left=1
+  local i=
   for i in $(seq 1 ${__s_j_count});
   do
     local __s_j_len=$(expr length "${__s_j_return}")
@@ -898,11 +906,13 @@ function echIdent()
 
   local __e_i_out=
   local __e_i_spacer="  "
+  local i=
   for i in $(seq 1 ${__e_i_step});
   do
     local __e_i_out="${__e_i_out}${__e_i_spacer}"
   done
 
+  local __e_i_level_i=
   for __e_i_level_i in $(seq 1 ${__e_i_level});
   do
     if [[ ${__e_i_level_i} == 5 ]]; then
@@ -1011,6 +1021,7 @@ function echCommand()
   local __e_c_command=
   local __e_c_command_ignore=
   export __echCommand=
+  local __e_c_env=
   for __e_c_env in "$@"
   do
     if [[ ${__e_c_env} == "--ignore" ]]; then
@@ -1148,6 +1159,7 @@ function jsonGet()
 
   local __json_get_tag_names=(${__json_get_tag_names})
   local __json_get_tag_name=
+  local __json_get_tag=
   for __json_get_tag in "${__json_get_tag_names[@]}"
   do
     local __json_get_tag_name="${__json_get_tag_name}.${__json_get_tag}"
@@ -1165,7 +1177,7 @@ function arrayContains()
 {
   local __inArray_array=(${1})
   local __inArray_arg=${2}
-
+  local __inArray_item=
   for __inArray_item in "${__inArray_array[@]}"
   do
     if [[ ${__inArray_arg} == ${__inArray_item} ]]; then
@@ -1191,6 +1203,7 @@ function nameFormat()
 {
   local __nameFormat_args=($@)
   local __nameFormat_output=
+  local __nameFormat_arg=
   for __nameFormat_arg in "${__nameFormat_args[@]}"
   do
     local __nameFormat_first=$(toUpper ${__nameFormat_arg:0:1})

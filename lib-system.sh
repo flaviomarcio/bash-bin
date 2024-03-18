@@ -66,48 +66,49 @@ function systemDNSEssentialList()
 
 function systemDNSList()
 {
-  local __systemDNSList_inc_pub=${1}
+  local __inc_pub=${1}
   if [[ ${STACK_PREFIX} == "" ]]; then
     return 0
   fi
-  local __systemDNSList_dns_list=" $(systemDNSEssentialList) ${STACK_DNS_LIST} "
-  local __systemDNSList_dns_list=$(echo ${__systemDNSList_dns_list} | sort)
-  local __systemDNSList_dns_list=(${__systemDNSList_dns_list})
-  local __systemDNSList_dns_out=
-  for __systemDNSList_dns in "${__systemDNSList_dns_list[@]}"
+  local __dns_list=" $(systemDNSEssentialList) ${STACK_DNS_LIST} "
+  local __dns_list=$(echo ${__dns_list} | sort)
+  local __dns_list=(${__dns_list})
+  local __dns_out=
+  local __dns=
+  for __dns in "${__dns_list[@]}"
   do
-    local __systemDNSList_dns_out="${__systemDNSList_dns_out} ${STACK_PREFIX_HOST}${__systemDNSList_dns}"
-    if [[ ${__systemDNSList_inc_pub} == true ]]; then
-      local __systemDNSList_dns_out="${__systemDNSList_dns_out} ${STACK_PREFIX_HOST}${__systemDNSList_dns}.${STACK_DOMAIN}"
+    local __dns_out="${__dns_out} ${STACK_PREFIX_HOST}${__dns}"
+    if [[ ${__inc_pub} == true ]]; then
+      local __dns_out="${__dns_out} ${STACK_PREFIX_HOST}${__dns}.${STACK_DOMAIN}"
     fi
   done
-  echo ${__systemDNSList_dns_out}
+  echo ${__dns_out}
   return 1
 }
 
 function systemETCHostApply()
 {
   return 1
-  local __systemETCHostApply_tag=${1}
+  local ____tag=${1}
   if [[ ${ROOT_APPLICATIONS_DIR} == "" ]]; then
     return 0;
   fi
-  if [[ ${__systemETCHostApply_tag} == "" ]]; then
+  if [[ ${____tag} == "" ]]; then
     return 0;
   fi
-  local __systemETCHostApply_dns_list=( $(systemDNSList true) )
-  export __systemETCHostApply_hosts=/etc/hosts
-  export __systemETCHostApply_hosts_BKP=${ROOT_APPLICATIONS_DIR}/hosts.backup
-  export __systemETCHostApply_hosts_TMP=${ROOT_APPLICATIONS_DIR}/hosts.temp
+  local ____dns_list=( $(systemDNSList true) )
+  export ____hosts=/etc/hosts
+  export ____hosts_BKP=${ROOT_APPLICATIONS_DIR}/hosts.backup
+  export ____hosts_TMP=${ROOT_APPLICATIONS_DIR}/hosts.temp
 
-  cp -rf ${__systemETCHostApply_hosts} ${__systemETCHostApply_hosts_BKP}
-  cp -rf ${__systemETCHostApply_hosts} ${__systemETCHostApply_hosts_TMP}
-  sed -i '/^\s*$/d' ${__systemETCHostApply_hosts_TMP}
-  sed -i '/srv-/d' ${__systemETCHostApply_hosts_TMP}
-  sed -i '/mcs-/d' ${__systemETCHostApply_hosts_TMP}
-  sed -i "/${__systemETCHostApply_tag}/d" ${__systemETCHostApply_hosts_TMP}
+  cp -rf ${____hosts} ${____hosts_BKP}
+  cp -rf ${____hosts} ${____hosts_TMP}
+  sed -i '/^\s*$/d' ${____hosts_TMP}
+  sed -i '/srv-/d' ${____hosts_TMP}
+  sed -i '/mcs-/d' ${____hosts_TMP}
+  sed -i "/${____tag}/d" ${____hosts_TMP}
 
-  if ! [[ -f ${__systemETCHostApply_hosts_BKP} ]]; then
+  if ! [[ -f ${____hosts_BKP} ]]; then
     echR "    +===========================+"
     echR "    +        ***********        +"
     echR "    +********Backup Fail********+"
@@ -118,17 +119,17 @@ function systemETCHostApply()
   fi
 
   echM "  DNS inserting"
-  echC "    - Target: ${__systemETCHostApply_hosts_TMP}"
-  echC "    - Backup: ${__systemETCHostApply_hosts_BKP}"
+  echC "    - Target: ${____hosts_TMP}"
+  echC "    - Backup: ${____hosts_BKP}"
   echB "    Prepare"
-  echY "      - cp -rf ${__systemETCHostApply_hosts} ${__systemETCHostApply_hosts_TMP}"
-  echY "      - cp -rf ${__systemETCHostApply_hosts} ${__systemETCHostApply_hosts_BKP}"
+  echY "      - cp -rf ${____hosts} ${____hosts_TMP}"
+  echY "      - cp -rf ${____hosts} ${____hosts_BKP}"
   echB "    Cleanup"
-  echY "      - sed -i '/^\s*$/d' ${__systemETCHostApply_hosts_TMP}"
-  echY "      - sed -i '/^\s*$/d' ${__systemETCHostApply_hosts_TMP}"
-  echY "      - sed -i '/srv-/d' ${__systemETCHostApply_hosts_TMP}"
-  echY "      - sed -i '/mcs-/d' ${__systemETCHostApply_hosts_TMP}"
-  echY "      - sed -i '/adm-/d' ${__systemETCHostApply_hosts_TMP}"
+  echY "      - sed -i '/^\s*$/d' ${____hosts_TMP}"
+  echY "      - sed -i '/^\s*$/d' ${____hosts_TMP}"
+  echY "      - sed -i '/srv-/d' ${____hosts_TMP}"
+  echY "      - sed -i '/mcs-/d' ${____hosts_TMP}"
+  echY "      - sed -i '/adm-/d' ${____hosts_TMP}"
   echG "    Finished"
   echo ""
   echB "    SUDO request"
@@ -153,24 +154,25 @@ function systemETCHostApply()
   fi
 
   echB "    DNS Change"
-  echC "      - Target: ${__systemETCHostApply_hosts_TMP}"
+  echC "      - Target: ${____hosts_TMP}"
   echB "      Actions"
 
-  echo "">>${__systemETCHostApply_hosts_TMP}
-  for systemETCHostApply_dns in "${__systemETCHostApply_dns_list[@]}"
+  echo "">>${____hosts_TMP}
+  local __dns=
+  for __dns in "${____dns_list[@]}"
   do
-    systemETCHostApply_cmd="echo \"127.0.0.1 ${systemETCHostApply_dns}\">>${__systemETCHostApply_hosts_TMP}"
-    echY "          ${systemETCHostApply_cmd}"
-    echo "127.0.0.1 ${systemETCHostApply_dns}">>${__systemETCHostApply_hosts_TMP}
+    local __cmd="echo \"127.0.0.1 ${__dns}\">>${____hosts_TMP}"
+    echY "          ${__cmd}"
+    echo "127.0.0.1 ${__dns}">>${____hosts_TMP}
   done
 
   echB "    DNS Apply"
-  echC "      - Target: ${__systemETCHostApply_hosts}"
-  echC "      - Source: ${__systemETCHostApply_hosts_TMP}"
-  echC "      - Backup: ${__systemETCHostApply_hosts_BKP}"
+  echC "      - Target: ${____hosts}"
+  echC "      - Source: ${____hosts_TMP}"
+  echC "      - Backup: ${____hosts_BKP}"
   echC "      Action"
-  echY "        - sudo cp -rf ${__systemETCHostApply_hosts_TMP} ${__systemETCHostApply_hosts}"
-  sudo cp -rf ${__systemETCHostApply_hosts_TMP} ${__systemETCHostApply_hosts}
+  echY "        - sudo cp -rf ${____hosts_TMP} ${____hosts}"
+  sudo cp -rf ${____hosts_TMP} ${____hosts}
   echG "    Finished"
 
   echo ""
@@ -258,20 +260,22 @@ function systemETCHostRemove()
 
 function systemETCHostPrint()
 {
-  export __systemETCHostApply_hosts=/etc/hosts
-  local __systemETCHostPrint_dns_list=$(systemDNSList)
-  local __systemETCHostPrint_dns_list=(${__systemETCHostPrint_dns_list})
+  export ____hosts=/etc/hosts
+  local __dns_list=$(systemDNSList)
+  local __dns_list=(${__dns_list})
   echM "  DNS Print"
   echB "    DNS list"
-  for __systemETCHostPrint_dns in "${__systemETCHostPrint_dns_list[@]}"
+  local __dns=
+  for __dns in "${__dns_list[@]}"
   do
-    echC "      ${__systemETCHostPrint_dns}" 
+    echC "      ${__dns}" 
   done
   echo ""
-  echB "    ${__systemETCHostApply_hosts} list"
-  for __systemETCHostPrint_dns in "${__systemETCHostPrint_dns_list[@]}"
+  echB "    ${____hosts} list"
+  local __dns=
+  for __dns in "${__dns_list[@]}"
   do
-    echY "      127.0.0.1 ${__systemETCHostPrint_dns}"
+    echY "      127.0.0.1 ${__dns}"
   done
   echo ""
   echG "  Finished"

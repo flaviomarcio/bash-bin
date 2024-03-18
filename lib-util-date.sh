@@ -16,6 +16,7 @@ function parserTime()
 {
   local __args=($@)
   local __out=
+  local __arg=
   for __arg in "${__args[@]}"
   do
     __arg=$(toLower ${__arg})
@@ -40,7 +41,7 @@ function parserTime()
     else
       __time=${__time}
     fi
-    __out="${__out} ${__time}"
+    local __out="${__out} ${__time}"
 
   done
 

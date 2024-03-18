@@ -20,13 +20,14 @@ function __private_deploy_envsubst()
   if [[ ${1} == "" ]]; then
     return 0
   fi
-  local __private_deploy_envsubst_files=(${1})
-  for __private_deploy_envsubst_file_src in "${__private_deploy_envsubst_files[@]}"
+  local __files=(${1})
+  local __file_src=
+  for __file_src in "${__files[@]}"
   do
-    if [[ -f ${__private_deploy_envsubst_file_src} ]]; then
-      local __private_deploy_envsubst_file_ori=${__private_deploy_envsubst_file_src}.ori
-      cat ${__private_deploy_envsubst_file_src}>${__private_deploy_envsubst_file_ori}
-      envsubst < ${__private_deploy_envsubst_file_ori} > ${__private_deploy_envsubst_file_src}
+    if [[ -f ${__file_src} ]]; then
+      local __file_ori=${__file_src}.ori
+      cat ${__file_src}>${__file_ori}
+      envsubst < ${__file_ori} > ${__file_src}
     fi
   done  
 
@@ -36,113 +37,116 @@ function __private_deploy_envsubst()
 function deployPrepareEnvFile()
 {
   unset __func_return
-  local __deploy_prepare_env_src_json_file=${1}
-  local __deploy_prepare_env_dst_dir=${2} 
-  local __deploy_prepare_env_tag_envs=${3}
+  local __src_json_file=${1}
+  local __dst_dir=${2} 
+  local __tag_envs=${3}
 
-  if ! [[ -f ${__deploy_prepare_env_src_json_file} ]]; then
+  if ! [[ -f ${__src_json_file} ]]; then
     return 1
   fi
 
-  mkdir -p ${__deploy_prepare_env_dst_dir}
+  mkdir -p ${__dst_dir}
 
-  if ! [[ -d ${__deploy_prepare_env_dst_dir} ]]; then
+  if ! [[ -d ${__dst_dir} ]]; then
     ls -l 
     return 0
   fi
-  cd ${__deploy_prepare_env_dst_dir}
-  if [[ ${PWD} != ${__deploy_prepare_env_dst_dir} ]]; then
+  cd ${__dst_dir}
+  if [[ ${PWD} != ${__dst_dir} ]]; then
     return 0
   fi
 
-  local __deploy_prepare_env_dst_json_file="${__deploy_prepare_env_dst_dir}/env.json"
-  cat ${__deploy_prepare_env_src_json_file}>${__deploy_prepare_env_dst_json_file}
+  local __dst_json_file="${__dst_dir}/env.json"
+  cat ${__src_json_file}>${__dst_json_file}
 
-  local __deploy_prepare_env_tag_envs=($(echo ${__deploy_prepare_env_tag_envs} | sed 's/-/_/g'))
+  local __tag_envs=($(echo ${__tag_envs} | sed 's/-/_/g'))
 
-  local __deploy_prepare_env_party_tag_files=()
-  for __deploy_prepare_env_tag in "${__deploy_prepare_env_tag_envs[@]}"
+  local __party_tag_files=()
+  local __tag=
+  for __tag in "${__tag_envs[@]}"
   do
-    #echo "__deploy_prepare_env_tag==${__deploy_prepare_env_tag}"
-    local __deploy_prepare_env_tag_ext=$(strArg 0 "$(strSplit ${__deploy_prepare_env_tag})" '.')
-    if [[ ${__deploy_prepare_env_tag_ext} == "" ]]; then
+    #echo "__tag==${__tag}"
+    local __tag_ext=$(strArg 0 "$(strSplit ${__tag})" '.')
+    if [[ ${__tag_ext} == "" ]]; then
       continue;
     fi
 
     #Env file
-    local __deploy_prepare_env_tag_envs=$(jsonGet "${__deploy_prepare_env_src_json_file}" "${__deploy_prepare_env_tag}" )
-    if [[ ${__deploy_prepare_env_tag_envs} == "" ]]; then
+    local __tag_envs=$(jsonGet "${__src_json_file}" "${__tag}" )
+    if [[ ${__tag_envs} == "" ]]; then
       continue;
     fi
 
-    local __deploy_prepare_env_party_tag_file=${__deploy_prepare_env_dst_dir}/tag.${__deploy_prepare_env_tag}.env
-    echo "">${__deploy_prepare_env_party_tag_file}
-    local __deploy_prepare_env_tag_envs=(${__deploy_prepare_env_tag_envs})
-    for __deploy_prepare_env_tag_env in "${__deploy_prepare_env_tag_envs[@]}"
+    local __party_tag_file=${__dst_dir}/tag.${__tag}.env
+    echo "">${__party_tag_file}
+    local __tag_envs=(${__tag_envs})
+    for __tag_env in "${__tag_envs[@]}"
     do
-      local __deploy_prepare_env_tag_env=$(echo ${__deploy_prepare_env_tag_env} | sed 's/\"//g')
-      echo ${__deploy_prepare_env_tag_env}>>${__deploy_prepare_env_party_tag_file}
+      local __tag_env=$(echo ${__tag_env} | sed 's/\"//g')
+      echo ${__tag_env}>>${__party_tag_file}
     done
-    fileDedupliceLines ${__deploy_prepare_env_party_tag_file}
-    local __deploy_prepare_env_party_tag_files+=(${__deploy_prepare_env_party_tag_file})
+    fileDedupliceLines ${__party_tag_file}
+    local __party_tag_files+=(${__party_tag_file})
   done
 
 
-  local __deploy_prepare_env_files=()
-  for __deploy_prepare_env_party_tag_file in "${__deploy_prepare_env_party_tag_files[@]}"
+  local __files=()
+  local __party_tag_file=
+  for __party_tag_file in "${__party_tag_files[@]}"
   do
-    local __deploy_prepare_env_tag_ext=$(basename ${__deploy_prepare_env_party_tag_file})
-    local __deploy_prepare_env_tag_ext=$(strArg 1 "$(strSplit ${__deploy_prepare_env_tag_ext})" '.')
-    local __deploy_prepare_env_tag_file_ext=${__deploy_prepare_env_dst_dir}/env_file.${__deploy_prepare_env_tag_ext}.env
+    local __tag_ext=$(basename ${__party_tag_file})
+    local __tag_ext=$(strArg 1 "$(strSplit ${__tag_ext})" '.')
+    local __tag_file_ext=${__dst_dir}/env_file.${__tag_ext}.env
 
-    if ! [[ -f ${__deploy_prepare_env_tag_file_ext} ]]; then
-      cat ${__deploy_prepare_env_party_tag_file}>${__deploy_prepare_env_tag_file_ext}
-      __deploy_prepare_env_files+=(${__deploy_prepare_env_tag_file_ext})
+    if ! [[ -f ${__tag_file_ext} ]]; then
+      cat ${__party_tag_file}>${__tag_file_ext}
+      __files+=(${__tag_file_ext})
     else
-      cat ${__deploy_prepare_env_party_tag_file}>>${__deploy_prepare_env_tag_file_ext}
+      cat ${__party_tag_file}>>${__tag_file_ext}
     fi    
   done
 
-  local __deploy_prepare_env_file_static=${__deploy_prepare_env_dst_dir}/env_file-static.env
-  echo "">${__deploy_prepare_env_file_static}
-
-  for __deploy_prepare_env_file in "${__deploy_prepare_env_files[@]}"
+  local __file_static=${__dst_dir}/env_file-static.env
+  echo "">${__file_static}
+  local __file=
+  for __file in "${__files[@]}"
   do
-    local __deploy_prepare_env_file_ext=$(basename ${__deploy_prepare_env_file})
-    local __deploy_prepare_env_file_ext=$(strArg 1 "$(strSplit ${__deploy_prepare_env_file_ext})" '.')
-    if [[ ${__deploy_prepare_env_file_ext} == "env" ]]; then
-      envsFileConvertToExport ${__deploy_prepare_env_file}
-      cat ${__func_return}>>${__deploy_prepare_env_file_static}
+    local __file_ext=$(basename ${__file})
+    local __file_ext=$(strArg 1 "$(strSplit ${__file_ext})" '.')
+    if [[ ${__file_ext} == "env" ]]; then
+      envsFileConvertToExport ${__file}
+      cat ${__func_return}>>${__file_static}
       source ${__func_return}
     fi
   done
-
-  for __deploy_prepare_env_file in "${__deploy_prepare_env_files[@]}"
+  local __file=
+  for __file in "${__files[@]}"
   do
-    local __deploy_prepare_env_file_ext=$(basename ${__deploy_prepare_env_file})
-    local __deploy_prepare_env_file_ext=$(strArg 1 "$(strSplit ${__deploy_prepare_env_file_ext})" '.')
-    if [[ ${__deploy_prepare_env_file_ext} == "env" ]]; then      
-      __private_deploy_envsubst ${__deploy_prepare_env_file}
+    local __file_ext=$(basename ${__file})
+    local __file_ext=$(strArg 1 "$(strSplit ${__file_ext})" '.')
+    if [[ ${__file_ext} == "env" ]]; then      
+      __private_deploy_envsubst ${__file}
     fi
   done
 
-  local __deploy_prepare_env_file_deploy=${__deploy_prepare_env_dst_dir}/env_file-deploy.env
-  echo "">${__deploy_prepare_env_file_deploy}
-  for __deploy_prepare_env_file in "${__deploy_prepare_env_files[@]}"
+  local __file_deploy=${__dst_dir}/env_file-deploy.env
+  echo "">${__file_deploy}
+  local __file=
+  for __file in "${__files[@]}"
   do
-    local __deploy_prepare_env_file_ext=$(basename ${__deploy_prepare_env_file})
-    local __deploy_prepare_env_file_ext=$(strArg 1 "$(strSplit ${__deploy_prepare_env_file_ext})" '.')
-    if [[ ${__deploy_prepare_env_file_ext} != "env" ]]; then
-      cat ${__deploy_prepare_env_file}>>${__deploy_prepare_env_file_deploy}
+    local __file_ext=$(basename ${__file})
+    local __file_ext=$(strArg 1 "$(strSplit ${__file_ext})" '.')
+    if [[ ${__file_ext} != "env" ]]; then
+      cat ${__file}>>${__file_deploy}
     fi
   done
 
-  __private_deploy_envsubst ${__deploy_prepare_env_file_static}
-  fileDedupliceLines ${__deploy_prepare_env_file_static}
-  source ${__deploy_prepare_env_file_static}
+  __private_deploy_envsubst ${__file_static}
+  fileDedupliceLines ${__file_static}
+  source ${__file_static}
 
-  __private_deploy_envsubst ${__deploy_prepare_env_file_deploy}
-  fileDedupliceLines ${__deploy_prepare_env_file_deploy}
+  __private_deploy_envsubst ${__file_deploy}
+  fileDedupliceLines ${__file_deploy}
 
   # #clean dir
   # rm -rf *.env.ori
@@ -150,7 +154,7 @@ function deployPrepareEnvFile()
   # rm -rf env_file.*.env
   # rm -rf env.json
 
-  export __func_return=${__deploy_prepare_env_file_deploy}
+  export __func_return=${__file_deploy}
   return 1
 }
 
@@ -219,6 +223,7 @@ function deploy()
   local __deploy_host_name="${STACK_PREFIX_HOST}${__deploy_name}"
 
   mkdir -p ${__deploy_builder_dir}
+  local __deploy_dependency=
   for __deploy_dependency in "${__deploy_dependency_dir[@]}"
   do
     if [[ -d ${__deploy_dependency} ]]; then
