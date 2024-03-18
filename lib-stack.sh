@@ -243,7 +243,7 @@ function stackMkDir()
   fi
 
   local __dirs=(${__dirs})
-
+  local __dir=
   for __dir in ${__dirs[*]}; 
   do
     if [[ -d ${__dir} ]]; then
@@ -793,6 +793,7 @@ function stackPublicEnvsConfigure()
   if ! [[ -f ${PUBLIC_STACK_ENVS_FILE} ]]; then
     echo "#!/bin/bash">${PUBLIC_STACK_ENVS_FILE}
   fi
+  local __env=
   for __env in ${__envs[*]}; 
   do
     sed -i "/${__env}/d" ${__bashrc}
@@ -818,7 +819,7 @@ function stackPublicEnvs()
     clearTerm
     __private_print_os_information
     echM "Current public envs values"
-    
+    local __env=
     for __env in ${__envs[*]}; 
     do
       echY "  - ${__env}: ${!__env}"
@@ -873,6 +874,7 @@ function stackVaultList()
     local __keys=(${__func_return})
     echB "  Keys"
     export __options=
+    local __key=
     for __key in "${__keys[@]}"
     do
       local __path=${__kv_path}/${__key}

@@ -261,6 +261,7 @@ function vaultKvPullToDir()
       return 0;
   fi
   local __kv_key_names=(${__func_return})
+  local __kv_name=
   for __kv_name in "${__kv_key_names[@]}"
   do
     local __kv_destine_file=${__kv_destine_dir}/${__kv_name}.json
@@ -304,6 +305,7 @@ function vaultKvPushFromDir()
  
   unset __return=
   local __kv_source_files=($(find ${__kv_source_dir} -name '*.json'))
+  local __kv_source_file=
   for __kv_source_file in "${__kv_source_files[@]}"
   do
     local __kv_name=$(basename ${__kv_source_file})
@@ -341,18 +343,18 @@ function vaultGetAndConvertToEnvsShell()
 
 function vaultTests()
 {
-  __kv_environment=dev
-  __kv_base_path=/secret
-  __kv_method=
-  __kv_uri=
-  __kv_token=
-  __kv_username=
-  __kv_password=
-  __kv_app_path=${__kv_base_path}/test
-  __kv_src_dir=${HOME}/temp
+  local __kv_environment=dev
+  local __kv_base_path=/secret
+  local __kv_method=
+  local __kv_uri=
+  local __kv_token=
+  local __kv_username=
+  local __kv_password=
+  local __kv_app_path=${__kv_base_path}/test
+  local __kv_src_dir=${HOME}/temp
   
   vaultLogin "${__kv_environment}" "${__kv_base_path}" "${__kv_method}" "${__kv_uri}" "${__kv_token}" "${__kv_username}" "${__kv_password}"
-
+  local i=
   for i in $(seq 1 9)
   do
     local __kv_app_data="{\"dt\":\"$(date)\", \"seq\":${i}}"
@@ -363,6 +365,7 @@ function vaultTests()
   vaultKvPullToDir "${__kv_src_dir}" "${__kv_app_path}"
   vaultKvList "${__kv_app_path}"; echo "vaultKvList: [${__func_return}]"
   local __kv_key_names=(${__func_return})
+  local __kv_key_name=
   for __kv_key_name in "${__kv_key_names[@]}"
   do
     local __kv_app_path_final="${__kv_app_path}/${__kv_key_name}"

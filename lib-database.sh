@@ -11,8 +11,6 @@ fi
 
 . ${BASH_BIN}/lib-strings.sh
 
-# export DATABASE_DIR=
-
 function __private_db_envs_clear()
 {
   export DATABASE_DIR=
@@ -38,14 +36,14 @@ function __private_db_envs_check()
 
 function __private_db_cleanup_sql()
 {
-  local __private_db_cleanup_sql_file=${1}
-  if ! [[ -f ${__private_db_cleanup_sql_file} ]]; then
+  local __file=${1}
+  if ! [[ -f ${__file} ]]; then
     return 0;
   fi
-  sed -i '/^$/d' ${__private_db_cleanup_sql_file}
-  local __private_db_cleanup_sql_envs=(DROP drop TRUNCATE truncate DELETE delete CASCADE cascade)
-  for __private_db_cleanup_sql_env in ${__private_db_cleanup_sql_envs[*]}; do 
-    sed -i "/${__private_db_cleanup_sql_env}/d" ${__private_db_cleanup_sql_file}
+  sed -i '/^$/d' ${__file}
+  local __envs=(DROP drop TRUNCATE truncate DELETE delete CASCADE cascade)
+  for __env in ${__envs[*]}; do 
+    sed -i "/${__env}/d" ${__file}
   done
   return 1;
 }
@@ -54,25 +52,27 @@ function __private_db_scan_files()
 {
   unset __func_return
   local DB_SCAN_DIR=${1}
-  local __private_db_scan_files_filters="${2}"
+  local __filters="${2}"
 
   if ! [[ -d ${DB_SCAN_DIR} ]]; then
     return 0;
   fi
 
   if [[ ${DATABASE_ENVIRONMENT} == "production" ]]; then
-    local DB_SCAN_FILTERS=$(echo ${__private_db_scan_files_filters} | sed 's/drops//g' | sed 's/drop//g' | sed 's/fakedata//g')
+    local DB_SCAN_FILTERS=$(echo ${__filters} | sed 's/drops//g' | sed 's/drop//g' | sed 's/fakedata//g')
   elif [[ ${DATABASE_ENVIRONMENT} == "testing" || ${DATABASE_ENVIRONMENT} == "development"  || ${DATABASE_ENVIRONMENT} == "stating" ]]; then
-    local DB_SCAN_FILTERS=${__private_db_scan_files_filters}
+    local DB_SCAN_FILTERS=${__filters}
   else
     local DB_SCAN_FILTERS=
   fi 
 
   local DB_SCAN_FILTERS=(${DB_SCAN_FILTERS})
   local DB_SCAN_STEP_DIRS=($(ls ${DB_SCAN_DIR}))
+  local DB_SCAN_STEP_DIR=
   for DB_SCAN_STEP_DIR in ${DB_SCAN_STEP_DIRS[*]}; 
   do
     unset DB_SCAN_STEP_FILES
+    local DB_SCAN_FILTER=
     for DB_SCAN_FILTER in ${DB_SCAN_FILTERS[*]}; 
     do
       if [[ $(echo ${DB_SCAN_FILTER} | grep sql) == "" ]]; then
@@ -80,6 +80,7 @@ function __private_db_scan_files()
       fi
       local DB_SCAN_DIR_STEP="${DB_SCAN_DIR}/${DB_SCAN_STEP_DIR}"
       local DB_SCAN_FILES=($(echo $(find ${DB_SCAN_DIR}/${DB_SCAN_STEP_DIR} -iname ${DB_SCAN_FILTER} | sort)))
+      local DB_SCAN_FILE=
       for DB_SCAN_FILE in ${DB_SCAN_FILES[*]};
       do
         local DB_SCAN_STEP_FILES="${DB_SCAN_STEP_FILES} ${DB_SCAN_FILE}"
@@ -94,7 +95,7 @@ function __private_db_scan_files()
   return 1  
 }
 
-function __private_db_scan_files_filters()
+function __filters()
 {
   if [[ ${DATABASE_ENVIRONMENT} == "production" ]]; then
     echo "tables constraints-pk constraints.sql constraints-fk constraints-check indexes initdata view"
@@ -104,7 +105,7 @@ function __private_db_scan_files_filters()
   return 1
 }
 
-function __private_db_scan_files_for_local()
+function __for_local()
 {
   __private_db_envs_check
   if ! [ "$?" -eq 1 ]; then
@@ -127,7 +128,7 @@ function __private_db_scan_files_for_local()
   return 1
 }
 
-function __private_db_scan_files_for_ddl()
+function __for_ddl()
 {
   __private_db_envs_check
   if ! [ "$?" -eq 1 ]; then
@@ -158,7 +159,8 @@ function __private_db_ddl_apply_scan()
   if ! [ -d ${__target} ]; then
     return 0;       
   fi
-  local __files=($(__private_db_scan_files_for_local "${__target}"))
+  local __files=($(__for_local "${__target}"))
+  local __file=
   for __file in ${__files[*]};
   do    
     local __func_return="${__func_return} ${__file}"
@@ -248,6 +250,7 @@ function databaseUpdateExec()
   if [[ ${EXEC_FILES} == "" ]]; then
     echR "        - No files found"
   else
+    local EXEC_FILE=
     for EXEC_FILE in ${EXEC_FILES[*]};
     do
       if [[ ${EXEC_FILE} == "["* ]] ; then
@@ -284,13 +287,14 @@ function databaseDDLMakerExec()
   fi
 
   local __db_ddl_file_dir=$(dirname ${__db_ddl_file})
-  local __db_ddl_files_extra=($(__private_db_scan_files_filters))
+  local __db_ddl_files_extra=($(__filters))
   echB "    Cleanup files..."
   echC "      - Local: ${__db_ddl_file_dir}"
   echR "    Removing..."
-  for ENV in ${__db_ddl_files_extra[*]};
+  local __env=
+  for __env in ${__db_ddl_files_extra[*]};
   do
-    local __database_file="${__db_ddl_file_dir}/initdb-${ENV}*.sql"
+    local __database_file="${__db_ddl_file_dir}/initdb-${__env}*.sql"
     echY "      rm -rf $(basename ${__database_file})"
     rm -rf ${__database_file}
   done
@@ -299,6 +303,7 @@ function databaseDDLMakerExec()
   echo "">${__db_ddl_file}
   local __ddl_files=$(__private_db_ddl_apply_scan ${__db_dir})
   local __files=()
+  local __ddl_file=
   for __ddl_file in ${__ddl_files[*]};
   do
     if ! [[ -f ${__ddl_file} ]]; then
@@ -315,8 +320,9 @@ function databaseDDLMakerExec()
     fi
   done
   echB "    Finished"
-  local __files=(${__db_ddl_file})
   echB "    Cleanup maked files..."
+  local __files=(${__db_ddl_file})
+  local __file=
   for __file in ${__files[*]};
   do
     __private_db_cleanup_sql ${__file}

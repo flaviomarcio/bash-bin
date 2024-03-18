@@ -174,9 +174,10 @@ function selectorDNS()
   echC ""
   echG "    # append dns for micro services"
   local LST=( $(__private_project_names) )
-  for ENV in "${LST[@]}"
+  local __env=
+  for __env in "${LST[@]}"
   do
-  echC "      sudo echo \"${PUBLIC_HOST_IP} mcs-${ENV}.local\">>\${ETC_HOST}"
+  echC "      sudo echo \"${PUBLIC_HOST_IP} mcs-${__env}.local\">>\${ETC_HOST}"
   done
   echC ""
   echG "    # /etc/hosts file show"
