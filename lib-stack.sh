@@ -41,9 +41,17 @@ function __private_stackEnvsLoadByStack()
   fi
   local __private_services_names_configure_name=${2}
 
-  export STACK_SERVICE_NAME=$(echo "${STACK_PREFIX_HOST}${STACK_NAME}" | sed 's/_/-/g')
+  local __stack_name_parser=$(echo ${STACK_NAME} | sed 's/_/-/g')
+
+  export STACK_SERVICE_NAME=${STACK_PREFIX}-${__stack_name_parser}
+
+  #hostnames
+  export STACK_SERVICE_HOSTNAME="${STACK_PREFIX_HOST}${__stack_name_parser}"
+  export STACK_SERVICE_HOSTNAME_PROXY=${STACK_SERVICE_NAME}
+  export STACK_SERVICE_HOSTNAME_PUBLIC=${STACK_SERVICE_NAME}.${STACK_DOMAIN}
 
   local __private_stackEnvsLoadByStack_storage=${STACK_TARGET_STORAGE_DIR}/${STACK_SERVICE_NAME}
+  #stograge
   export STACK_SERVICE_STORAGE_DATA_DIR=${__private_stackEnvsLoadByStack_storage}/data
   export STACK_SERVICE_STORAGE_DB_DIR=${__private_stackEnvsLoadByStack_storage}/db
   export STACK_SERVICE_STORAGE_LOG_DIR=${__private_stackEnvsLoadByStack_storage}/log
@@ -54,12 +62,10 @@ function __private_stackEnvsLoadByStack()
   export STACK_SERVICE_STORAGE_IMPORT_DIR=${__private_stackEnvsLoadByStack_storage}/import
   export STACK_SERVICE_STORAGE_PROVIDER_DIR=${__private_stackEnvsLoadByStack_storage}/provider
   export STACK_SERVICE_STORAGE_CERT_DIR=${__private_stackEnvsLoadByStack_storage}/certificates
-  
+  #image
   export STACK_SERVICE_IMAGE="${STACK_SERVICE_NAME}"
   export STACK_SERVICE_IMAGE_URL="${STACK_REGISTRY_DNS_PUBLIC}/${STACK_SERVICE_IMAGE}"
 
-  export STACK_SERVICE_HOSTNAME=${STACK_SERVICE_NAME}
-  export STACK_SERVICE_HOSTNAME_PUBLIC=${STACK_SERVICE_HOSTNAME}.${STACK_DOMAIN}
 
   unset __dirs
   local __dirs="${__dirs} ${STACK_SERVICE_STORAGE_DATA_DIR}"
@@ -297,7 +303,7 @@ function stackStorageMake()
   return 1
 }
 
-function __private_stackInitTargetEnvFile()
+function stackInitTargetEnvFile()
 {
   unset __func_return
   if [[ ${PUBLIC_STACK_TARGET_ENVS_FILE} == "" ]]; then
@@ -507,7 +513,7 @@ function stackEnvsLoad()
 
   if [[ ${STACK_ENVIRONMENT} != "" && ${STACK_TARGET} != "" ]]; then
     export STACK_PREFIX="${STACK_ENVIRONMENT}-${STACK_TARGET}"
-    #export STACK_PREFIX_HOST="${STACK_PREFIX}-"
+    export STACK_PREFIX_HOST="${STACK_PREFIX}-"
   fi
   export STACK_PREFIX_NAME=$(echo ${STACK_PREFIX} | sed 's/-/_/g')
 
@@ -661,9 +667,9 @@ function stackEnvsLoad()
   envsSetIfIsEmpty CUR_DATETIME "$(date +'%Y-%m-%d')T$(date +'%H:%M:%S')"
 
 
-  __private_stackInitTargetEnvFile
+  stackInitTargetEnvFile
   if ! [ "$?" -eq 1 ]; then
-    export __func_return="fail on calling __private_stackInitTargetEnvFile"
+    export __func_return="fail on calling stackInitTargetEnvFile"
     return 0;
   fi
 
@@ -1013,3 +1019,6 @@ function stackVaultPush(){
 # }
 
 # #__lib_stack_tests
+
+
+stackInitTargetEnvFile

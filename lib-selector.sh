@@ -20,8 +20,9 @@ function __private_print_os_information()
   echG "OS informations"
   echC "  - $(uname -a)"
   echC "  - $(docker --version), IPv4: ${PUBLIC_HOST_IPv4}"
-  if [[ ${__public_target} != "" ]]; then
-    echC "  - Target: ${__public_target}, Environment: ${__public_environment}"
+  if [[ ${__public_environment} != "" ]]; then
+    echC "  - Target: ${COLOR_YELLOW}${__public_target}${COLOR_CIANO}, Environment: ${COLOR_YELLOW}${__public_environment}"
+    echC "  - Prefix: ${COLOR_YELLOW}${__public_environment}-${__public_target}"
   fi
 }
 
