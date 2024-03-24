@@ -1,11 +1,11 @@
 #!/bin/bash
 
 if [[ ${BASH_BIN} == "" ]]; then
-  BASH_BIN=${PWD}
+  export BASH_BIN=${PWD}
 fi
 
 if [[ ${BASH_BIN_BIN} == "" ]]; then
-  BASH_BIN_BIN=${BASH_BIN}/bin
+  export BASH_BIN_BIN=${BASH_BIN}/bin
   export PATH=${PATH}:${BASH_BIN_BIN}
 fi
 
