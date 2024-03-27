@@ -501,7 +501,7 @@ function stackEnvsLoad()
   envsSetIfIsEmpty STACK_VAULT_ENABLED false
 
   envsSetIfIsEmpty STACK_DEFAULT_DEPLOY_CPU "1"
-  envsSetIfIsEmpty STACK_DEFAULT_DEPLOY_MEMORY "1GB"
+  envsSetIfIsEmpty STACK_DEFAULT_DEPLOY_MEMORY "2GB"
   envsSetIfIsEmpty STACK_DEFAULT_DEPLOY_REPLICAS 1
 
   envsSetIfIsEmpty STACK_HAPROXY_CERT_DIR "${STACK_INFRA_CONF_DIR}/haproxy/cert"
