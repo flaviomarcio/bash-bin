@@ -404,6 +404,7 @@ function stackInitTargetEnvFile()
   local __local_add+=(STACK_SERVICE_IMAGE_MYSQL)
   local __local_add+=(STACK_SERVICE_IMAGE_REDIS)
   local __local_add+=(STACK_SERVICE_IMAGE_MSSQL)
+  local __local_add+=(STACK_SERVICE_IMAGE_GLUTERFS)
 
   # save envs
   envsFileAddIfNotExists "${PUBLIC_STACK_TARGET_ENVS_FILE}" "${__local_add[@]}"
@@ -584,6 +585,7 @@ function stackEnvsLoad()
   envsSetIfIsEmpty STACK_SERVICE_IMAGE_MSSQL "mcr.microsoft.com/mssql/server"
   envsSetIfIsEmpty STACK_SERVICE_IMAGE_VAULT "hashicorp/vault:1.16"
   envsSetIfIsEmpty STACK_SERVICE_IMAGE_MINIO "bitnami/minio:2024.3.26"
+  envsSetIfIsEmpty STACK_SERVICE_IMAGE_GLUTERFS "gluster/gluster-centos"
 
   
 
