@@ -223,7 +223,7 @@ function dockerSwarmInit()
     echG "  [ENTER] para configurar"
     echG ""
     read
-    echB "  Action: [Swam-Init]"
+    echB "  Action: [Swarm-Init]"
     echY "    - ${__cmd}"
     echB "  Executing ..."
     echo $(${__cmd})

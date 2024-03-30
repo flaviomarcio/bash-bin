@@ -21,8 +21,14 @@ function __private_print_os_information()
   echC "  - $(uname -a)"
   echC "  - $(docker --version), IPv4: ${PUBLIC_HOST_IPv4}"
   if [[ ${__public_environment} != "" ]]; then
-    echC "  - Target: ${COLOR_YELLOW}${__public_target}${COLOR_CIANO}, Environment: ${COLOR_YELLOW}${__public_environment}"
-    echC "  - Prefix: ${COLOR_YELLOW}${__public_environment}-${__public_target}"
+    echC "  - Target: ${COLOR_YELLOW}${__public_target}${COLOR_CIANO}, Environment: ${COLOR_YELLOW}${__public_environment}, ${COLOR_CIANO}, Prefix: ${COLOR_YELLOW}${__public_environment}-${__public_target}"
+
+    local __docker_daemon=/etc/docker/daemon.json
+    local __docker_tls=$(cat ${__docker_daemon} | jq '.tls')
+    local __docker_cert=$(cat ${__docker_daemon} | jq '.tlscert')
+    if [[ ${__docker_tls} == true ]]; then
+      echC "  - Docker: tls: ${COLOR_YELLOW}${__docker_tls} ${COLOR_CIANO}, cert: ${COLOR_YELLOW}$(dirname ${__docker_cert})"
+    fi
   fi
 }
 
