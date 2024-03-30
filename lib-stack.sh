@@ -573,7 +573,7 @@ function stackEnvsLoad()
   envsSetIfIsEmpty STACK_SERVICE_HEALTH_CHECK_RETRIES "5"
   #services default images
   envsSetIfIsEmpty STACK_SERVICE_IMAGE_DNSMASQ "dockurr/dnsmasq:latest"
-  envsSetIfIsEmpty STACK_SERVICE_IMAGE_TRAEFIK "traefik:v2.9"
+  envsSetIfIsEmpty STACK_SERVICE_IMAGE_TRAEFIK "traefik:v2.11.0"
   envsSetIfIsEmpty STACK_SERVICE_IMAGE_REGISTRY "registry:latest"
   envsSetIfIsEmpty STACK_SERVICE_IMAGE_POSTGRES "postgres:16.1-bullseye"
   envsSetIfIsEmpty STACK_SERVICE_IMAGE_POSTGRES_9 "postgres:9.6"
