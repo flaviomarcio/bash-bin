@@ -63,22 +63,24 @@ function __private_stackEnvsLoadByStack()
   export STACK_SERVICE_STORAGE_IMPORT_DIR=${__storage}/import
   export STACK_SERVICE_STORAGE_PROVIDER_DIR=${__storage}/provider
   export STACK_SERVICE_STORAGE_CERT_DIR=${__storage}/certificates
+  export STACK_SERVICE_STORAGE_THEME_DIR=${__storage}/theme
   #image
   export STACK_SERVICE_IMAGE="${STACK_SERVICE_NAME}"
   export STACK_SERVICE_IMAGE_URL="${STACK_REGISTRY_DNS_PUBLIC}/${STACK_SERVICE_IMAGE}"
 
 
-  unset __dirs
-  local __dirs="${__dirs} ${STACK_SERVICE_STORAGE_DATA_DIR}"
-  local __dirs="${__dirs} ${STACK_SERVICE_STORAGE_DB_DIR}"
-  local __dirs="${__dirs} ${STACK_SERVICE_STORAGE_LOG_DIR}"
-  local __dirs="${__dirs} ${STACK_SERVICE_STORAGE_CONFIG_DIR}"
-  local __dirs="${__dirs} ${STACK_SERVICE_STORAGE_BACKUP_DIR}"
-  local __dirs="${__dirs} ${STACK_SERVICE_STORAGE_EXTENSION_DIR}"
-  local __dirs="${__dirs} ${STACK_SERVICE_STORAGE_PLUGIN_DIR}"
-  local __dirs="${__dirs} ${STACK_SERVICE_STORAGE_IMPORT_DIR}"
-  local __dirs="${__dirs} ${STACK_SERVICE_STORAGE_PROVIDER_DIR}"
-  local __dirs="${__dirs} ${STACK_SERVICE_STORAGE_CERT_DIR}"
+  local __dirs="
+${STACK_SERVICE_STORAGE_DATA_DIR} \
+${STACK_SERVICE_STORAGE_DB_DIR} \
+${STACK_SERVICE_STORAGE_LOG_DIR} \
+${STACK_SERVICE_STORAGE_CONFIG_DIR} \
+${STACK_SERVICE_STORAGE_BACKUP_DIR} \
+${STACK_SERVICE_STORAGE_EXTENSION_DIR} \
+${STACK_SERVICE_STORAGE_PLUGIN_DIR} \
+${STACK_SERVICE_STORAGE_IMPORT_DIR} \
+${STACK_SERVICE_STORAGE_PROVIDER_DIR} \
+${STACK_SERVICE_STORAGE_CERT_DIR} \
+${STACK_SERVICE_STORAGE_THEME_DIR}"
 
   stackMkDir 777 "${__dirs}"
 

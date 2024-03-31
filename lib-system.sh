@@ -32,33 +32,33 @@ function systemIPvPrepare()
 
 function systemDNSEssentialList()
 {
-  unset __func_return
-  local __func_return="${__func_return} activemq"
-  local __func_return="${__func_return} admin"
-  local __func_return="${__func_return} cadvisor"
-  local __func_return="${__func_return} cadvisorZFS"
-  local __func_return="${__func_return} grafana"
-  local __func_return="${__func_return} haproxy"
-  local __func_return="${__func_return} jenkins"
-  local __func_return="${__func_return} keycloak"
-  local __func_return="${__func_return} loki"
-  local __func_return="${__func_return} minio"
-  local __func_return="${__func_return} mysql"
-  local __func_return="${__func_return} nexus"
-  local __func_return="${__func_return} opentelemetry"
-  local __func_return="${__func_return} portainer"
-  local __func_return="${__func_return} postgres-admin"
-  local __func_return="${__func_return} postgres"
-  local __func_return="${__func_return} prometheus"
-  local __func_return="${__func_return} promtail"
-  local __func_return="${__func_return} rabbitmq"
-  local __func_return="${__func_return} redis"
-  local __func_return="${__func_return} registry"
-  local __func_return="${__func_return} tempo"
-  local __func_return="${__func_return} traefik"
-  local __func_return="${__func_return} vault"
-  local __func_return="${__func_return} wikijs"
-  local __func_return="${__func_return} wireguard"
+  export __func_return="
+activemq \
+admin \
+cadvisor \
+cadvisorZFS \
+grafana \
+haproxy \
+jenkins \
+keycloak \
+loki \
+minio \
+mysql \
+nexus \
+opentelemetry \
+portainer \
+postgres-admin \
+postgres \
+prometheus \
+promtail \
+rabbitmq \
+redis \
+registry \
+tempo \
+traefik \
+vault \
+wikijs \
+wireguard"
   echo ${__func_return}
   return 1
 
