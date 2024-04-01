@@ -285,6 +285,33 @@ function dockerSwarmConfigure()
   return 1
 }
 
+function dockerPluginInstall()
+{
+  local __plugin_dir=${1}
+  if [[ ${__plugin_dir} == "" ]]; then
+    local __plugin_dir=${STACK_PLUGINS_DIR}
+  fi
+  if ! [[ -d ${__plugin_dir} ]]; then
+    return 0
+  fi
+
+  local __plugins=($(cat ${__plugin_dir}/docker-plugins))
+
+  for __plugin in "${__plugins[@]}"
+  do
+    if [[ ${__plugin} == \#* ]]; then
+      continue;
+    fi
+
+    local __check=$(docker plugin ls | grep ${__plugin})
+    if [[ ${__check} != "" ]]; then
+      continue;      
+    fi
+
+    echo -e "y" | docker plugin install ${__check}
+  done
+}
+
 function dockerNetworkCreate()
 {
   unset __func_return
