@@ -259,9 +259,9 @@ function stackMkDir()
 
 function stackMkVolumes()
 {
-  if [[ ${STACK_SERVICE_VOLUME_TYPE} != "local" ]]; then
-    return 1;
-  fi
+  # if [[ ${STACK_SERVICE_VOLUME_TYPE} != "local" ]]; then
+  #   return 1;
+  # fi
 #===================*===================*===================*===================*===================*===================*
 #REF 
 #   https://docs.docker.com/storage/volumes/
@@ -310,15 +310,15 @@ function stackMkVolumes()
   local __env=
   for __env in ${__envs[*]};
   do
-    local __dir=${!${__env}}
+    local __dir=${!__env}
     stackMkDir 777 "${__dir}"  
-    local __vol=$(echo ${__env} | sed 's/_DIR/_VOL/g')
+    #local __vol=$(echo ${__env} | sed 's/_DIR/_VOL/g')
   done
 
-  if ! [ "$?" -eq 1 ]; then
-    export __func_return="No create \${STACK_ROOT_DIR}: ${STACK_ROOT_DIR}"
-    return 0;
-  fi
+  # if ! [ "$?" -eq 1 ]; then
+  #   export __func_return="No create \${STACK_ROOT_DIR}: ${STACK_ROOT_DIR}"
+  #   return 0;
+  # fi
 
 
 # docker service create \
