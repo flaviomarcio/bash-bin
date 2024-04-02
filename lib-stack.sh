@@ -310,8 +310,7 @@ function stackMkVolumes()
   local __env=
   for __env in ${__envs[*]};
   do
-    local __dir=${!__env}
-    stackMkDir 777 "${__dir}"  
+    stackMkDir 777 "${!__env}"  
     #local __vol=$(echo ${__env} | sed 's/_DIR/_VOL/g')
   done
 
