@@ -328,6 +328,38 @@ function utilInitialize()
 
 }
 
+function envsGet()
+{
+  unset __func_return
+  local __args=$@
+  if [[ ${__args} == "" ]]; then
+    return 1
+  fi
+  local __arg=
+  local __args=(${__args})
+  for __arg in "${__args[@]}"
+  do
+    export __func_return="${__func_return} $(printenv | awk -F '=' '{print $1}' | grep ${__arg})"
+  done
+  echo ${__func_return}
+  return 1    
+}
+
+function envsUnSet()
+{
+  unset __func_return
+  local __envs=$(envsGet "$@")
+  if [[ ${__envs} == "" ]]; then
+    return 1
+  fi
+  local __env=
+  for __env in "${__envs[@]}"
+  do
+    unset ${__env}
+  done
+  return 1    
+}
+
 function envsOS()
 {
   unset __func_return
@@ -379,7 +411,7 @@ function envsFileAddIfNotExists()
     if [[ ${__i} == 0 ]]; then
       local __env_file=${__arg}
     else
-      __env_file_names="${__env_file_names} ${__arg}"
+      local __env_file_names="${__env_file_names} ${__arg}"
     fi
     local __i=1
   done
@@ -403,7 +435,6 @@ function envsFileAddIfNotExists()
 
   local __env_file_temp="/tmp/envsFileAddIfNotExists_${RANDOM}.env"
   cat ${__env_file}>${__env_file_temp}
-  sed -i "/${__env_file_name}=/d" ${__env_file_temp}
   #remover apenas linhas com apenas "export"
   sed -i '/^\s*export\s*$/d' ${__env_file_temp}
 
@@ -424,13 +455,16 @@ function envsFileAddIfNotExists()
     fi
 
     local __check_value=$(echo ${__env_final} | sed 's/\*/\\\*/g')
-    local __check=$(cat ${__env_file} | grep "${__check_value}")
+
+    local __check=$(sed -n "/export ${__env_file_name}=/p" ${__env_file_temp})
+    #echR $__check
     if [[ ${__check} != "" ]]; then
-      return 1;
+      continue
     fi
 
     echo "export ${__env_final}">>${__env_file_temp}
   done
+
 
   sort -u ${__env_file_temp} -o ${__env_file}
   rm -rf ${__env_file_temp}

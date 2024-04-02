@@ -13,25 +13,15 @@ fi
 . ${BASH_BIN}/lib-docker.sh
 . ${BASH_BIN}/lib-vault.sh
 
+
 function __private_stackEnvsLoadByStack()
 {
   unset __func_return
   export STACK_NAME=${1}
   unset STACK_SERVICE_IMAGE
   unset STACK_SERVICE_NAME
-  unset STACK_SERVICE_HOSTNAME
-  unset STACK_SERVICE_HOSTNAME_PUBLIC
-  unset STACK_SERVICE_STORAGE_DATA_DIR
-  unset STACK_SERVICE_STORAGE_DB_DIR
-  unset STACK_SERVICE_STORAGE_LOG_DIR
-  unset STACK_SERVICE_STORAGE_CONFIG_DIR
-  unset STACK_SERVICE_STORAGE_BACKUP_DIR
-  unset STACK_SERVICE_STORAGE_EXTENSION_DIR
-  unset STACK_SERVICE_STORAGE_PLUGIN_DIR
-  unset STACK_SERVICE_STORAGE_IMPORT_DIR
-  unset STACK_SERVICE_STORAGE_PROVIDER_DIR
-  unset STACK_SERVICE_STORAGE_CERT_DIR
-  
+  envsUnSet STACK_SERVICE_HOSTNAME STACK_SERVICE_STORAGE_
+
   if [[ ${STACK_NAME} == "" ]]; then
     export __func_return="failt on calling __private_stackEnvsLoadByStack, invalid env \${STACK_NAME}"
     return 0
@@ -52,6 +42,7 @@ function __private_stackEnvsLoadByStack()
   export STACK_SERVICE_HOSTNAME_PUBLIC=${STACK_SERVICE_NAME}.${STACK_DOMAIN}
 
   local __storage=${STACK_TARGET_STORAGE_DIR}/${STACK_SERVICE_NAME}
+
   #stograge
   export STACK_SERVICE_STORAGE_DATA_DIR=${__storage}/data
   export STACK_SERVICE_STORAGE_DB_DIR=${__storage}/db
@@ -64,25 +55,29 @@ function __private_stackEnvsLoadByStack()
   export STACK_SERVICE_STORAGE_PROVIDER_DIR=${__storage}/provider
   export STACK_SERVICE_STORAGE_CERT_DIR=${__storage}/certificates
   export STACK_SERVICE_STORAGE_THEME_DIR=${__storage}/theme
+
+  local __dirs="
+STACK_SERVICE_STORAGE_DATA_DIR \
+STACK_SERVICE_STORAGE_DB_DIR \
+STACK_SERVICE_STORAGE_LOG_DIR \
+STACK_SERVICE_STORAGE_CONFIG_DIR \
+STACK_SERVICE_STORAGE_BACKUP_DIR \
+STACK_SERVICE_STORAGE_EXTENSION_DIR \
+STACK_SERVICE_STORAGE_PLUGIN_DIR \
+STACK_SERVICE_STORAGE_IMPORT_DIR \
+STACK_SERVICE_STORAGE_PROVIDER_DIR \
+STACK_SERVICE_STORAGE_CERT_DIR \
+STACK_SERVICE_STORAGE_THEME_DIR"
+  stackMkVolumes "${__dirs}"
+
+  if ! [ "$?" -eq 1 ]; then
+    export __func_return="fail on calling stackMakeStructure, ${__func_return}"
+    return 0;
+  fi
+
   #image
   export STACK_SERVICE_IMAGE="${STACK_SERVICE_NAME}"
   export STACK_SERVICE_IMAGE_URL="${STACK_REGISTRY_DNS_PUBLIC}/${STACK_SERVICE_IMAGE}"
-
-
-  local __dirs="
-${STACK_SERVICE_STORAGE_DATA_DIR} \
-${STACK_SERVICE_STORAGE_DB_DIR} \
-${STACK_SERVICE_STORAGE_LOG_DIR} \
-${STACK_SERVICE_STORAGE_CONFIG_DIR} \
-${STACK_SERVICE_STORAGE_BACKUP_DIR} \
-${STACK_SERVICE_STORAGE_EXTENSION_DIR} \
-${STACK_SERVICE_STORAGE_PLUGIN_DIR} \
-${STACK_SERVICE_STORAGE_IMPORT_DIR} \
-${STACK_SERVICE_STORAGE_PROVIDER_DIR} \
-${STACK_SERVICE_STORAGE_CERT_DIR} \
-${STACK_SERVICE_STORAGE_THEME_DIR}"
-
-  stackMkDir 777 "${__dirs}"
 
   #load envs DNS
   stackMakeStructure
@@ -171,7 +166,6 @@ function __private_stackEnvsDefaultByStack()
 
   envsSetIfIsEmpty APPLICATION_DEPLOY_IMAGE "${STACK_SERVICE_IMAGE_URL}"
   envsSetIfIsEmpty APPLICATION_DEPLOY_HOSTNAME ${STACK_SERVICE_HOSTNAME}
-  envsSetIfIsEmpty APPLICATION_DEPLOY_MODE ${STACK_SERVICE_DEFAULT_NODE_MODE}
   envsSetIfIsEmpty APPLICATION_DEPLOY_NODE "${STACK_SERVICE_DEFAULT_NODE_SERVICES}"
   envsSetIfIsEmpty APPLICATION_DEPLOY_NODE_TOOL "${STACK_SERVICE_DEFAULT_NODE_SERVICES}"
   envsSetIfIsEmpty APPLICATION_DEPLOY_NODE_SERVICES ${STACK_SERVICE_DEFAULT_NODE_GLOBAL}
@@ -213,6 +207,7 @@ function __configure()
   fi
 
   local __configure_dirs=("/data/lib" "/data/lib.dir" "/mnt/storage/lib.dir")
+  local __configure_dir=
   for __configure_dir in "${__configure_dirs[@]}"
   do
     if ! [[ -d ${__configure_dir} ]]; then
@@ -258,6 +253,95 @@ function stackMkDir()
       return 0
     fi    
   done 
+
+  return 1
+}
+
+function stackMkVolumes()
+{
+  if [[ ${STACK_SERVICE_VOLUME_TYPE} != "local" ]]; then
+    return 1;
+  fi
+#===================*===================*===================*===================*===================*===================*
+#REF 
+#   https://docs.docker.com/storage/volumes/
+#   https://docs.docker.com/compose/compose-file/07-volumes/
+#===================*===================*===================*===================*===================*===================*
+
+#===================*===================*===================*===================*===================*===================*
+# Create a volume using a volume driver
+#===================*===================*===================*===================*===================*===================*
+#  docker plugin install --grant-all-permissions vieux/sshfs
+# This example specifies an SSH password, but if the two hosts have shared keys configured, you can exclude the password. Each volume driver may have zero or more configurable options, you specify each of them using an -o flag.
+
+#  docker volume create --driver vieux/sshfs \
+#   -o sshcmd=test@node2:/home/test \
+#   -o password=testpassword \
+#   sshvolume
+#
+#===================*===================*===================*===================*===================*===================*
+# Create CIFS/Samba volumes
+#===================*===================*===================*===================*===================*===================*
+# You can mount a Samba share directly in Docker without configuring a mount point on your host.
+#  docker volume create \
+# 	--driver local \
+# 	--opt type=cifs \
+# 	--opt device=//uxxxxx.your-server.de/backup \
+# 	--opt o=addr=uxxxxx.your-server.de,username=uxxxxxxx,password=*****,file_mode=0777,dir_mode=0777 \
+# 	--name cif-volume
+
+#===================*===================*===================*===================*===================*===================*
+#Block storage devices
+#===================*===================*===================*===================*===================*===================*
+# mount -t ext4 /dev/loop5 /external-drive
+# docker run --mount='type=volume,dst=/external-drive,volume-driver=local,volume-opt=device=/dev/loop5,volume-opt=type=ext4'
+# OR
+#
+# fallocate -l 1G disk.raw
+# mkfs.ext4 disk.raw
+# losetup -f --show disk.raw
+# >/dev/loop5
+# docker run -it --rm --mount='type=volume,dst=/external-drive,volume-driver=local,volume-opt=device=/dev/loop5,volume-opt=type=ext4' ubuntu bash
+# losetup -d /dev/loop5
+
+
+
+  local __envs="$@"
+  local __env=
+  for __env in ${__envs[*]};
+  do
+    local __dir=${!${__env}}
+    stackMkDir 777 "${__dir}"  
+    local __vol=$(echo ${__env} | sed 's/_DIR/_VOL/g')
+  done
+
+  if ! [ "$?" -eq 1 ]; then
+    export __func_return="No create \${STACK_ROOT_DIR}: ${STACK_ROOT_DIR}"
+    return 0;
+  fi
+
+
+# docker service create \
+#  --mount 'type=volume,src=<VOLUME-NAME>,dst=<CONTAINER-PATH>,volume-driver=local,volume-opt=type=nfs,volume-opt=device=<nfs-server>:<nfs-path>,"volume-opt=o=addr=<nfs-address>,vers=4,soft,timeo=180,bg,tcp,rw"'
+#  --name myservice \
+#  IMAGE
+
+
+  # local __dirs=(${__dirs})
+  # local __dir=
+  # for __dir in ${__dirs[*]}; 
+  # do
+  #   if [[ -d ${__dir} ]]; then
+  #     continue
+  #   fi
+  #   mkdir -p ${__dir}
+  #   chmod ${__permission} ${__dir}
+  #   if ! [[ -d ${__dir} ]]; then
+  #     export __func_return="No create dir: env \${__dir}:${__dir}"
+  #     return 0
+  #   fi    
+  # done 
+
 
   return 1
 }
@@ -317,99 +401,25 @@ function stackInitTargetEnvFile()
     export __func_return="env \${PUBLIC_STACK_TARGET_ENVS_FILE} is empty on calling __private_initFilesStack"
     return 0
   fi
+  if [[ ${__private_stackInitTargetEnvFile_inited} == 1 ]]; then
+    return 1
+  fi
+
+  export __private_stackInitTargetEnvFile_inited=1
 
   #primary default envs
-  local __local_add=()
-  local __local_add+=(STACK_ADMIN_USERNAME)
-  local __local_add+=(STACK_ADMIN_PASSWORD)
-  local __local_add+=(STACK_ADMIN_EMAIL)
-  local __local_add+=(STACK_TZ)
-  local __local_add+=(STACK_DOMAIN)
-  local __local_add+=(STACK_DNS_SERVER_ENABLE)
-  local __local_add+=(STACK_PROXY_PORT_HTTP)
-  local __local_add+=(STACK_PROXY_PORT_HTTPS)
-  local __local_add+=(STACK_PREFIX_HOST_ENABLED)
-  local __local_add+=(STACK_PROXY_LOG_LEVEL)
-  local __local_add+=(STACK_VAULT_TOKEN)
-  local __local_add+=(STACK_VAULT_TOKEN_DEPLOY)
 
-  local __local_add+=(STACK_DEFAULT_USERNAME)
-  local __local_add+=(STACK_DEFAULT_PASSWORD)
-  local __local_add+=(STACK_DEFAULT_DATABASE)
-  local __local_add+=(STACK_DEFAULT_CONTEXT_PATH)
-  local __local_add+=(STACK_DEFAULT_PORT)
-  local __local_add+=(STACK_DEFAULT_LOG_LEVEL)
-
-  #database envs
-  local __local_add+=(STACK_DEFAULT_DB_HOST_PG)
-  local __local_add+=(STACK_DEFAULT_DB_HOST_PG_9)
-  local __local_add+=(STACK_DEFAULT_DB_PORT)
-  local __local_add+=(STACK_DEFAULT_DB_NAME)
-  local __local_add+=(STACK_DEFAULT_DB_USERNAME)
-  local __local_add+=(STACK_DEFAULT_DB_PASSWORD)
-  local __local_add+=(STACK_DEFAULT_DB_SCHEMA)
-  local __local_add+=(STACK_DEFAULT_DB_URL)
-
-  #
-  local __local_add+=(STACK_SERVICE_DEFAULT_LOG_LEVEL)
-  local __local_add+=(STACK_SERVICE_DEFAULT_NODE_GLOBAL)
-  local __local_add+=(STACK_SERVICE_DEFAULT_NODE_DB)
-  local __local_add+=(STACK_SERVICE_DEFAULT_NODE_MODE)
-  local __local_add+=(STACK_SERVICE_DEFAULT_NODE_SERVICES)
-  local __local_add+=(STACK_SERVICE_DEFAULT_NODE_FW)
-  local __local_add+=(STACK_SERVICE_DEFAULT_NODE_TOOL)
-  local __local_add+=(STACK_SERVICE_DEFAULT_TOKEN)
-  local __local_add+=(STACK_SERVICE_DEFAULT_USER)
-  local __local_add+=(STACK_SERVICE_DEFAULT_PASS)
-  local __local_add+=(STACK_SERVICE_DEFAULT_EMAIL)
-  local __local_add+=(STACK_SERVICE_DEFAULT_DATABASE)
-  local __local_add+=(STACK_SERVICE_DEFAULT_CONTEXT_PATH)
-  local __local_add+=(STACK_SERVICE_DEFAULT_PORT)
-  local __local_add+=(STACK_SERVICE_DEFAULT_SHELF_LIFE)
-  local __local_add+=(STACK_SERVICE_HEALTH_CHECK_INTERVAL)
-  local __local_add+=(STACK_SERVICE_HEALTH_CHECK_TIMEOUT)
-  local __local_add+=(STACK_SERVICE_HEALTH_CHECK_RETRIES)
-
-  #postgres envs
-  local __local_add+=(POSTGRES_URL)
-  local __local_add+=(POSTGRES_HOST)
-  local __local_add+=(POSTGRES_USER)
-  local __local_add+=(POSTGRES_PASSWORD)
-  local __local_add+=(POSTGRES_DATABASE)
-  local __local_add+=(POSTGRES_PORT)
-
-  local __local_add+=(STACK_VAULT_PORT)
-  local __local_add+=(STACK_VAULT_URI)
-  local __local_add+=(STACK_VAULT_METHOD)
-  local __local_add+=(STACK_VAULT_TOKEN)
-  local __local_add+=(STACK_VAULT_TOKEN_DEPLOY)
-  local __local_add+=(STACK_VAULT_APP_ROLE_ID)
-  local __local_add+=(STACK_VAULT_APP_ROLE_SECRET)
-  local __local_add+=(STACK_VAULT_IMPORT)
-
-  #gocd
-  local __local_add+=(STACK_GOCD_REGISTER_KEY)
-  local __local_add+=(STACK_GOCD_WEB_HOOK_SECRET)
-  local __local_add+=(STACK_GOCD_SERVER_ID)
-  local __local_add+=(STACK_GOCD_GIT_REPOSITORY)
-  local __local_add+=(STACK_GOCD_GIT_BRANCH)
-  local __local_add+=(STACK_GOCD_AGENT_REPLICAS)
-
-  #services default images 
-  local __local_add+=(STACK_SERVICE_IMAGE_DNSMASQ)
-  local __local_add+=(STACK_SERVICE_IMAGE_TRAEFIK)
-  local __local_add+=(STACK_SERVICE_IMAGE_REGISTRY)
-  local __local_add+=(STACK_SERVICE_IMAGE_POSTGRES)
-  local __local_add+=(STACK_SERVICE_IMAGE_POSTGRES_9)
-  local __local_add+=(STACK_SERVICE_IMAGE_INFLUXDB)
-  local __local_add+=(STACK_SERVICE_IMAGE_MARIADB)
-  local __local_add+=(STACK_SERVICE_IMAGE_MYSQL)
-  local __local_add+=(STACK_SERVICE_IMAGE_REDIS)
-  local __local_add+=(STACK_SERVICE_IMAGE_MSSQL)
-  local __local_add+=(STACK_SERVICE_IMAGE_GLUTERFS)
+  #stack defaults
+  local __local_add="
+  STACK_TZ
+  STACK_DOMAIN
+  STACK_DNS_SERVER_ENABLE
+  STACK_PREFIX_HOST_ENABLED
+  $(envsGet STACK_ADMIN_ STACK_PROXY_ STACK_DEFAULT_ STACK_SERVICE_DEFAULT_ STACK_SERVICE_HEALTH_ STACK_GOCD_ STACK_SERVICE_IMAGE STACK_VOLUME_ STACK_LDAP_ STACK_TRAEFIK_ POSTGRES_)
+  "
 
   # save envs
-  envsFileAddIfNotExists "${PUBLIC_STACK_TARGET_ENVS_FILE}" "${__local_add[@]}"
+  envsFileAddIfNotExists "${PUBLIC_STACK_TARGET_ENVS_FILE}" "${__local_add}"
 
   echo $(chmod +x ${PUBLIC_STACK_TARGET_ENVS_FILE})&>/dev/null
   return 1
@@ -560,7 +570,6 @@ function stackEnvsLoad()
   envsSetIfIsEmpty STACK_SERVICE_DEFAULT_LOG_LEVEL ${STACK_DEFAULT_LOG_LEVEL}
 
   #nodes
-  envsSetIfIsEmpty STACK_SERVICE_DEFAULT_NODE_MODE global
   envsSetIfIsEmpty STACK_SERVICE_DEFAULT_NODE_GLOBAL node.role==manager
   envsSetIfIsEmpty STACK_SERVICE_DEFAULT_NODE_DB ${STACK_SERVICE_DEFAULT_NODE_GLOBAL}
   envsSetIfIsEmpty STACK_SERVICE_DEFAULT_NODE_SERVICES ${STACK_SERVICE_DEFAULT_NODE_GLOBAL}
@@ -587,9 +596,6 @@ function stackEnvsLoad()
   envsSetIfIsEmpty STACK_SERVICE_IMAGE_MSSQL "mcr.microsoft.com/mssql/server"
   envsSetIfIsEmpty STACK_SERVICE_IMAGE_VAULT "hashicorp/vault:1.16"
   envsSetIfIsEmpty STACK_SERVICE_IMAGE_MINIO "bitnami/minio:2024.3.26"
-  envsSetIfIsEmpty STACK_SERVICE_IMAGE_GLUTERFS "gluster/gluster-centos"
-
-  
 
   #temp
   envsSetIfIsEmpty CUR_DATE "$(date +'%Y-%m-%d')"
@@ -609,99 +615,20 @@ function stackEnvsLoad()
 function stackEnvsByStackExportToFile()
 {
   unset __func_return
-  local __local_add=()
-  local __local_add+=(APPLICATION_ACTION)
-  local __local_add+=(APPLICATION_DEPLOY_BACKUP_DIR)
-  local __local_add+=(APPLICATION_DEPLOY_CPU)
-  local __local_add+=(APPLICATION_DEPLOY_DATA_DIR)
-  local __local_add+=(APPLICATION_DEPLOY_DNS)
-  local __local_add+=(APPLICATION_DEPLOY_DNS_3RDPARTY)
-  local __local_add+=(APPLICATION_DEPLOY_DNS_3RDPARTY_PATH)
-  local __local_add+=(APPLICATION_DEPLOY_DNS_PATH)
-  local __local_add+=(APPLICATION_DEPLOY_DNS_PUBLIC)
-  local __local_add+=(APPLICATION_DEPLOY_DNS_PUBLIC_PATH)
-  local __local_add+=(APPLICATION_DEPLOY_HEALTH_CHECK_INTERVAL)
-  local __local_add+=(APPLICATION_DEPLOY_HEALTH_CHECK_RETRIES)
-  local __local_add+=(APPLICATION_DEPLOY_HEALTH_CHECK_TIMEOUT)
-  local __local_add+=(APPLICATION_DEPLOY_HOSTNAME)
-  local __local_add+=(APPLICATION_DEPLOY_IMAGE)
-  local __local_add+=(APPLICATION_DEPLOY_MEMORY)
-  local __local_add+=(APPLICATION_DEPLOY_MODE)
-  local __local_add+=(APPLICATION_DEPLOY_NETWORK_NAME)
-  local __local_add+=(APPLICATION_DEPLOY_NODE)
-  local __local_add+=(APPLICATION_DEPLOY_NODE_DB)
-  local __local_add+=(APPLICATION_DEPLOY_NODE_FW)
-  local __local_add+=(APPLICATION_DEPLOY_NODE_SERVICES)
-  local __local_add+=(APPLICATION_DEPLOY_NODE_TOOL)
-  local __local_add+=(APPLICATION_DEPLOY_PORT)
-  local __local_add+=(APPLICATION_DEPLOY_REPLICAS)
-  local __local_add+=(APPLICATION_DEPLOY_SHELF_LIFE)
-  local __local_add+=(APPLICATION_DEPLOY_FILE)
-  local __local_add+=(APPLICATION_ENV_FILE)
-  local __local_add+=(APPLICATION_ENV_TAGS)
-  local __local_add+=(APPLICATION_GIT)
-  local __local_add+=(APPLICATION_GIT_BRANCH)
-  local __local_add+=(APPLICATION_DEPLOY_NAME)
-  local __local_add+=(APPLICATION_STACK)
-  local __local_add+=(APPLICATION_DEPLOY_VAULT_IMPORT)
-  local __local_add+=(APPLICATION_DEPLOY_VAULT_METHOD)
-  local __local_add+=(APPLICATION_DEPLOY_VAULT_TOKEN)
-  local __local_add+=(APPLICATION_DEPLOY_VAULT_URI)
-  local __local_add+=(APPLICATION_DEPLOY_VAULT_APP_ROLE_ID)
-  local __local_add+=(APPLICATION_DEPLOY_VAULT_APP_ROLE_SECRET)
-  local __local_add+=(APPLICATION_DEPLOY_VAULT_ENABLED)
-
-  envsFileAddIfNotExists "${1}" "${__local_add[@]}"  
-  
+  unset __local_add
+  local __local_add="
+                      $(printenv | awk -F '=' '{print $1}' | grep STACK_SERVICE_)
+                      $(printenv | awk -F '=' '{print $1}' | grep APPLICATION_)
+                    "
+  envsFileAddIfNotExists "${1}" "${__local_add}"   
+  cat ${1}
   return 1
 }
 
 function stackEnvsClearByStack()
 {
   unset __func_return
-  unset APPLICATION_ACTION
-  unset APPLICATION_ACTION_SCRIPT
-  unset APPLICATION_DEPLOY_BACKUP_DIR
-  unset APPLICATION_DEPLOY_CPU
-  unset APPLICATION_DEPLOY_DATA_DIR
-  unset APPLICATION_DEPLOY_DNS
-  unset APPLICATION_DEPLOY_DNS_3RDPARTY
-  unset APPLICATION_DEPLOY_DNS_3RDPARTY_PATH
-  unset APPLICATION_DEPLOY_DNS_PATH
-  unset APPLICATION_DEPLOY_DNS_PUBLIC
-  unset APPLICATION_DEPLOY_DNS_PUBLIC_PATH
-  unset APPLICATION_DEPLOY_FILE
-  unset APPLICATION_DEPLOY_HEALTH_CHECK_INTERVAL
-  unset APPLICATION_DEPLOY_HEALTH_CHECK_RETRIES
-  unset APPLICATION_DEPLOY_HEALTH_CHECK_TIMEOUT
-  unset APPLICATION_DEPLOY_HOSTNAME
-  unset APPLICATION_DEPLOY_IMAGE
-  unset APPLICATION_DEPLOY_MEMORY
-  unset APPLICATION_DEPLOY_MEMORY
-  unset APPLICATION_DEPLOY_MODE
-  unset APPLICATION_DEPLOY_NAME
-  unset APPLICATION_DEPLOY_NETWORK_NAME
-  unset APPLICATION_DEPLOY_NODE_DB
-  unset APPLICATION_DEPLOY_NODE_FW
-  unset APPLICATION_DEPLOY_NODE_SERVICES
-  unset APPLICATION_DEPLOY_NODE_TOOL
-  unset APPLICATION_DEPLOY_PORT
-  unset APPLICATION_DEPLOY_REPLICAS
-  unset APPLICATION_DEPLOY_SHELF_LIFE
-  unset APPLICATION_DEPLOY_VAULT_APP_ROLE_ID
-  unset APPLICATION_DEPLOY_VAULT_APP_ROLE_SECRET
-  unset APPLICATION_DEPLOY_VAULT_ENABLED
-  unset APPLICATION_DEPLOY_VAULT_IMPORT
-  unset APPLICATION_DEPLOY_VAULT_METHOD
-  unset APPLICATION_DEPLOY_VAULT_TOKEN
-  unset APPLICATION_DEPLOY_VAULT_URI
-  unset APPLICATION_ENV_FILE
-  unset APPLICATION_ENV_TAGS
-  unset APPLICATION_GIT
-  unset APPLICATION_GIT_BRANCH
-  unset APPLICATION_STACK
-  unset APPLICATION_STACK_NAME
-  
+  envsUnSet APPLICATION_
   return 1
 }
 
