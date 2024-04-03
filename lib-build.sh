@@ -26,7 +26,6 @@ function buildCompilerCheck()
       return 1;
     fi
 
-
     if [[ -f ${__dir}/pom.xml ]]; then
       export __func_return="maven"
       return 1;
@@ -37,7 +36,12 @@ function buildCompilerCheck()
       return 1;
     fi
 
-    __check=$(find ${__dir} -name '*.pro')
+    if [[ -f ${__dir}/package.json ]]; then
+      export __func_return="node"
+      return 1;
+    fi
+
+    local __check=$(find ${__dir} -name '*.pro')
     if [[ ${__check} != ""  ]]; then
       export __func_return="qmake"
       return 1;
@@ -54,14 +58,14 @@ function qtBuild()
 
   local __src_dir=${1}
   local __project_filter=${2}
-  local __qt_version=${QT_VERSION}
+  local __version=${QT_VERSION}
 
-  if [[ ${__qt_version} == "" ]]; then
-    local __qt_version="6.5.2"
+  if [[ ${__version} == "" ]]; then
+    local __version="6.5.2"
   fi
 
-  if [[ ${__qt_root_dir} == "" ]]; then
-    local __qt_root_dir=${HOME}/Qt
+  if [[ ${__root_dir} == "" ]]; then
+    local __root_dir=${HOME}/Qt
   fi
 
   #base envs
@@ -71,25 +75,25 @@ function qtBuild()
   local __build_dir=$(echo ${__build_dir} | sed 's/.pro//g')
   local __target_name=app
   local __target_file=${__build_dir}/${__target_name}
-  local __qt_library_path=${__qt_root_dir}/${__qt_version}/gcc_64
-  local __qt_bin_dir=${__qt_library_path}/bin
-  local __qt_lib_dir=${__qt_library_path}/lib
-  local __qt_plugin_dir=${__qt_library_path}/plugins
-  local __qmake=${__qt_bin_dir}/qmake
+  local __library_path=${__root_dir}/${__version}/gcc_64
+  local __bin_dir=${__library_path}/bin
+  local __lib_dir=${__library_path}/lib
+  local __plugin_dir=${__library_path}/plugins
+  local __qmake=${__bin_dir}/qmake
 
   echG "  Source building with Qt/QMake"
-  if ! [[ -d ${__qt_root_dir} ]]; then
-    echR "      - Invalid qt root dir: ${__qt_root_dir}"
-  elif [[ ${__qt_version} == "" ]]; then
-    echR "      - Invalid qt version: ${__qt_version}"
-  elif ! [[ -d ${__qt_library_path} ]]; then
-    echR "      - Invalid qt library path: ${__qt_library_path}"
-  elif ! [[ -d ${__qt_bin_dir} ]]; then
-    echR "      - Invalid qt bin dir: ${__qt_bin_dir}"
-  elif ! [[ -d ${__qt_lib_dir} ]]; then
-    echR "      - Invalid qt lib dir: ${__qt_lib_dir}"
-  elif ! [[ -d ${__qt_plugin_dir} ]]; then
-    echR "      - Invalid qt plugin dir: ${__qt_plugin_dir}"
+  if ! [[ -d ${__root_dir} ]]; then
+    echR "      - Invalid qt root dir: ${__root_dir}"
+  elif [[ ${__version} == "" ]]; then
+    echR "      - Invalid qt version: ${__version}"
+  elif ! [[ -d ${__library_path} ]]; then
+    echR "      - Invalid qt library path: ${__library_path}"
+  elif ! [[ -d ${__bin_dir} ]]; then
+    echR "      - Invalid qt bin dir: ${__bin_dir}"
+  elif ! [[ -d ${__lib_dir} ]]; then
+    echR "      - Invalid qt lib dir: ${__lib_dir}"
+  elif ! [[ -d ${__plugin_dir} ]]; then
+    echR "      - Invalid qt plugin dir: ${__plugin_dir}"
   elif ! [[ -f ${__qmake} ]]; then
     echR "      - Invalid qmake application: ${__qmake}"
   elif [[ ${__src_dir} == "" ]]; then
@@ -98,9 +102,9 @@ function qtBuild()
     echR "      - Invalid project file: ${__project_file}"
   else
     #build
-    local QT_PLUGIN_PATH=${__qt_plugin_dir}
-    local QT_QPA_PLATFORM_PLUGIN_PATH=${__qt_lib_dir}:${QT_PLUGIN_PATH}
-    local LD_LIBRARY_PATH=${__qt_library_path}
+    local QT_PLUGIN_PATH=${__plugin_dir}
+    local QT_QPA_PLATFORM_PLUGIN_PATH=${__lib_dir}:${QT_PLUGIN_PATH}
+    local LD_LIBRARY_PATH=${__library_path}
     rm -rf ${__build_dir}
     mkdir -p ${__build_dir};
 
@@ -150,12 +154,12 @@ function qtBuild()
 function mavenBuild()
 {
   unset __func_return
-  local __mvn_build_src_dir=${1}
-  local __mvn_jar_filter=${2}
+  local __build_src_dir=${1}
+  local __jar_filter=${2}
 
   echG "  Source building with Maven"
-  local __mvn_check=$(which mvn)
-  if [[ ${__mvn_check} == ""  ]]; then
+  local __check=$(which mvn)
+  if [[ ${__check} == ""  ]]; then
     echR "  ==============================  "
     echR "     ************************     "
     echR "  ***MAVEN não está instalado***  "
@@ -163,7 +167,7 @@ function mavenBuild()
     echR "  ==============================  "
     return 0
   fi
-  if ! [[ -d ${__mvn_build_src_dir} ]]; then
+  if ! [[ -d ${__build_src_dir} ]]; then
     echR "  ==============================  "
     echR "       ********************       "
     echR "  *****Source dir no exists*****  "
@@ -171,7 +175,7 @@ function mavenBuild()
     echR "  ==============================  "
     return 0;
   fi
-  if ! [[ -f "${__mvn_build_src_dir}/pom.xml" ]]; then
+  if ! [[ -f "${__build_src_dir}/pom.xml" ]]; then
     echR "  ==============================  "
     echR "           *************          "
     echR "  *********POM no exists*******"
@@ -180,46 +184,85 @@ function mavenBuild()
     return 0;
   fi
 
-  cd ${__mvn_build_src_dir}
-  local __mvn_build_base_dir=$(dirname ${__mvn_build_src_dir});
-  local __mvn_build_src_bin_dir=${__mvn_build_src_dir}/target
+  cd ${__build_src_dir}
+  local __build_base_dir=$(dirname ${__build_src_dir});
+  local __build_src_bin_dir=${__build_src_dir}/target
 
-  local __mvn_cmd="mvn install -DskipTests"
+  local __cmd="mvn install -DskipTests"
   echM "    Maven build"
-  echC "      - Source dir: ${__mvn_build_src_dir}"
-  echY "      - ${__mvn_cmd}"
-  local __mvn_output=$(${__mvn_cmd})
-  local __mvn_check=$(echo ${__mvn_output} | grep ERROR)
-  if [[ ${__mvn_check} != "" ]]; then
+  echC "      - Source dir: ${__build_src_dir}"
+  echY "      - ${__cmd}"
+  local __output=$(${__cmd})
+  local __check=$(echo ${__output} | grep ERROR)
+  if [[ ${__check} != "" ]]; then
     echR "    source build fail:"
     echR "    ==============================  "
     echR "    *******Maven build fail*******  "
     echR "    *******Maven build fail*******  "
     echR "    ==============================  "
-    printf "${__mvn_output}"
+    printf "${__output}"
   else
-    local __mvn_cmd="mvn help:evaluate -Dexpression=project.build.finalName -q -DforceStdout"
-    echY "      - ${__mvn_cmd}"
-    #__mvn_jar_filter=$(mvn help:evaluate -Dexpression=project.build.finalName -q -DforceStdout)
-    local __mvn_jar_filter="app-0.0.1-SNAPSHOT.jar"
+    local __cmd="mvn help:evaluate -Dexpression=project.build.finalName -q -DforceStdout"
+    echY "      - ${__cmd}"
+    #__jar_filter=$(mvn help:evaluate -Dexpression=project.build.finalName -q -DforceStdout)
+    local __jar_filter="app-0.0.1-SNAPSHOT.jar"
     #binary jar file name
-    local __mvn_jar_source_file=${__mvn_build_src_bin_dir}/${__mvn_jar_filter}
-    echG "      - jar file: ${__mvn_jar_source_file}"
-    if ! [[ -f ${__mvn_jar_source_file} ]]; then
-      echY "      jar file: ${__mvn_jar_source_file}"
+    local __jar_source_file=${__build_src_bin_dir}/${__jar_filter}
+    echG "      - jar file: ${__jar_source_file}"
+    if ! [[ -f ${__jar_source_file} ]]; then
+      echY "      jar file: ${__jar_source_file}"
       echR "      ==============================  "
       echR "      ******JAR file not found******  "
       echR "      ******JAR file not found******  "
       echR "      ==============================  "
     else
-      local __mvn_jar_source_file_new=${__mvn_build_base_dir}/$(basename ${__mvn_jar_source_file})
-      mv ${__mvn_jar_source_file} ${__mvn_jar_source_file_new}
-      export __func_return="${__func_return} ${__mvn_jar_source_file_new}"
-      echC "      - JAR file: ${__mvn_jar_source_file_new}"
+      local __jar_source_file_new=${__build_base_dir}/$(basename ${__jar_source_file})
+      mv ${__jar_source_file} ${__jar_source_file_new}
+      export __func_return="${__func_return} ${__jar_source_file_new}"
+      echC "      - JAR file: ${__jar_source_file_new}"
     fi
   fi
-  cd ${__mvn_build_base_dir}
-  rm -rf ${__mvn_build_src_dir}
+  cd ${__build_base_dir}
+  rm -rf ${__build_src_dir}
+  echG "    Finished"
+  if [[ ${__func_return} == "" ]]; then
+    return 0
+  fi
+  return 1
+}
+
+function nodeBuild()
+{
+  unset __func_return
+  local __build_src_dir=${1}
+  local __jar_filter=${2}
+
+  echG "  Source building with PHP"
+  local __check=$(which node)
+  if [[ ${__check} == "" ]]; then
+    echR "  ====================  "
+    echR "     **************     "
+    echR "  ***NODE not found***  "
+    echR "     **************     "
+    echR "  ====================  "
+    return 0
+  fi
+  if ! [[ -d ${__build_src_dir} ]]; then
+    echR "  ==============================  "
+    echR "       ********************       "
+    echR "  *****Source dir not found*****  "
+    echR "       ********************       "
+    echR "  ==============================  "
+    return 0;
+  fi
+  if [[ -f ${__build_src_dir}/package.json ]]; then
+    echR "  ============================  "
+    echR "     **********************     "
+    echR "  ***package.json not found***  "
+    echR "     **********************     "
+    echR "  ============================  "
+    return 0
+  fi
   echG "    Finished"
   if [[ ${__func_return} == "" ]]; then
     return 0
