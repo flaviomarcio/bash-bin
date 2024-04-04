@@ -285,32 +285,38 @@ function dockerSwarmConfigure()
   return 1
 }
 
-function dockerPluginInstall()
+function dockerPluginsInstall()
 {
-  local __plugin_dir=${1}
-  if [[ ${__plugin_dir} == "" ]]; then
-    local __plugin_dir=${STACK_PLUGINS_DIR}
+  local __plugins_file=${STACK_PLUGINS_DIR}/docker-plugins
+  if ! [[ -f ${__plugins_file} ]]; then
+    return 1;
   fi
-  if ! [[ -d ${__plugin_dir} ]]; then
-    return 0
-  fi
-
-  local __plugins=($(cat ${__plugin_dir}/docker-plugins))
-
+  local __plugins=($(cat ${__plugins_file}))
+  local __plugin=
+  local __plugins_selected=()
   for __plugin in "${__plugins[@]}"
   do
-    if [[ ${__plugin} == \#* ]]; then
-      continue;
+    local __check=$(docker plugin ls | grep "${__plugin}")
+    if [[ ${__check} == "" ]]; then
+      local __plugins_selected+=(${__plugin})
     fi
-
-    local __check=$(docker plugin ls | grep ${__plugin})
-    if [[ ${__check} != "" ]]; then
-      continue;      
-    fi
-
-    echo -e "y" | docker plugin install ${__check}
   done
+
+  if [[ ${__plugins_selected} == "" ]]; then
+    return 1;
+  fi
+
+  echM "      Docker plugins install"
+  for __plugin in "${__plugins_selected[@]}"
+  do
+    local __cmd="docker plugin install --grant-all-permissions ${__plugin}"
+    echB "        Plugin: ${COLOR_YELLOW}${__plugin}"
+    echY "          - ${__cmd}"
+    echo $(${__cmd}) >/dev/null 2>&1     
+  done
+  return 1
 }
+
 
 function dockerNetworkCreate()
 {
@@ -360,7 +366,7 @@ function dockerBuildCompose()
   local __hostname=${8}
   local __network_name=${9}
 
-  echM "    Docker containers create"  
+  echM "    Docker containers create"
   if ! [[ -f  ${__compose_file} ]]; then
     echY "  File not found: ${__compose_file}"  
     echR "  ===============================  "

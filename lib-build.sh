@@ -78,7 +78,7 @@ function qtBuild()
   local __library_path=${__root_dir}/${__version}/gcc_64
   local __bin_dir=${__library_path}/bin
   local __lib_dir=${__library_path}/lib
-  local __plugin_dir=${__library_path}/plugins
+  local __plugin_dir=${__library_path}
   local __qmake=${__bin_dir}/qmake
 
   echG "  Source building with Qt/QMake"

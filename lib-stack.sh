@@ -68,10 +68,11 @@ STACK_SERVICE_STORAGE_IMPORT_DIR \
 STACK_SERVICE_STORAGE_PROVIDER_DIR \
 STACK_SERVICE_STORAGE_CERT_DIR \
 STACK_SERVICE_STORAGE_THEME_DIR"
-  stackMkVolumes "${__dirs}"
+  
+  stackMkVolumes "${STACK_SERVICE_NAME}" "${__dirs}"
 
   if ! [ "$?" -eq 1 ]; then
-    export __func_return="fail on calling stackMakeStructure, ${__func_return}"
+    export __func_return="fail on calling stackMkVolumes, ${__func_return}"
     return 0;
   fi
 
@@ -166,12 +167,29 @@ function __private_stackEnvsDefaultByStack()
 
   envsSetIfIsEmpty APPLICATION_DEPLOY_IMAGE "${STACK_SERVICE_IMAGE_URL}"
   envsSetIfIsEmpty APPLICATION_DEPLOY_HOSTNAME ${STACK_SERVICE_HOSTNAME}
+  
   envsSetIfIsEmpty APPLICATION_DEPLOY_NODE "${STACK_SERVICE_DEFAULT_NODE_SERVICES}"
   envsSetIfIsEmpty APPLICATION_DEPLOY_NODE_TOOL "${STACK_SERVICE_DEFAULT_NODE_SERVICES}"
   envsSetIfIsEmpty APPLICATION_DEPLOY_NODE_SERVICES ${STACK_SERVICE_DEFAULT_NODE_GLOBAL}
   envsSetIfIsEmpty APPLICATION_DEPLOY_NODE_DB ${STACK_SERVICE_DEFAULT_NODE_GLOBAL}
   envsSetIfIsEmpty APPLICATION_DEPLOY_NODE_FW ${STACK_SERVICE_DEFAULT_NODE_GLOBAL}
   envsSetIfIsEmpty APPLICATION_DEPLOY_NODE_BUILD "${STACK_SERVICE_DEFAULT_NODE_GLOBAL}"
+  unset APPLICATION_DEPLOY_NODE_ANY  
+  local __node_only_names=$(envsGetValues APPLICATION_DEPLOY_NODE_)
+  local __node_only_names=$(echo ${__node_only_names} | sed 's/ == /==/g')
+  local __node_only_names=$(echo ${__node_only_names} | sed 's/node.role==//g')
+  local __node_only_names=$(strDeduplice ${__node_only_names})
+  local __i=0
+  for __node_name in ${__node_only_names[*]};
+  do
+    if [[ ${__i} == 0 ]]; then
+      local __node_any_names="node.hostname==${__node_name}"
+    else
+      local __node_any_names="${__node_any_names}, node.hostname == ${__node_name}"
+    fi
+    local __i=1
+  done 
+  export APPLICATION_DEPLOY_NODE_ANY=${__node_any_names}
 
   envsSetIfIsEmpty APPLICATION_DEPLOY_NETWORK_NAME ${STACK_NETWORK_DEFAULT}
   envsSetIfIsEmpty APPLICATION_DEPLOY_DATA_DIR "${STACK_SERVICE_STORAGE_DATA_DIR}"
@@ -259,6 +277,36 @@ function stackMkDir()
 
 function stackMkVolumes()
 {
+  unset __func_return
+  unset __service_name
+  unset __env_dirs
+  unset __storage_type
+
+  local __i=0
+  for __arg in "$@"
+  do
+    if [[ ${__i} == 0 ]]; then
+      local __service_name=${__arg}
+    # elif [[ ${__i} == 1 ]]; then
+    #   local __storage_type=${__arg}
+    else
+      local __env_dirs="${__env_dirs} ${__arg}"
+    fi
+    local __i=1
+  done
+
+  if [[ ${__service_name} == "" ]]; then
+    export __func_return="Invalid env \${__service_name}"
+    return 0
+  elif [[ ${__env_dirs} == "" ]]; then
+    export __func_return="Invalid env \${__env_dirs}"
+    return 0
+  fi
+
+  if [[ ${__storage_type} == "" ]]; then
+    local __storage_type=sshfs
+  fi
+
   # if [[ ${STACK_SERVICE_VOLUME_TYPE} != "local" ]]; then
   #   return 1;
   # fi
@@ -304,14 +352,42 @@ function stackMkVolumes()
 # docker run -it --rm --mount='type=volume,dst=/external-drive,volume-driver=local,volume-opt=device=/dev/loop5,volume-opt=type=ext4' ubuntu bash
 # losetup -d /dev/loop5
 
-
-
-  local __envs="$@"
   local __env=
-  for __env in ${__envs[*]};
+  for __env in ${__env_dirs[*]};
   do
-    stackMkDir 777 "${!__env}"  
-    #local __vol=$(echo ${__env} | sed 's/_DIR/_VOL/g')
+    local __dir=${!__env}
+    local __block=${!__env}.raw
+    stackMkDir 777 "${__dir}"
+
+    # if [[ ${__storage_type} == "sshfs" ]]; then
+    #   local __block=${__dir}.raw
+    #   if [[ -f ${__block} ]]l then
+    #     continue;
+    #   fi
+    #   fallocate -l 1G ${__block}
+    #   mkfs.ext4 ${__block}
+    #   losetup -f --show ${__block}
+    #   # >/dev/loop5
+    #   # docker run -it --rm --mount='type=volume,dst=/external-drive,volume-driver=local,volume-opt=device=/dev/loop5,volume-opt=type=ext4' ubuntu bash
+    #   # losetup -d /dev/loop5
+
+    #   docker volume create --driver vieux/sshfs \
+    #   #   -o sshcmd=test@node2:/home/test \
+    #   #   -o password=testpassword \
+    #   #   sshvolume
+    # fi
+
+
+
+    # local __vol=$(echo ${__env} | sed 's/_DIR//g' | sed 's/_STORAGE_/_VOLUME_/g' )
+    # local __vol_remote=":/${__service_name}"
+
+
+
+    # echo "docker volume create --driver local --opt type=nfs --opt o=addr=IP_DO_SERVIDOR,rw --opt device=${__vol_remote} ${__vol}"
+    
+    # docker run --mount='type=volume,dst=/external-drive,volume-driver=local,volume-opt=device=/dev/loop5,volume-opt=type=ext4'
+
   done
 
   # if ! [ "$?" -eq 1 ]; then

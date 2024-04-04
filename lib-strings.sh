@@ -211,6 +211,13 @@ function copyFile()
   return 0
 }
 
+function strDeduplice()
+{
+  export __func_return=$(echo "$@" | awk '{ for (i=1; i<=NF; i++) if (!seen[$i]++) printf("%s%s", $i, (i==NF) ? "\n" : " ") }')
+  echo "${__func_return}"
+  return 1;
+}
+
 function fileDedupliceLines()
 {
   if [[ ${1} == "" ]]; then
@@ -340,6 +347,51 @@ function envsGet()
   for __arg in "${__args[@]}"
   do
     export __func_return="${__func_return} $(printenv | awk -F '=' '{print $1}' | grep ${__arg})"
+  done
+  export __func_return=$(echo ${__func_return})
+  echo ${__func_return}
+  return 1    
+}
+
+function envsGetValues()
+{
+  unset __func_return
+
+  local __i=0
+  local __spliter=
+  local __args=
+  for __arg in "$@"
+  do
+    if [[ ${__i} == 0 ]]; then
+      local __spliter=${__arg}
+    else
+      local __args="${__args} ${__arg}"
+    fi
+    local __i=1
+  done
+  if [[ $(expr length "${__spliter}") > 1 ]]; then
+    local __spliter=" "
+    local __args="$@"
+  elif [[ ${__args} == "" ]]; then
+    local __spliter=" "
+    local __args=${__spliter}
+  fi
+
+  local __args=$(envsGet "${__args}")
+  if [[ ${__args} == "" ]]; then
+    return 1
+  fi
+  local __arg=
+  local __args=(${__args})
+  local __i=0
+  for __arg in "${__args[@]}"
+  do
+    if [[ ${__i} == 0 ]]; then
+      export __func_return=${!__arg}
+    else
+      export __func_return="${__func_return}${__spliter}${!__arg}"
+    fi
+    local __i=1
   done
   echo ${__func_return}
   return 1    
