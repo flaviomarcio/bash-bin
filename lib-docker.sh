@@ -140,8 +140,8 @@ function dockerSwarmNodeLabels()
 function dockerSwarmNodeLabelValue()
 {
   local __node=${1}
-  local __scope=${2}
-  local __value=$(docker node inspect ${__node} --format '{{ json .Spec.Labels }}' | jq -r ".[\"${__scope}\"]")
+  local __label=${2}
+  local __value=$(docker node inspect ${__node} --format '{{ json .Spec.Labels }}' | jq -r ".[\"${__label}\"]")
   if [[ ${__value} != "null" ]]; then
     echo ${__value}
   fi
@@ -152,30 +152,171 @@ function dockerSwarmNodeLabelInit()
 {
   unset __func_return
   local __nodes=($(docker node ls --quiet))
-  local __scopes=($(dockerSwarmNodeLabels))
+  local __labels=($(dockerSwarmNodeLabels))
   local __node_count=${#__nodes[@]}
 
   if [[ ${__node_count} == 1 ]]; then    
     local __node=
     for __node in "${__nodes[@]}"
     do
-      local __scope=
-      for __scope in "${__scopes[@]}"
+      local __label=
+      for __label in "${__labels[@]}"
       do
-        local __scope_value=$(dockerSwarmNodeLabelValue ${__node} ${__scope})
-        if [[ ${__scope_value} == true ]]; then
+        local __label_value=$(dockerSwarmNodeLabelValue ${__node} ${__label})
+        if [[ ${__label_value} == true ]]; then
           continue;
         fi
-        $(docker node update --label-add "${__scope}=true" ${__node})>/dev/null 2>&1
-        local __scope_value=$(dockerSwarmNodeLabelValue ${__node} ${__scope})
-        if [[ ${__scope_value} != true ]]; then
-          export __func_return="Error on set: ${__cmd} "
+        $(docker node update --label-add "${__label}=true" ${__node})>/dev/null 2>&1
+        local __label_value=$(dockerSwarmNodeLabelValue ${__node} ${__label})
+        if [[ ${__label_value} != true ]]; then
+          export __func_return="Error on set: ${__cmd}"
           return 0
         fi
       done
     done
   fi
   return 1;
+}
+
+function dockerSwarmNodesPrint()
+{
+  local __nodes=($(docker node ls --quiet))
+  local __labels=($(dockerSwarmNodeLabels))
+  echM "Docker nodes"
+  for __node in "${__nodes[@]}"
+  do
+    local __node_name=$(docker node inspect ${__node} | jq '.[].Description.Hostname' | sed 's/\"//g')
+    local __node_status=$(docker node inspect ${__node} | jq '.[].Status.State' | sed 's/\"//g')
+    local __node_ip=$(docker node inspect ${__node} | jq '.[].Status.Addr' | sed 's/\"//g')
+    echB "  - Node: ${COLOR_YELLOW} ${__node_name}: ${COLOR_CIANO}Status: ${COLOR_YELLOW}${__node_status}${COLOR_CIANO}, Ip: ${COLOR_YELLOW}${__node_ip}"
+    echC "    Labels"
+    local __label=
+    for __label in "${__labels[@]}"
+    do
+      local __label_value=$(dockerSwarmNodeLabelValue ${__node} ${__label})
+      echC "      - ${__label}: ${COLOR_YELLOW}${__label_value}"
+    done
+  done
+
+  echG "\n[ENTER] para continuar"
+  return 1;  
+}
+
+function dockerSwarmLabelNodesPrint()
+{
+  local __nodes=($(docker node ls --quiet))
+  local __labels=($(dockerSwarmNodeLabels))
+  echM "Docker nodes by label"
+  for __label in "${__labels[@]}"
+  do
+    echB "  - Label: ${COLOR_YELLOW}${__label}" 
+    local __node=
+    for __node in "${__nodes[@]}"
+    do
+      local __label_value=$(dockerSwarmNodeLabelValue ${__node} ${__label})
+      if [[ ${__label_value} == true ]]; then
+        local __node_name=$(docker node inspect ${__node} | jq '.[].Description.Hostname' | sed 's/\"//g')
+        local __node_status=$(docker node inspect ${__node} | jq '.[].Status.State' | sed 's/\"//g')
+        local __node_ip=$(docker node inspect ${__node} | jq '.[].Status.Addr' | sed 's/\"//g')
+        echB "    - Node: ${COLOR_YELLOW} ${__node_name}: ${COLOR_CIANO}Status: ${COLOR_YELLOW}${__node_status}${COLOR_CIANO}, Ip: ${COLOR_YELLOW}${__node_ip}"
+      fi
+    done
+  done
+
+  echG "\n[ENTER] para continuar"
+  return 1;  
+}
+
+
+function dockerSwarmInit()
+{
+  local __action=${1}
+  local __swarm_ip=${2}
+
+  if [[ ${STACK_DNS_SERVER_ENABLE} == true ]]; then
+    local __cmd="docker swarm init --dns ${STACK_PREFIX_HOST}dnsserver --advertise-addr ${__swarm_ip}"
+  else
+    local __cmd="docker swarm init --advertise-addr ${__swarm_ip}"
+  fi
+
+  if [[ ${__action} == true ]]; then
+    clearTerm
+    echB "  Docker swarm não está instalado"
+    echG ""
+    echG "  [ENTER] para configurar"
+    echG ""
+    read
+    echB "  Action: [Swarm-Init]"
+    echY "    - ${__cmd}"
+    echB "  Executing ..."
+    echo $(${__cmd})
+    dockerSwarmIsActive
+    if [ "$?" -eq 1 ]; then
+      echG "    - Successfull"
+    else
+      echE "    - [FAIL] docker swarm não configurado"
+    fi
+    echG "  Finished"
+    echG ""
+    echG "  [ENTER para continuar]"
+    echG ""
+    read
+  else
+    echo ${__cmd}
+  fi  
+  return 1
+}
+
+function dockerSwarmLeave()
+{
+  local __cmd="docker swarm leave --force"
+  if [[ ${__action} == true ]]; then
+    echB "  Action: [Swam-Leave]"
+    echY "    - ${__cmd}"
+    echB "  Executing ..."
+    echo $(${__cmd})
+    echG "  Finished"
+  else
+    echo ${__cmd}
+  fi
+  return 1
+}
+
+function dockerSwarmConfigure()
+{
+  local options=(Back Swarm-Init Swarm-Leave Swarm-Nodes Label-Nodes)
+  while :
+  do
+    clearTerm
+    echM $'\n'"Docker configure"$'\n'
+    PS3=$'\n'"Choose a option: "
+    select opt in "${options[@]}"
+    do
+      unset __cmd
+      if [[ ${opt} == "Back" ]]; then
+        return 1
+      elif [[ ${opt} == "Swarm-Init" ]]; then
+        local __cmd=$(dockerSwarmInit)
+      elif [[ ${opt} == "Swarm-Leave" ]]; then
+        local __cmd=$(dockerSwarmLeave)
+      elif [[ ${opt} == "Swarm-Nodes" ]]; then
+        dockerSwarmNodesPrint
+        read
+        continue
+      elif [[ ${opt} == "Label-Nodes" ]]; then
+        dockerSwarmLabelNodesPrint
+        read
+        continue
+      fi
+      echB "    Action: [${__cmd}]"
+      echY "      - ${__cmd}"
+      echB "      Executing ..."
+      echo $(${__cmd})
+      echG "    Finished"
+      break
+    done
+  done
+  return 1
 }
 
 function dockerCleanup()
@@ -290,86 +431,6 @@ function dockerList()
     echo ""
     sleep 2
   done
-}
-
-function dockerSwarmInit()
-{
-  local __action=${1}
-  local __swarm_ip=${2}
-
-  if [[ ${STACK_DNS_SERVER_ENABLE} == true ]]; then
-    local __cmd="docker swarm init --dns ${STACK_PREFIX_HOST}dnsserver --advertise-addr ${__swarm_ip}"
-  else
-    local __cmd="docker swarm init --advertise-addr ${__swarm_ip}"
-  fi
-
-  if [[ ${__action} == true ]]; then
-    clearTerm
-    echB "  Docker swarm não está instalado"
-    echG ""
-    echG "  [ENTER] para configurar"
-    echG ""
-    read
-    echB "  Action: [Swarm-Init]"
-    echY "    - ${__cmd}"
-    echB "  Executing ..."
-    echo $(${__cmd})
-    dockerSwarmIsActive
-    if [ "$?" -eq 1 ]; then
-      echG "    - Successfull"
-    else
-      echE "    - [FAIL] docker swarm não configurado"
-    fi
-    echG "  Finished"
-    echG ""
-    echG "  [ENTER para continuar]"
-    echG ""
-    read
-  else
-    echo ${__cmd}
-  fi  
-  return 1
-}
-
-function dockerSwarmLeave()
-{
-  local __cmd="docker swarm leave --force"
-  if [[ ${__action} == true ]]; then
-    echB "  Action: [Swam-Leave]"
-    echY "    - ${__cmd}"
-    echB "  Executing ..."
-    echo $(${__cmd})
-    echG "  Finished"
-  else
-    echo ${__cmd}
-  fi
-  return 1
-}
-
-function dockerSwarmConfigure()
-{
-  clearTerm
-  echM $'\n'"Docker configure"$'\n'
-  PS3=$'\n'"Choose a option: "
-  local options=(Back Swarm-Init Swarm-Leave)
-  select opt in "${options[@]}"
-  do
-    unset __cmd
-    if [[ ${opt} == "Back" ]]; then
-      return 1
-    elif [[ ${opt} == "Swarm-Init" ]]; then
-      local __cmd=$(dockerSwarmInit)
-    elif [[ ${opt} == "Swarm-Leave" ]]; then
-      local __cmd=$(dockerSwarmLeave)
-    fi
-    echB "    Action: [${__cmd}]"
-    echY "      - ${__cmd}"
-    echB "      Executing ..."
-    echo $(${__cmd})
-    echG "    Finished"
-    break
-  done
-  return 1
 }
 
 function dockerPluginsInstall()
