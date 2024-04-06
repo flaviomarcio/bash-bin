@@ -201,6 +201,7 @@ function dockerSwarmNodesPrint()
   done
 
   echG "\n[ENTER] para continuar"
+  read
   return 1;  
 }
 
@@ -226,6 +227,7 @@ function dockerSwarmLabelNodesPrint()
   done
 
   echG "\n[ENTER] para continuar"
+  read
   return 1;  
 }
 
@@ -310,11 +312,12 @@ function dockerSwarmConfigure()
   while :
   do
     clearTerm
+    __private_print_os_information
     echM $'\n'"Docker configure"$'\n'
     PS3=$'\n'"Choose a option: "
     select opt in "${options[@]}"
     do
-      unset __cmd
+      local __cmd=
       if [[ ${opt} == "Back" ]]; then
         return 1
       elif [[ ${opt} == "Swarm-Init" ]]; then
@@ -323,16 +326,13 @@ function dockerSwarmConfigure()
         local __cmd=$(dockerSwarmLeave)
       elif [[ ${opt} == "Swarm-Join" ]]; then
         dockerSwarmJoinPrint
-        read
-        continue
+        break
       elif [[ ${opt} == "Swarm-Nodes" ]]; then
         dockerSwarmNodesPrint
-        read
-        continue
+        break
       elif [[ ${opt} == "Label-Nodes" ]]; then
         dockerSwarmLabelNodesPrint
-        read
-        continue
+        break
       fi
       echB "    Action: [${__cmd}]"
       echY "      - ${__cmd}"
