@@ -125,15 +125,17 @@ function dockerSwarmVerify()
 
 function dockerSwarmNodeLabels()
 {
-  echo "stack-node-type-master
- stack-node-type-infrastructure
- stack-node-type-database
- stack-node-type-sre
- stack-node-type-security
- stack-node-type-deploy
- stack-node-type-streaming
- stack-node-type-observability
- stack-node-type-documentation"
+  echo "stack-type-master
+ stack-type-infrastructure
+ stack-type-fw
+ stack-type-tools
+ stack-type-database
+ stack-type-sre
+ stack-type-security
+ stack-type-deploy
+ stack-type-streaming
+ stack-type-observability
+ stack-type-documentation"
   return 1
 }
 
@@ -227,6 +229,21 @@ function dockerSwarmLabelNodesPrint()
   return 1;  
 }
 
+function dockerSwarmJoinPrint()
+{
+  echM "Docker Swarm Join"
+  local __join_token_worker=$(docker swarm join-token worker | grep '\-\-token')
+  local __join_token_manager=$(docker swarm join-token manager | grep '\-\-token')
+  local __join_token_worker=$(strTrim "${__join_token_worker}")
+  local __join_token_manager=$(strTrim "${__join_token_manager}")    
+  echC "  - worker: ${COLOR_YELLOW}${__join_token_worker}"
+  echC "  - manager: ${COLOR_YELLOW}${__join_token_manager}"
+  echG "Finished"
+  echG ""
+  echG "[ENTER para continuar]"
+  read
+}
+
 
 function dockerSwarmInit()
 {
@@ -248,18 +265,23 @@ function dockerSwarmInit()
     read
     echB "  Action: [Swarm-Init]"
     echY "    - ${__cmd}"
-    echB "  Executing ..."
-    echo $(${__cmd})
+    echo $(${__cmd})>/dev/null 2>&1
     dockerSwarmIsActive
     if [ "$?" -eq 1 ]; then
-      echG "    - Successfull"
+      echG "    Successfull"
+      echB "  JOIN Tokens"
+      local __join_token_worker=$(docker swarm join-token worker | grep '\-\-token')
+      local __join_token_manager=$(docker swarm join-token manager | grep '\-\-token')
+      local __join_token_worker=$(strTrim "${__join_token_worker}")
+      local __join_token_manager=$(strTrim "${__join_token_manager}")    
+      echC "    - worker: ${COLOR_YELLOW}${__join_token_worker}"
+      echC "    - manager: ${COLOR_YELLOW}${__join_token_manager}"
     else
-      echE "    - [FAIL] docker swarm não configurado"
+      echE "    [FAIL] docker swarm não configurado"
     fi
     echG "  Finished"
     echG ""
     echG "  [ENTER para continuar]"
-    echG ""
     read
   else
     echo ${__cmd}
@@ -284,7 +306,7 @@ function dockerSwarmLeave()
 
 function dockerSwarmConfigure()
 {
-  local options=(Back Swarm-Init Swarm-Leave Swarm-Nodes Label-Nodes)
+  local options=(Back Swarm-Init Swarm-Leave Swarm-Nodes Swarm-Join Label-Nodes)
   while :
   do
     clearTerm
@@ -299,6 +321,10 @@ function dockerSwarmConfigure()
         local __cmd=$(dockerSwarmInit)
       elif [[ ${opt} == "Swarm-Leave" ]]; then
         local __cmd=$(dockerSwarmLeave)
+      elif [[ ${opt} == "Swarm-Join" ]]; then
+        dockerSwarmJoinPrint
+        read
+        continue
       elif [[ ${opt} == "Swarm-Nodes" ]]; then
         dockerSwarmNodesPrint
         read

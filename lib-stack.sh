@@ -167,31 +167,7 @@ function __private_stackEnvsDefaultByStack()
   envsSetIfIsEmpty APPLICATION_DEPLOY_DNS_3RDPARTY_PATH "${APPLICATION_DEPLOY_DNS_PATH}"
 
   envsSetIfIsEmpty APPLICATION_DEPLOY_IMAGE "${STACK_SERVICE_IMAGE_URL}"
-  envsSetIfIsEmpty APPLICATION_DEPLOY_HOSTNAME ${STACK_SERVICE_HOSTNAME}
-  
-  envsSetIfIsEmpty APPLICATION_DEPLOY_NODE "${STACK_SERVICE_DEFAULT_NODE_SERVICES}"
-  envsSetIfIsEmpty APPLICATION_DEPLOY_NODE_TOOL "${STACK_SERVICE_DEFAULT_NODE_SERVICES}"
-  envsSetIfIsEmpty APPLICATION_DEPLOY_NODE_SERVICES ${STACK_SERVICE_DEFAULT_NODE_GLOBAL}
-  envsSetIfIsEmpty APPLICATION_DEPLOY_NODE_DB ${STACK_SERVICE_DEFAULT_NODE_GLOBAL}
-  envsSetIfIsEmpty APPLICATION_DEPLOY_NODE_FW ${STACK_SERVICE_DEFAULT_NODE_GLOBAL}
-  envsSetIfIsEmpty APPLICATION_DEPLOY_NODE_BUILD "${STACK_SERVICE_DEFAULT_NODE_GLOBAL}"
-  unset APPLICATION_DEPLOY_NODE_ANY  
-  local __node_only_names=$(envsGetValues APPLICATION_DEPLOY_NODE_)
-  local __node_only_names=$(echo ${__node_only_names} | sed 's/ == /==/g')
-  local __node_only_names=$(echo ${__node_only_names} | sed 's/node.role==//g')
-  local __node_only_names=$(strDeduplice ${__node_only_names})
-  local __i=0
-  for __node_name in ${__node_only_names[*]};
-  do
-    if [[ ${__i} == 0 ]]; then
-      local __node_any_names="node.hostname==${__node_name}"
-    else
-      local __node_any_names="${__node_any_names}, node.hostname == ${__node_name}"
-    fi
-    local __i=1
-  done 
-  export APPLICATION_DEPLOY_NODE_ANY=${__node_any_names}
-
+  envsSetIfIsEmpty APPLICATION_DEPLOY_HOSTNAME ${STACK_SERVICE_HOSTNAME}  
   envsSetIfIsEmpty APPLICATION_DEPLOY_NETWORK_NAME ${STACK_NETWORK_DEFAULT}
   envsSetIfIsEmpty APPLICATION_DEPLOY_DATA_DIR "${STACK_SERVICE_STORAGE_DATA_DIR}"
   envsSetIfIsEmpty APPLICATION_DEPLOY_DB_DIR "${STACK_SERVICE_STORAGE_DATA_DIR}"
@@ -648,15 +624,6 @@ function stackEnvsLoad()
   envsSetIfIsEmpty STACK_SERVICE_DEFAULT_CONTEXT_PATH ${STACK_DEFAULT_CONTEXT_PATH}
   envsSetIfIsEmpty STACK_SERVICE_DEFAULT_PORT ${STACK_DEFAULT_PORT}
   envsSetIfIsEmpty STACK_SERVICE_DEFAULT_LOG_LEVEL ${STACK_DEFAULT_LOG_LEVEL}
-
-  #nodes
-  envsSetIfIsEmpty STACK_SERVICE_DEFAULT_NODE_GLOBAL node.role==manager
-  envsSetIfIsEmpty STACK_SERVICE_DEFAULT_NODE_DB ${STACK_SERVICE_DEFAULT_NODE_GLOBAL}
-  envsSetIfIsEmpty STACK_SERVICE_DEFAULT_NODE_SERVICES ${STACK_SERVICE_DEFAULT_NODE_GLOBAL}
-  envsSetIfIsEmpty STACK_SERVICE_DEFAULT_NODE_TOOL ${STACK_SERVICE_DEFAULT_NODE_GLOBAL}
-  envsSetIfIsEmpty STACK_SERVICE_DEFAULT_NODE_FW ${STACK_SERVICE_DEFAULT_NODE_GLOBAL}
-
-
 
   #resources limit
   envsSetIfIsEmpty STACK_SERVICE_DEFAULT_SHELF_LIFE "24h"

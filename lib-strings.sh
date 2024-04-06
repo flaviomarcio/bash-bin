@@ -211,6 +211,11 @@ function copyFile()
   return 0
 }
 
+function strTrim()
+{
+  echo "$@" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
+}
+
 function strDeduplice()
 {
   export __func_return=$(echo "$@" | awk '{ for (i=1; i<=NF; i++) if (!seen[$i]++) printf("%s%s", $i, (i==NF) ? "\n" : " ") }')
