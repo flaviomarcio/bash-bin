@@ -17,21 +17,21 @@ __selector_environments="testing development staging production"
 
 function __private_print_os_information()
 {
+  local __docker_daemon=/etc/docker/daemon.json
+  local __docker_info="Docker: ${COLOR_YELLOW}"$(docker --version | sed 's/Docker //g')
+  local __docker_root_dir=$(cat ${__docker_daemon} | sed 's/data-root/data_root/g' | jq '.data_root' | sed 's/\"//g')
+  local __docker_tls=$(cat ${__docker_daemon} | jq '.tls')
+  local __docker_cert=$(cat ${__docker_daemon} | jq '.tlscert')
+
   echG "OS informations"
   echC "  - $(uname -a)"
-  echC "  - $(docker --version), IPv4: ${PUBLIC_HOST_IPv4}"
+  echC "  - ${__docker_info}${COLOR_CIANO}, IPv4: ${COLOR_YELLOW}${PUBLIC_HOST_IPv4}${COLOR_CIANO}, root-dir: ${COLOR_YELLOW}${__docker_root_dir}"
+  if [[ ${__docker_tls} == true ]]; then
+    echC "    - tls: ${COLOR_YELLOW}${__docker_tls} ${COLOR_CIANO}, cert: ${COLOR_YELLOW}$(dirname ${__docker_cert})"
+  fi
   if [[ ${__public_environment} != "" ]]; then
-    echC "  - Environment: ${COLOR_YELLOW}${__public_environment}${COLOR_CIANO}, Target: ${COLOR_YELLOW}${__public_target}${COLOR_CIANO}, Prefix: ${COLOR_YELLOW}${__public_environment}-${__public_target}"
-
-    local __docker_daemon=/etc/docker/daemon.json
-    local __docker_tls=$(cat ${__docker_daemon} | jq '.tls')
-    local __docker_cert=$(cat ${__docker_daemon} | jq '.tlscert')
-    if [[ ${__docker_tls} == true ]]; then
-      echC "  - Docker: tls: ${COLOR_YELLOW}${__docker_tls} ${COLOR_CIANO}, cert: ${COLOR_YELLOW}$(dirname ${__docker_cert})"
-    fi
-    if [[ ${STACK_TARGET_ROOT_DIR} != "" ]]; then
-      echC "  - RootDir: ${COLOR_YELLOW}${STACK_TARGET_ROOT_DIR}"
-    fi
+    echC "  - Stack : - Environment: ${COLOR_YELLOW}${__public_environment}${COLOR_CIANO}, Target: ${COLOR_YELLOW}${__public_target}${COLOR_CIANO}, Prefix: ${COLOR_YELLOW}${__public_environment}-${__public_target}"
+    echC "            - RootDir: ${COLOR_YELLOW}${STACK_TARGET_ROOT_DIR}"
   fi
 }
 
