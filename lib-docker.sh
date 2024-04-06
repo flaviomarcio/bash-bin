@@ -63,6 +63,22 @@ function __private_dockerParserHostName()
   echo ${__name}
 }
 
+function dockerIsRunning()
+{
+  unset __func_return
+  local __check=$(which docker)
+  if [[ ${__check} == "" ]]; then
+    export __func_return="Docker is not installed"
+    return 0;
+  fi
+  local __check=$(systemctl status docker.service | grep "Active: active")
+  if [[ ${__check} == "" ]]; then
+    export __func_return="Docker service is not running"
+    return 0;
+  fi
+  return 1;
+}
+
 function dockerSwarmState()
 {
   echo $(docker info --format '{{ .Swarm.LocalNodeState }}')
@@ -80,15 +96,86 @@ function dockerSwarmIsActive()
 
 function dockerSwarmVerify()
 {
-  dockerSwarmIsActive
-  if [ "$?" -eq 1 ]; then
-    return 1
+  echM "Docker swarm verify"
+  dockerIsRunning
+  if ! [ "$?" -eq 1 ]; then
+    export __func_return="Error on calling dockerIsRunning: ${__func_return}"
+    return 0
+  else
+    echC "  - Docker: ${COLOR_YELLOW}running"
+    dockerSwarmIsActive
+    if ! [ "$?" -eq 1 ]; then
+      dockerSwarmInit true "${PUBLIC_HOST_IPv4}"
+      if ! [ "$?" -eq 1 ]; then
+        export __func_return="Error on calling dockerSwarmInit: ${__func_return}"
+        return 0
+      fi
+    fi
+    echC "  - Swarm: ${COLOR_YELLOW}inited"
   fi
-  dockerSwarmInit true "${PUBLIC_HOST_IPv4}"
-  if [ "$?" -eq 1 ]; then
-    return 1
+  dockerSwarmNodeLabelInit true "${PUBLIC_HOST_IPv4}"
+  if ! [ "$?" -eq 1 ]; then
+    export __func_return="Error on calling dockerSwarmNodeLabelInit: ${__func_return}"
+    return 0
   fi
-  return 0
+  echC "  - Labels: ${COLOR_YELLOW}added"
+  echG "Finished"
+  return 1
+}
+
+function dockerSwarmNodeLabels()
+{
+  echo "stack-node-type-master
+ stack-node-type-infrastructure
+ stack-node-type-database
+ stack-node-type-sre
+ stack-node-type-security
+ stack-node-type-deploy
+ stack-node-type-streaming
+ stack-node-type-observability
+ stack-node-type-documentation"
+  return 1
+}
+
+function dockerSwarmNodeLabelValue()
+{
+  local __node=${1}
+  local __scope=${2}
+  local __value=$(docker node inspect ${__node} --format '{{ json .Spec.Labels }}' | jq -r ".[\"${__scope}\"]")
+  if [[ ${__value} != "null" ]]; then
+    echo ${__value}
+  fi
+  return 1
+}
+
+function dockerSwarmNodeLabelInit()
+{
+  unset __func_return
+  local __nodes=($(docker node ls --quiet))
+  local __scopes=($(dockerSwarmNodeLabels))
+  local __node_count=${#__nodes[@]}
+
+  if [[ ${__node_count} == 1 ]]; then    
+    local __node=
+    for __node in "${__nodes[@]}"
+    do
+      local __scope=
+      for __scope in "${__scopes[@]}"
+      do
+        local __scope_value=$(dockerSwarmNodeLabelValue ${__node} ${__scope})
+        if [[ ${__scope_value} == true ]]; then
+          continue;
+        fi
+        $(docker node update --label-add "${__scope}=true" ${__node})>/dev/null 2>&1
+        local __scope_value=$(dockerSwarmNodeLabelValue ${__node} ${__scope})
+        if [[ ${__scope_value} != true ]]; then
+          export __func_return="Error on set: ${__cmd} "
+          return 0
+        fi
+      done
+    done
+  fi
+  return 1;
 }
 
 function dockerCleanup()
@@ -529,5 +616,3 @@ function dockerRegistryImageCheck()
   export __func_return=1  
   return 1;
 }
-
-
