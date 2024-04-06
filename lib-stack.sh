@@ -105,14 +105,15 @@ function __private_stackEnvsLoadByTarget()
   fi
 
   #dirs
-  export ROOT_TARGET_DIR="${ROOT_ENVIRONMENT_DIR}/${STACK_TARGET}"
-  export STACK_INFRA_DIR="${ROOT_TARGET_DIR}/infrastructure"
-  export STACK_INFRA_CONF_DIR="${ROOT_TARGET_DIR}/infrastructure/conf"
+  export STACK_TARGET_ROOT_DIR="${ROOT_ENVIRONMENT_DIR}/${STACK_TARGET}"
+  export STACK_INFRA_DIR="${STACK_TARGET_ROOT_DIR}/infrastructure"
+  export STACK_INFRA_CONF_DIR="${STACK_TARGET_ROOT_DIR}/infrastructure/conf"
   export STACK_INFRA_CERT_DIR="${STACK_INFRA_CONF_DIR}/cert"
-  export STACK_TEMPLATES_DIR="${ROOT_TARGET_DIR}/templates"
-  export STACK_TARGET_STORAGE_DIR=${ROOT_TARGET_DIR}/storage-data
+  export STACK_TEMPLATES_DIR="${STACK_TARGET_ROOT_DIR}/templates"
+  export STACK_TARGET_STORAGE_DIR=${STACK_TARGET_ROOT_DIR}/storage-data
+  export STACK_TARGET_STORAGE_NFS=${STACK_TARGET_ROOT_DIR}/storage-nfs
 
-  stackMkDir 755 "${ROOT_TARGET_DIR} ${STACK_INFRA_CERT_DIR} ${STACK_INFRA_DIR} ${STACK_INFRA_CONF_DIR} ${STACK_TARGET_STORAGE_DIR}"
+  stackMkDir 755 "${STACK_TARGET_ROOT_DIR} ${STACK_INFRA_CERT_DIR} ${STACK_INFRA_DIR} ${STACK_INFRA_CONF_DIR} ${STACK_TARGET_STORAGE_DIR} ${STACK_TARGET_STORAGE_NFS}"
 
   envsSetIfIsEmpty STACK_NETWORK_PREFIX "${STACK_ENVIRONMENT}-${STACK_TARGET}"
   envsSetIfIsEmpty STACK_NETWORK_DEFAULT "${STACK_NETWORK_PREFIX}-inbound"
@@ -127,7 +128,7 @@ function __private_stackEnvsLoadByTarget()
 
   envsSetIfIsEmpty STACK_REGISTRY_DNS_PUBLIC "${STACK_PREFIX_HOST}registry.${STACK_DOMAIN}:5000"
   envsSetIfIsEmpty PUBLIC_STACK_ENVS_FILE "${STACK_ROOT_DIR}/stack_envs.env"
-  envsSetIfIsEmpty PUBLIC_STACK_TARGET_ENVS_FILE "${ROOT_TARGET_DIR}/stack_envs.env"
+  envsSetIfIsEmpty PUBLIC_STACK_TARGET_ENVS_FILE "${STACK_TARGET_ROOT_DIR}/stack_envs.env"
   
   
   if [[ -f ${PUBLIC_STACK_TARGET_ENVS_FILE} ]]; then
@@ -359,6 +360,10 @@ function stackMkVolumes()
     local __block=${!__env}.raw
     stackMkDir 777 "${__dir}"
 
+    # local __dir_nfs="${STACK_TARGET_STORAGE_NFS}/$(basename ${__dir})"
+    # mkdir -p ${__dir_nfs}
+    
+
     # if [[ ${__storage_type} == "sshfs" ]]; then
     #   local __block=${__dir}.raw
     #   if [[ -f ${__block} ]]l then
@@ -457,7 +462,7 @@ function stackStorageMake()
     return 0;
   fi
 
-  stackMkDir 755 "${ROOT_APPLICATIONS_DIR} ${ROOT_TARGET_DIR} ${STACK_CERT_DEFAULT_DIR} ${ROOT_ENVIRONMENT_DIR} ${STACK_INFRA_DIR}"
+  stackMkDir 755 "${ROOT_APPLICATIONS_DIR} ${STACK_TARGET_ROOT_DIR} ${STACK_CERT_DEFAULT_DIR} ${ROOT_ENVIRONMENT_DIR} ${STACK_INFRA_DIR}"
   stackMkDir 777 "${STORAGE_SERVICE_DIR}"
 
 

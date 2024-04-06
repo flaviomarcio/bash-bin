@@ -29,6 +29,9 @@ function __private_print_os_information()
     if [[ ${__docker_tls} == true ]]; then
       echC "  - Docker: tls: ${COLOR_YELLOW}${__docker_tls} ${COLOR_CIANO}, cert: ${COLOR_YELLOW}$(dirname ${__docker_cert})"
     fi
+    if [[ ${STACK_TARGET_ROOT_DIR} != "" ]]; then
+      echC "  - RootDir: ${COLOR_YELLOW}${STACK_TARGET_ROOT_DIR}"
+    fi
   fi
 }
 
