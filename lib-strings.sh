@@ -993,8 +993,6 @@ function echIdent()
   local __e_i_step=$(toInt "${2}")
   let "__e_i_step=${__e_i_step}"
 
-  #echo "    __e_i_level=${__e_i_level}, __e_i_step==${__e_i_step}"
-
   local __e_i_out=
   local __e_i_spacer="  "
   local i=

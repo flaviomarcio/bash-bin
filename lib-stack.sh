@@ -13,80 +13,84 @@ fi
 . ${BASH_BIN}/lib-docker.sh
 . ${BASH_BIN}/lib-vault.sh
 
-
 function __private_stackEnvsLoadByStack()
 {
   unset __func_return
   export STACK_NAME=${1}
+
   unset STACK_SERVICE_IMAGE
   unset STACK_SERVICE_NAME
   envsUnSet STACK_SERVICE_HOSTNAME STACK_SERVICE_STORAGE_
 
-  if [[ ${STACK_NAME} == "" ]]; then
+  if [[ ${STACK_DOMAIN} == "" ]]; then
+    export __func_return="failt on calling __private_stackEnvsLoadByStack, invalid env \${STACK_DOMAIN}"
+    return 0
+  elif [[ ${STACK_NAME} == "" ]]; then
     export __func_return="failt on calling __private_stackEnvsLoadByStack, invalid env \${STACK_NAME}"
     return 0
-  fi
-  if [[ ${STACK_PREFIX} == "" ]]; then
+  elif [[ ${STACK_PREFIX} == "" ]]; then
     export __func_return="failt on calling __private_stackEnvsLoadByStack, invalid env \${STACK_PREFIX}"
     return 0
+  else
+    local __private_services_names_configure_name=${2}
+
+    local __stack_name_parser=$(echo ${STACK_NAME} | sed 's/_/-/g')
+
+    export STACK_SERVICE_NAME=${STACK_PREFIX}-${__stack_name_parser}
+
+    #hostnames
+    export STACK_SERVICE_HOSTNAME="${STACK_PREFIX_HOST}${__stack_name_parser}"
+    export STACK_SERVICE_HOSTNAME_PROXY=${STACK_SERVICE_NAME}
+    export STACK_SERVICE_HOSTNAME_PUBLIC=${STACK_SERVICE_NAME}.${STACK_DOMAIN}
+
+    local __storage=${STACK_TARGET_STORAGE_DIR}/${STACK_SERVICE_NAME}
+
+    #stograge
+    export STACK_SERVICE_STORAGE_DATA_DIR=${__storage}/data
+    export STACK_SERVICE_STORAGE_DB_DIR=${__storage}/db
+    export STACK_SERVICE_STORAGE_LOG_DIR=${__storage}/log
+    export STACK_SERVICE_STORAGE_CONFIG_DIR=${__storage}/config
+    export STACK_SERVICE_STORAGE_BACKUP_DIR=${__storage}/backup
+    export STACK_SERVICE_STORAGE_EXTENSION_DIR=${__storage}/extension
+    export STACK_SERVICE_STORAGE_PLUGIN_DIR=${__storage}/plugin
+    export STACK_SERVICE_STORAGE_IMPORT_DIR=${__storage}/import
+    export STACK_SERVICE_STORAGE_PROVIDER_DIR=${__storage}/provider
+    export STACK_SERVICE_STORAGE_CERT_DIR=${__storage}/certificates
+    export STACK_SERVICE_STORAGE_THEME_DIR=${__storage}/theme
+
+    local __dirs="
+  STACK_SERVICE_STORAGE_DATA_DIR \
+  STACK_SERVICE_STORAGE_DB_DIR \
+  STACK_SERVICE_STORAGE_LOG_DIR \
+  STACK_SERVICE_STORAGE_CONFIG_DIR \
+  STACK_SERVICE_STORAGE_BACKUP_DIR \
+  STACK_SERVICE_STORAGE_EXTENSION_DIR \
+  STACK_SERVICE_STORAGE_PLUGIN_DIR \
+  STACK_SERVICE_STORAGE_IMPORT_DIR \
+  STACK_SERVICE_STORAGE_PROVIDER_DIR \
+  STACK_SERVICE_STORAGE_CERT_DIR \
+  STACK_SERVICE_STORAGE_THEME_DIR"
+    
+    stackMkVolumes "${STACK_SERVICE_NAME}" "${__dirs}"
+
+    if ! [ "$?" -eq 1 ]; then
+      export __func_return="fail on calling stackMkVolumes, ${__func_return}"
+      return 0;
+    fi
+
+    #image
+    export STACK_SERVICE_IMAGE="${STACK_SERVICE_NAME}"
+    export STACK_SERVICE_IMAGE_URL="${STACK_REGISTRY_DNS_PUBLIC}/${STACK_SERVICE_IMAGE}"
+
+    #load envs DNS
+    stackMakeStructure
+    if ! [ "$?" -eq 1 ]; then
+      export __func_return="fail on calling stackMakeStructure, ${__func_return}"
+      return 0;
+    fi
+    return 1
+
   fi
-  local __private_services_names_configure_name=${2}
-
-  local __stack_name_parser=$(echo ${STACK_NAME} | sed 's/_/-/g')
-
-  export STACK_SERVICE_NAME=${STACK_PREFIX}-${__stack_name_parser}
-
-  #hostnames
-  export STACK_SERVICE_HOSTNAME="${STACK_PREFIX_HOST}${__stack_name_parser}"
-  export STACK_SERVICE_HOSTNAME_PROXY=${STACK_SERVICE_NAME}
-  export STACK_SERVICE_HOSTNAME_PUBLIC=${STACK_SERVICE_NAME}.${STACK_DOMAIN}
-
-  local __storage=${STACK_TARGET_STORAGE_DIR}/${STACK_SERVICE_NAME}
-
-  #stograge
-  export STACK_SERVICE_STORAGE_DATA_DIR=${__storage}/data
-  export STACK_SERVICE_STORAGE_DB_DIR=${__storage}/db
-  export STACK_SERVICE_STORAGE_LOG_DIR=${__storage}/log
-  export STACK_SERVICE_STORAGE_CONFIG_DIR=${__storage}/config
-  export STACK_SERVICE_STORAGE_BACKUP_DIR=${__storage}/backup
-  export STACK_SERVICE_STORAGE_EXTENSION_DIR=${__storage}/extension
-  export STACK_SERVICE_STORAGE_PLUGIN_DIR=${__storage}/plugin
-  export STACK_SERVICE_STORAGE_IMPORT_DIR=${__storage}/import
-  export STACK_SERVICE_STORAGE_PROVIDER_DIR=${__storage}/provider
-  export STACK_SERVICE_STORAGE_CERT_DIR=${__storage}/certificates
-  export STACK_SERVICE_STORAGE_THEME_DIR=${__storage}/theme
-
-  local __dirs="
-STACK_SERVICE_STORAGE_DATA_DIR \
-STACK_SERVICE_STORAGE_DB_DIR \
-STACK_SERVICE_STORAGE_LOG_DIR \
-STACK_SERVICE_STORAGE_CONFIG_DIR \
-STACK_SERVICE_STORAGE_BACKUP_DIR \
-STACK_SERVICE_STORAGE_EXTENSION_DIR \
-STACK_SERVICE_STORAGE_PLUGIN_DIR \
-STACK_SERVICE_STORAGE_IMPORT_DIR \
-STACK_SERVICE_STORAGE_PROVIDER_DIR \
-STACK_SERVICE_STORAGE_CERT_DIR \
-STACK_SERVICE_STORAGE_THEME_DIR"
-  
-  stackMkVolumes "${STACK_SERVICE_NAME}" "${__dirs}"
-
-  if ! [ "$?" -eq 1 ]; then
-    export __func_return="fail on calling stackMkVolumes, ${__func_return}"
-    return 0;
-  fi
-
-  #image
-  export STACK_SERVICE_IMAGE="${STACK_SERVICE_NAME}"
-  export STACK_SERVICE_IMAGE_URL="${STACK_REGISTRY_DNS_PUBLIC}/${STACK_SERVICE_IMAGE}"
-
-  #load envs DNS
-  stackMakeStructure
-  if ! [ "$?" -eq 1 ]; then
-    export __func_return="fail on calling stackMakeStructure, ${__func_return}"
-    return 0;
-  fi
-  return 1
 }
 
 function __private_stackEnvsLoadByTarget()
@@ -124,12 +128,12 @@ function __private_stackEnvsLoadByTarget()
   envsSetIfIsEmpty STACK_NETWORK_GRAFANA_TEMPO "${STACK_NETWORK_PREFIX}-grafana-tempo"
   envsSetIfIsEmpty STACK_NETWORK_GRAFANA_K6 "${STACK_NETWORK_PREFIX}-grafana-k6"
   envsSetIfIsEmpty STACK_NETWORK_KONG "${STACK_NETWORK_PREFIX}-kong-net"
-  
 
-  envsSetIfIsEmpty STACK_REGISTRY_DNS_PUBLIC "${STACK_PREFIX_HOST}registry.${STACK_DOMAIN}:5000"
+  envsSetIfIsEmpty STACK_REGISTRY_DNS_PUBLIC "${STACK_ENVIRONMENT}-${STACK_TARGET}-registry.${STACK_DOMAIN}:5000"
   envsSetIfIsEmpty PUBLIC_STACK_ENVS_FILE "${STACK_ROOT_DIR}/stack_envs.env"
+  envsSetIfIsEmpty PUBLIC_STACK_ENVS_RESOURCE_FILE "${STACK_ROOT_DIR}/stack_resource.env"
   envsSetIfIsEmpty PUBLIC_STACK_TARGET_ENVS_FILE "${STACK_TARGET_ROOT_DIR}/stack_envs.env"
-  
+ 
   
   if [[ -f ${PUBLIC_STACK_TARGET_ENVS_FILE} ]]; then
     source ${PUBLIC_STACK_TARGET_ENVS_FILE}
@@ -161,10 +165,12 @@ function __private_stackEnvsDefaultByStack()
 
   envsSetIfIsEmpty APPLICATION_DEPLOY_DNS ${STACK_SERVICE_HOSTNAME}
   envsSetIfIsEmpty APPLICATION_DEPLOY_DNS_PATH ${STACK_SERVICE_DEFAULT_CONTEXT_PATH}
-  envsSetIfIsEmpty APPLICATION_DEPLOY_DNS_PUBLIC "${STACK_SERVICE_HOSTNAME}.${STACK_DOMAIN}"
-  envsSetIfIsEmpty APPLICATION_DEPLOY_DNS_PUBLIC_PATH "${APPLICATION_DEPLOY_DNS_PATH}"
-  envsSetIfIsEmpty APPLICATION_DEPLOY_DNS_3RDPARTY "${STACK_ENVIRONMENT}-${STACK_SERVICE_HOSTNAME}.${STACK_DOMAIN}"
-  envsSetIfIsEmpty APPLICATION_DEPLOY_DNS_3RDPARTY_PATH "${APPLICATION_DEPLOY_DNS_PATH}"
+  if [[ ${STACK_DOMAIN} != ""  ]]; then
+    envsSetIfIsEmpty APPLICATION_DEPLOY_DNS_PUBLIC "${STACK_SERVICE_HOSTNAME}.${STACK_DOMAIN}"
+    envsSetIfIsEmpty APPLICATION_DEPLOY_DNS_PUBLIC_PATH "${APPLICATION_DEPLOY_DNS_PATH}"
+    envsSetIfIsEmpty APPLICATION_DEPLOY_DNS_3RDPARTY "${STACK_ENVIRONMENT}-${STACK_SERVICE_HOSTNAME}.${STACK_DOMAIN}"
+    envsSetIfIsEmpty APPLICATION_DEPLOY_DNS_3RDPARTY_PATH "${APPLICATION_DEPLOY_DNS_PATH}"
+  fi
 
   envsSetIfIsEmpty APPLICATION_DEPLOY_IMAGE "${STACK_SERVICE_IMAGE_URL}"
   envsSetIfIsEmpty APPLICATION_DEPLOY_HOSTNAME ${STACK_SERVICE_HOSTNAME}  
@@ -483,180 +489,180 @@ function stackInitTargetEnvFile()
 
 function stackEnvsLoad()
 {
+  function __defaultCheck()
+  {
+    #obrigatory envs
+    envsSetIfIsEmpty STACK_TZ "America/Sao_Paulo"
+    envsSetIfIsEmpty STACK_TARGET undefined
+    envsSetIfIsEmpty STACK_DOMAIN "portela-professional.com.br"
+
+    envsSetIfIsEmpty STACK_PROTOCOL http
+    envsSetIfIsEmpty STACK_PROXY_PORT_HTTP 80
+    envsSetIfIsEmpty STACK_PROXY_PORT_HTTPS 443
+    envsSetIfIsEmpty STACK_PREFIX_HOST_ENABLED false
+
+      #resources limit
+    envsSetIfIsEmpty STACK_SERVICE_DEFAULT_SHELF_LIFE "24h"
+    envsSetIfIsEmpty STACK_SERVICE_HEALTH_CHECK_INTERVAL "60s"
+    envsSetIfIsEmpty STACK_SERVICE_HEALTH_CHECK_TIMEOUT "5s"
+    envsSetIfIsEmpty STACK_SERVICE_HEALTH_CHECK_RETRIES "5"
+    #services default images
+    envsSetIfIsEmpty STACK_SERVICE_IMAGE_DNSMASQ "dockurr/dnsmasq:latest"
+    envsSetIfIsEmpty STACK_SERVICE_IMAGE_TRAEFIK "traefik:v2.11.0"
+    envsSetIfIsEmpty STACK_SERVICE_IMAGE_REGISTRY "registry:latest"
+    envsSetIfIsEmpty STACK_SERVICE_IMAGE_POSTGRES "postgres:16.1-bullseye"
+    envsSetIfIsEmpty STACK_SERVICE_IMAGE_POSTGRES_9 "postgres:9.6"
+    envsSetIfIsEmpty STACK_SERVICE_IMAGE_INFLUXDB "influxdb:1.8.10"
+    envsSetIfIsEmpty STACK_SERVICE_IMAGE_MARIADB "lscr.io/linuxserver/mariadb"
+    envsSetIfIsEmpty STACK_SERVICE_IMAGE_MYSQL "mysql:8.0.36-debian"
+    envsSetIfIsEmpty STACK_SERVICE_IMAGE_REDIS "docker.io/bitnami/redis:7.2"
+    envsSetIfIsEmpty STACK_SERVICE_IMAGE_MSSQL "mcr.microsoft.com/mssql/server"
+    envsSetIfIsEmpty STACK_SERVICE_IMAGE_VAULT "hashicorp/vault:1.16"
+    envsSetIfIsEmpty STACK_SERVICE_IMAGE_MINIO "bitnami/minio:2024.3.26"
+
+
+    envsSetIfIsEmpty STACK_VAULT_PORT 8200
+    envsSetIfIsEmpty STACK_VAULT_URI "http://${STACK_PREFIX_HOST}vault"
+    envsSetIfIsEmpty STACK_VAULT_METHOD token
+    envsSetIfIsEmpty STACK_VAULT_TOKEN "${STACK_SERVICE_DEFAULT_TOKEN}"
+    envsSetIfIsEmpty STACK_VAULT_TOKEN_DEPLOY "${STACK_VAULT_TOKEN}"
+    envsSetIfIsEmpty STACK_VAULT_APP_ROLE_ID "${STACK_SERVICE_DEFAULT_USER}"
+    envsSetIfIsEmpty STACK_VAULT_APP_ROLE_SECRET "${STACK_SERVICE_DEFAULT_PASS}"
+    envsSetIfIsEmpty STACK_VAULT_IMPORT "vault:/kv/${STACK_TARGET}/${STACK_ENVIRONMENT}"
+    envsSetIfIsEmpty STACK_VAULT_ENABLED false
+
+    envsSetIfIsEmpty STACK_DEFAULT_DEPLOY_CPU "1"
+    envsSetIfIsEmpty STACK_DEFAULT_DEPLOY_MEMORY "2GB"
+    envsSetIfIsEmpty STACK_DEFAULT_DEPLOY_REPLICAS 1
+
+    envsSetIfIsEmpty STACK_HAPROXY_CERT_DIR "${STACK_INFRA_CONF_DIR}/haproxy/cert"
+    envsSetIfIsEmpty STACK_HAPROXY_CONFIG_FILE "${STACK_INFRA_CONF_DIR}/haproxy/haproxy.cfg"
+  }
   unset __func_return
-  local __private_stackEnvsLoad_environment=${1}
-  local __private_stackEnvsLoad_target=${2}
-
-  if [[ ${__private_stackEnvsLoad_environment} == "" ]]; then
-    export __func_return="Invalid env: \${__private_stackEnvsLoad_environment}"
-    return 0;
-  elif [[ ${__private_stackEnvsLoad_target} == "" ]]; then
-    export __func_return="Invalid env: \${__private_stackEnvsLoad_target}"
-    return 0;
-  fi
-
   unset PUBLIC_STACK_TARGETS_FILE
   unset PUBLIC_STACK_TARGET_ENVS_FILE
+  local __environment=${1}
+  local __target=${2}
 
-  export STACK_ENVIRONMENT="${__private_stackEnvsLoad_environment}"
-  if [[ ${STACK_ENVIRONMENT} != "" && ${STACK_TARGET} != "" ]]; then
-    export STACK_PREFIX="${STACK_ENVIRONMENT}-${STACK_TARGET}"
-  fi
-  export STACK_PREFIX_NAME=$(echo ${STACK_PREFIX} | sed 's/-/_/g')
-  if [[ ${STACK_PREFIX_HOST_ENABLED} == true ]]; then
-    export STACK_PREFIX_HOST="${STACK_PREFIX}-"
+  __defaultCheck
+
+  if [[ ${__environment} == "" ]]; then
+    export __func_return="Invalid env: \${__environment}"
+  elif [[ ${__target} == "" ]]; then
+    export __func_return="Invalid env: \${__target}"
+  elif [[ ${STACK_DOMAIN} == "" ]]; then
+    export __func_return="Invalid env: \${STACK_DOMAIN}"
   else
-    export STACK_PREFIX_HOST="int-"
+    export STACK_ENVIRONMENT="${__environment}"
+    if [[ ${STACK_ENVIRONMENT} != "" && ${STACK_TARGET} != "" ]]; then
+      export STACK_PREFIX="${STACK_ENVIRONMENT}-${STACK_TARGET}"
+    fi
+    export STACK_PREFIX_NAME=$(echo ${STACK_PREFIX} | sed 's/-/_/g')
+    if [[ ${STACK_PREFIX_HOST_ENABLED} == true ]]; then
+      export STACK_PREFIX_HOST="${STACK_PREFIX}-"
+    else
+      export STACK_PREFIX_HOST="int-"
+    fi
+
+    envsSetIfIsEmpty STACK_ROOT_DIR "${HOME}"
+    #remove barra no final
+    export STACK_ROOT_DIR=$(dirname ${STACK_ROOT_DIR}/ignore)
+    export ROOT_APPLICATIONS_DIR="${STACK_ROOT_DIR}/applications"
+    export ROOT_ENVIRONMENT_DIR=${ROOT_APPLICATIONS_DIR}/${STACK_ENVIRONMENT}
+    export STACK_CERT_DEFAULT_DIR="${ROOT_APPLICATIONS_DIR}/certs"
+    export PUBLIC_STACK_TARGETS_FILE="${ROOT_APPLICATIONS_DIR}/stack_targets.env"
+    export PUBLIC_STACK_ENVIRONMENTS_FILE="${ROOT_APPLICATIONS_DIR}/stack_environments.env"
+
+    mkdir -p ${ROOT_APPLICATIONS_DIR}
+
+    if ! [[ -f ${PUBLIC_STACK_ENVIRONMENTS_FILE} ]]; then
+      envsSetIfIsEmpty STACK_ENVIRONMENTS "testing development stating production"
+      echo ${STACK_ENVIRONMENTS}>${PUBLIC_STACK_ENVIRONMENTS_FILE}
+    else
+      envsSetIfIsEmpty STACK_ENVIRONMENTS "testing development stating production"
+    fi
+
+    if ! [[ -f ${PUBLIC_STACK_TARGETS_FILE} ]]; then
+      envsSetIfIsEmpty PUBLIC_STACK_TARGETS "company"
+      echo ${PUBLIC_STACK_TARGETS}>${PUBLIC_STACK_TARGETS_FILE}
+    else
+      envsSetIfIsEmpty PUBLIC_STACK_TARGETS "company"
+    fi
+
+    if ! [[ -f ${PUBLIC_STACK_TARGETS_FILE} ]]; then
+      echo "${PUBLIC_STACK_TARGETS}">${PUBLIC_STACK_TARGETS_FILE}
+    fi
+
+    __private_stackEnvsLoadByTarget ${__target}
+    if ! [ "$?" -eq 1 ]; then
+      export __func_return="fail on calling __private_stackEnvsLoadByTarget, ${__func_return}"
+    elif [[ ${STACK_TARGET} == "" ]]; then
+      export __func_return="fail on calling __private_stackEnvsLoadByTarget, env \${STACK_TARGET} not found"
+    else
+      __defaultCheck
+      #cosntruira diretorios de envs carregadas
+      stackStorageMake
+      if ! [ "$?" -eq 1 ]; then
+        export __func_return="fail on calling stackStorageMake, ${__func_return}"
+      else
+        #primary default envs
+        envsSetIfIsEmpty STACK_ADMIN_USERNAME services
+        envsSetIfIsEmpty STACK_ADMIN_PASSWORD services
+        envsSetIfIsEmpty STACK_ADMIN_EMAIL services@services.com
+        envsSetIfIsEmpty STACK_DNS_SERVER_ENABLE false
+        envsSetIfIsEmpty STACK_DEFAULT_TOKEN "00000000-0000-0000-0000-000000000000"
+        envsSetIfIsEmpty STACK_DEFAULT_USERNAME "${STACK_ADMIN_USERNAME}"
+        envsSetIfIsEmpty STACK_DEFAULT_PASSWORD "${STACK_ADMIN_PASSWORD}"
+        envsSetIfIsEmpty STACK_DEFAULT_EMAIL "${STACK_DEFAULT_USERNAME}@${STACK_DOMAIN}"
+        envsSetIfIsEmpty STACK_DEFAULT_DATABASE ${STACK_DEFAULT_USERNAME}
+        envsSetIfIsEmpty STACK_DEFAULT_CONTEXT_PATH "/"
+        envsSetIfIsEmpty STACK_DEFAULT_PORT 8080
+        envsSetIfIsEmpty STACK_DEFAULT_LOG_LEVEL INFO
+
+        #database envs
+        envsSetIfIsEmpty STACK_DEFAULT_DB_HOST_PG ${STACK_PREFIX_HOST}postgres
+        envsSetIfIsEmpty STACK_DEFAULT_DB_HOST_PG_9 ${STACK_PREFIX_HOST}postgres-9
+        envsSetIfIsEmpty STACK_DEFAULT_DB_PORT 5432
+        envsSetIfIsEmpty STACK_DEFAULT_DB_NAME ${STACK_DEFAULT_DATABASE}
+        envsSetIfIsEmpty STACK_DEFAULT_DB_USERNAME ${STACK_DEFAULT_USERNAME}
+        envsSetIfIsEmpty STACK_DEFAULT_DB_PASSWORD ${STACK_DEFAULT_PASSWORD}
+        envsSetIfIsEmpty STACK_DEFAULT_DB_SCHEMA
+        envsSetIfIsEmpty STACK_DEFAULT_DB_URL "jdbc:postgresql://${STACK_PREFIX_HOST}postgres:${STACK_DEFAULT_DB_PORT}/${STACK_DEFAULT_DB_NAME}"
+
+        #postgres envs
+        envsSetIfIsEmpty POSTGRES_URL ${STACK_DEFAULT_DB_URL}
+        envsSetIfIsEmpty POSTGRES_HOST ${STACK_DEFAULT_DB_HOST_PG}
+        envsSetIfIsEmpty POSTGRES_USER ${STACK_DEFAULT_DB_USERNAME}
+        envsSetIfIsEmpty POSTGRES_PASSWORD ${STACK_DEFAULT_DB_PASSWORD}
+        envsSetIfIsEmpty POSTGRES_DATABASE "${STACK_DEFAULT_DB_PASSWORD}"
+        envsSetIfIsEmpty POSTGRES_PORT ${STACK_DEFAULT_DB_PORT}
+
+        #default users
+        envsSetIfIsEmpty STACK_SERVICE_DEFAULT_TOKEN ${STACK_DEFAULT_TOKEN}
+        envsSetIfIsEmpty STACK_SERVICE_DEFAULT_USER ${STACK_DEFAULT_USERNAME}
+        envsSetIfIsEmpty STACK_SERVICE_DEFAULT_PASS ${STACK_DEFAULT_PASSWORD}
+        envsSetIfIsEmpty STACK_SERVICE_DEFAULT_EMAIL ${STACK_DEFAULT_EMAIL}
+        envsSetIfIsEmpty STACK_SERVICE_DEFAULT_DATABASE ${STACK_DEFAULT_DATABASE}  
+        envsSetIfIsEmpty STACK_SERVICE_DEFAULT_CONTEXT_PATH ${STACK_DEFAULT_CONTEXT_PATH}
+        envsSetIfIsEmpty STACK_SERVICE_DEFAULT_PORT ${STACK_DEFAULT_PORT}
+        envsSetIfIsEmpty STACK_SERVICE_DEFAULT_LOG_LEVEL ${STACK_DEFAULT_LOG_LEVEL}
+
+        #temp
+        export CUR_DATE="$(date +'%Y-%m-%d')"
+        export CUR_TIME="$(date +'%H:%M:%S')"
+        export CUR_DATETIME="$(date +'%Y-%m-%d')T$(date +'%H:%M:%S')"
+
+
+        stackInitTargetEnvFile
+        if ! [ "$?" -eq 1 ]; then
+          export __func_return="fail on calling stackInitTargetEnvFile"
+        else
+          return 1
+        fi
+      fi
+    fi
   fi
-
-  envsSetIfIsEmpty STACK_ROOT_DIR "${HOME}"
-  #remove barra no final
-  export STACK_ROOT_DIR=$(dirname ${STACK_ROOT_DIR}/ignore)
-  export ROOT_APPLICATIONS_DIR="${STACK_ROOT_DIR}/applications"
-  export ROOT_ENVIRONMENT_DIR=${ROOT_APPLICATIONS_DIR}/${STACK_ENVIRONMENT}
-  export STACK_CERT_DEFAULT_DIR="${ROOT_APPLICATIONS_DIR}/certs"
-  export PUBLIC_STACK_TARGETS_FILE="${ROOT_APPLICATIONS_DIR}/stack_targets.env"
-  export PUBLIC_STACK_ENVIRONMENTS_FILE="${ROOT_APPLICATIONS_DIR}/stack_environments.env"
-
-  mkdir -p ${ROOT_APPLICATIONS_DIR}
-
-  if ! [[ -f ${PUBLIC_STACK_ENVIRONMENTS_FILE} ]]; then
-    envsSetIfIsEmpty STACK_ENVIRONMENTS "testing development stating production"
-    echo ${STACK_ENVIRONMENTS}>${PUBLIC_STACK_ENVIRONMENTS_FILE}
-  else
-    envsSetIfIsEmpty STACK_ENVIRONMENTS "testing development stating production"
-  fi
-
-  if ! [[ -f ${PUBLIC_STACK_TARGETS_FILE} ]]; then
-    envsSetIfIsEmpty PUBLIC_STACK_TARGETS "company"
-    echo ${PUBLIC_STACK_TARGETS}>${PUBLIC_STACK_TARGETS_FILE}
-  else
-    envsSetIfIsEmpty PUBLIC_STACK_TARGETS "company"
-  fi
-
-  if ! [[ -f ${PUBLIC_STACK_TARGETS_FILE} ]]; then
-    echo "${PUBLIC_STACK_TARGETS}">${PUBLIC_STACK_TARGETS_FILE}
-  fi
-
-  __private_stackEnvsLoadByTarget ${__private_stackEnvsLoad_target}
-  if ! [ "$?" -eq 1 ]; then
-    export __func_return="fail on calling __private_stackEnvsLoadByTarget, ${__func_return}"
-    return 0;
-  elif [[ ${STACK_TARGET} == "" ]]; then
-    export __func_return="fail on calling __private_stackEnvsLoadByTarget, env \${STACK_TARGET} not found"
-    return 0;
-  fi
-
-  #chamados apenas para gerar a limpeza das envs
-  __private_stackEnvsLoadByStack
-
-  #obrigatory envs
-  envsSetIfIsEmpty STACK_TZ "America/Sao_Paulo"
-  envsSetIfIsEmpty STACK_TARGET undefined
-  envsSetIfIsEmpty STACK_DOMAIN "portela-professional.com.br"
-  envsSetIfIsEmpty STACK_PROTOCOL http
-  envsSetIfIsEmpty STACK_PROXY_PORT_HTTP 80
-  envsSetIfIsEmpty STACK_PROXY_PORT_HTTPS 443
-  envsSetIfIsEmpty STACK_PREFIX_HOST_ENABLED false
-  
-  envsSetIfIsEmpty STACK_VAULT_PORT 8200
-  envsSetIfIsEmpty STACK_VAULT_URI "http://${STACK_PREFIX_HOST}vault"
-  envsSetIfIsEmpty STACK_VAULT_METHOD token
-  envsSetIfIsEmpty STACK_VAULT_TOKEN "${STACK_SERVICE_DEFAULT_TOKEN}"
-  envsSetIfIsEmpty STACK_VAULT_TOKEN_DEPLOY "${STACK_VAULT_TOKEN}"
-  envsSetIfIsEmpty STACK_VAULT_APP_ROLE_ID "${STACK_SERVICE_DEFAULT_USER}"
-  envsSetIfIsEmpty STACK_VAULT_APP_ROLE_SECRET "${STACK_SERVICE_DEFAULT_PASS}"
-  envsSetIfIsEmpty STACK_VAULT_IMPORT "vault:/kv/${STACK_TARGET}/${STACK_ENVIRONMENT}"
-  envsSetIfIsEmpty STACK_VAULT_ENABLED false
-
-  envsSetIfIsEmpty STACK_DEFAULT_DEPLOY_CPU "1"
-  envsSetIfIsEmpty STACK_DEFAULT_DEPLOY_MEMORY "2GB"
-  envsSetIfIsEmpty STACK_DEFAULT_DEPLOY_REPLICAS 1
-
-  envsSetIfIsEmpty STACK_HAPROXY_CERT_DIR "${STACK_INFRA_CONF_DIR}/haproxy/cert"
-  envsSetIfIsEmpty STACK_HAPROXY_CONFIG_FILE "${STACK_INFRA_CONF_DIR}/haproxy/haproxy.cfg"
-
-  #cosntruira diretorios de envs carregadas
-  stackStorageMake
-  if ! [ "$?" -eq 1 ]; then
-    export __func_return="fail on calling stackStorageMake, ${__func_return}"
-    return 0;
-  fi
-
-  #primary default envs
-  envsSetIfIsEmpty STACK_ADMIN_USERNAME services
-  envsSetIfIsEmpty STACK_ADMIN_PASSWORD services
-  envsSetIfIsEmpty STACK_ADMIN_EMAIL services@services.com
-  envsSetIfIsEmpty STACK_DNS_SERVER_ENABLE false
-  envsSetIfIsEmpty STACK_DEFAULT_TOKEN "00000000-0000-0000-0000-000000000000"
-  envsSetIfIsEmpty STACK_DEFAULT_USERNAME "${STACK_ADMIN_USERNAME}"
-  envsSetIfIsEmpty STACK_DEFAULT_PASSWORD "${STACK_ADMIN_PASSWORD}"
-  envsSetIfIsEmpty STACK_DEFAULT_EMAIL "${STACK_DEFAULT_USERNAME}@${STACK_DOMAIN}"
-  envsSetIfIsEmpty STACK_DEFAULT_DATABASE ${STACK_DEFAULT_USERNAME}
-  envsSetIfIsEmpty STACK_DEFAULT_CONTEXT_PATH "/"
-  envsSetIfIsEmpty STACK_DEFAULT_PORT 8080
-  envsSetIfIsEmpty STACK_DEFAULT_LOG_LEVEL INFO
-
-  #database envs
-  envsSetIfIsEmpty STACK_DEFAULT_DB_HOST_PG ${STACK_PREFIX_HOST}postgres
-  envsSetIfIsEmpty STACK_DEFAULT_DB_HOST_PG_9 ${STACK_PREFIX_HOST}postgres-9
-  envsSetIfIsEmpty STACK_DEFAULT_DB_PORT 5432
-  envsSetIfIsEmpty STACK_DEFAULT_DB_NAME ${STACK_DEFAULT_DATABASE}
-  envsSetIfIsEmpty STACK_DEFAULT_DB_USERNAME ${STACK_DEFAULT_USERNAME}
-  envsSetIfIsEmpty STACK_DEFAULT_DB_PASSWORD ${STACK_DEFAULT_PASSWORD}
-  envsSetIfIsEmpty STACK_DEFAULT_DB_SCHEMA
-  envsSetIfIsEmpty STACK_DEFAULT_DB_URL "jdbc:postgresql://${STACK_PREFIX_HOST}postgres:${STACK_DEFAULT_DB_PORT}/${STACK_DEFAULT_DB_NAME}"
-
-  #postgres envs
-  envsSetIfIsEmpty POSTGRES_URL ${STACK_DEFAULT_DB_URL}
-  envsSetIfIsEmpty POSTGRES_HOST ${STACK_DEFAULT_DB_HOST_PG}
-  envsSetIfIsEmpty POSTGRES_USER ${STACK_DEFAULT_DB_USERNAME}
-  envsSetIfIsEmpty POSTGRES_PASSWORD ${STACK_DEFAULT_DB_PASSWORD}
-  envsSetIfIsEmpty POSTGRES_DATABASE "${STACK_DEFAULT_DB_PASSWORD}"
-  envsSetIfIsEmpty POSTGRES_PORT ${STACK_DEFAULT_DB_PORT}
-
-  #default users
-  envsSetIfIsEmpty STACK_SERVICE_DEFAULT_TOKEN ${STACK_DEFAULT_TOKEN}
-  envsSetIfIsEmpty STACK_SERVICE_DEFAULT_USER ${STACK_DEFAULT_USERNAME}
-  envsSetIfIsEmpty STACK_SERVICE_DEFAULT_PASS ${STACK_DEFAULT_PASSWORD}
-  envsSetIfIsEmpty STACK_SERVICE_DEFAULT_EMAIL ${STACK_DEFAULT_EMAIL}
-  envsSetIfIsEmpty STACK_SERVICE_DEFAULT_DATABASE ${STACK_DEFAULT_DATABASE}  
-  envsSetIfIsEmpty STACK_SERVICE_DEFAULT_CONTEXT_PATH ${STACK_DEFAULT_CONTEXT_PATH}
-  envsSetIfIsEmpty STACK_SERVICE_DEFAULT_PORT ${STACK_DEFAULT_PORT}
-  envsSetIfIsEmpty STACK_SERVICE_DEFAULT_LOG_LEVEL ${STACK_DEFAULT_LOG_LEVEL}
-
-  #resources limit
-  envsSetIfIsEmpty STACK_SERVICE_DEFAULT_SHELF_LIFE "24h"
-  envsSetIfIsEmpty STACK_SERVICE_HEALTH_CHECK_INTERVAL "60s"
-  envsSetIfIsEmpty STACK_SERVICE_HEALTH_CHECK_TIMEOUT "5s"
-  envsSetIfIsEmpty STACK_SERVICE_HEALTH_CHECK_RETRIES "5"
-  #services default images
-  envsSetIfIsEmpty STACK_SERVICE_IMAGE_DNSMASQ "dockurr/dnsmasq:latest"
-  envsSetIfIsEmpty STACK_SERVICE_IMAGE_TRAEFIK "traefik:v2.11.0"
-  envsSetIfIsEmpty STACK_SERVICE_IMAGE_REGISTRY "registry:latest"
-  envsSetIfIsEmpty STACK_SERVICE_IMAGE_POSTGRES "postgres:16.1-bullseye"
-  envsSetIfIsEmpty STACK_SERVICE_IMAGE_POSTGRES_9 "postgres:9.6"
-  envsSetIfIsEmpty STACK_SERVICE_IMAGE_INFLUXDB "influxdb:1.8.10"
-  envsSetIfIsEmpty STACK_SERVICE_IMAGE_MARIADB "lscr.io/linuxserver/mariadb"
-  envsSetIfIsEmpty STACK_SERVICE_IMAGE_MYSQL "mysql:8.0.36-debian"
-  envsSetIfIsEmpty STACK_SERVICE_IMAGE_REDIS "docker.io/bitnami/redis:7.2"
-  envsSetIfIsEmpty STACK_SERVICE_IMAGE_MSSQL "mcr.microsoft.com/mssql/server"
-  envsSetIfIsEmpty STACK_SERVICE_IMAGE_VAULT "hashicorp/vault:1.16"
-  envsSetIfIsEmpty STACK_SERVICE_IMAGE_MINIO "bitnami/minio:2024.3.26"
-
-  #temp
-  envsSetIfIsEmpty CUR_DATE "$(date +'%Y-%m-%d')"
-  envsSetIfIsEmpty CUR_TIME "$(date +'%H:%M:%S')"
-  envsSetIfIsEmpty CUR_DATETIME "$(date +'%Y-%m-%d')T$(date +'%H:%M:%S')"
-
-
-  stackInitTargetEnvFile
-  if ! [ "$?" -eq 1 ]; then
-    export __func_return="fail on calling stackInitTargetEnvFile"
-    return 0;
-  fi
-
-  return 1
+  return 0;
 }
 
 function stackEnvsByStackExportToFile()
@@ -686,7 +692,10 @@ function stackEnvsLoadByStack()
   local __target=${2}
   local __stack_name=${3}
 
-  if [[ ${__environment} == "" ]]; then
+  if [[ ${STACK_DOMAIN} == "" ]]; then
+    export __func_return="Invaid env: \${STACK_DOMAIN}"
+    return 0;
+  elif [[ ${__environment} == "" ]]; then
     export __func_return="Invaid env: \${__environment}"
     return 0;
   elif [[ ${__target} == "" ]]; then
@@ -695,56 +704,45 @@ function stackEnvsLoadByStack()
   elif [[ ${__stack_name} == "" ]]; then
     export __func_return="Invaid env: \${__stack_name}"
     return 0;
+  else
+    stackEnvsLoad "${__environment}" "${__target}"
+    if [[ ${STACK_ENVIRONMENT} == "" ]]; then
+      export __func_return="fail on calling stackEnvsLoad: env: \${STACK_ENVIRONMENT}"
+      return 0;
+    elif [[ ${STACK_TARGET} == "" ]]; then
+      export __func_return="fail on calling stackEnvsLoad: env: \${STACK_TARGET}"
+      return 0;
+    else
+      __private_stackEnvsLoadByStack "${__stack_name}"
+      __private_stackEnvsDefaultByStack ${__environment} ${__target} ${__stack_name}
+      if ! [ "$?" -eq 1 ]; then
+        export __func_return="fail on calling __private_stackEnvsLoadByStack, ${__func_return}"
+        return 0;
+      elif [[ ${STACK_TARGET} == "" ]]; then
+        export __func_return="fail on calling __private_stackEnvsLoadByStack: env: \${STACK_TARGET}"
+        return 0;
+      elif [[ ${STACK_ENVIRONMENT} == "" ]]; then
+        export __func_return="fail on calling stackEnvsLoad, env \${STACK_ENVIRONMENT} not found"
+        return 0;
+      elif [[ ${STACK_LIB_DIR} == "" ]]; then
+        export __func_return="fail on calling stackEnvsLoad, env \${STACK_LIB_DIR} not found"
+        return 0;
+      elif [[ ${STACK_NAME} == "" ]]; then
+        export __func_return="fail on calling __private_stackEnvsLoadByStack, env \${STACK_NAME} not found"
+        return 0;
+      elif [[ ${STACK_PREFIX} == ""  ]]; then
+        echFail "${1}" "fail on calling __private_stackEnvsLoadByStack, invalid env \${STACK_PREFIX}"
+        return 0;
+      elif [[ ${STACK_SERVICE_IMAGE} == ""  ]]; then
+        echFail "${1}" "fail on calling __private_stackEnvsLoadByStack, invalid env \${STACK_SERVICE_IMAGE}"
+        return 0;
+      elif [[ ${STACK_SERVICE_HOSTNAME} == ""  ]]; then
+        echFail "${1}" "fail on calling __private_stackEnvsLoadByStack, invalid env \${STACK_SERVICE_HOSTNAME}"
+        return 0;
+      fi
+      return 1;
+    fi
   fi
-
-  stackEnvsLoad "${__environment}" "${__target}"
-  if [[ ${STACK_ENVIRONMENT} == "" ]]; then
-    export __func_return="fail on calling stackEnvsLoad: env: \${STACK_ENVIRONMENT}"
-    return 0;
-  fi
-
-  if [[ ${STACK_TARGET} == "" ]]; then
-    export __func_return="fail on calling stackEnvsLoad: env: \${STACK_TARGET}"
-    return 0;
-  fi
-
-  __private_stackEnvsLoadByStack "${__stack_name}"
-  __private_stackEnvsDefaultByStack ${__environment} ${__target} ${__stack_name}
-  if ! [ "$?" -eq 1 ]; then
-    export __func_return="fail on calling __private_stackEnvsLoadByStack, ${__func_return}"
-    return 0;
-  elif [[ ${STACK_TARGET} == "" ]]; then
-    export __func_return="fail on calling __private_stackEnvsLoadByStack: env: \${STACK_TARGET}"
-    return 0;
-  fi
-
-  if [[ ${STACK_DOMAIN} == "" ]]; then
-    export __func_return="fail on calling stackEnvsLoad, env \${STACK_DOMAIN} not found"
-    return 0;
-  elif [[ ${STACK_ENVIRONMENT} == "" ]]; then
-    export __func_return="fail on calling stackEnvsLoad, env \${STACK_ENVIRONMENT} not found"
-    return 0;
-  elif [[ ${STACK_LIB_DIR} == "" ]]; then
-    export __func_return="fail on calling stackEnvsLoad, env \${STACK_LIB_DIR} not found"
-    return 0;
-  elif [[ ${STACK_TARGET} == "" ]]; then
-    export __func_return="fail on calling __private_stackEnvsLoadByStack, env \${STACK_TARGET} not found"
-    return 0;
-  elif [[ ${STACK_NAME} == "" ]]; then
-    export __func_return="fail on calling __private_stackEnvsLoadByStack, env \${STACK_NAME} not found"
-    return 0;
-  elif [[ ${STACK_PREFIX} == ""  ]]; then
-    echFail "${1}" "fail on calling __private_stackEnvsLoadByStack, invalid env \${STACK_PREFIX}"
-    return 0;
-  elif [[ ${STACK_SERVICE_IMAGE} == ""  ]]; then
-    echFail "${1}" "fail on calling __private_stackEnvsLoadByStack, invalid env \${STACK_SERVICE_IMAGE}"
-    return 0;
-  elif [[ ${STACK_SERVICE_HOSTNAME} == ""  ]]; then
-    echFail "${1}" "fail on calling __private_stackEnvsLoadByStack, invalid env \${STACK_SERVICE_HOSTNAME}"
-    return 0;    
-  fi
-
-  return 1;
 }
 
 function stackMakeStructure()

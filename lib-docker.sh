@@ -127,6 +127,7 @@ function dockerSwarmNodeLabels()
 {
   echo "stack-type-master
  stack-type-infrastructure
+ stack-type-waf
  stack-type-fw
  stack-type-tools
  stack-type-database
