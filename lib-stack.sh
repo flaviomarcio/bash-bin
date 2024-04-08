@@ -564,7 +564,7 @@ function stackEnvsLoad()
       export STACK_PREFIX_HOST="int-"
     fi
 
-    envsSetIfIsEmpty STACK_ROOT_DIR "${HOME}"
+    envsSetIfIsEmpty STACK_ROOT_DIR "${HOME}/data"
     #remove barra no final
     export STACK_ROOT_DIR=$(dirname ${STACK_ROOT_DIR}/ignore)
     export ROOT_APPLICATIONS_DIR="${STACK_ROOT_DIR}/applications"
