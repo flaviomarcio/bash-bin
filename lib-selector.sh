@@ -17,11 +17,17 @@ __selector_environments="testing development staging production"
 
 function __private_print_os_information()
 {
-  local __docker_daemon=/etc/docker/daemon.json
   local __docker_info="Docker: ${COLOR_YELLOW}"$(docker --version | sed 's/Docker //g')
-  local __docker_root_dir=$(cat ${__docker_daemon} | sed 's/data-root/data_root/g' | jq '.data_root' | sed 's/\"//g')
-  local __docker_tls=$(cat ${__docker_daemon} | jq '.tls')
-  local __docker_cert=$(cat ${__docker_daemon} | jq '.tlscert')
+  local __docker_daemon=/etc/docker/daemon.json
+  if [[ -f ${__docker_daemon} ]]; then
+    local __docker_root_dir=$(cat ${__docker_daemon} | sed 's/data-root/data_root/g' | jq '.data_root' | sed 's/\"//g')
+    local __docker_tls=$(cat ${__docker_daemon} | jq '.tls')
+    local __docker_cert=$(cat ${__docker_daemon} | jq '.tlscert')
+  else
+    local __docker_root_dir="UNDEFINED"
+    local __docker_tls="UNDEFINED"
+    local __docker_cert="UNDEFINED"
+  fi
 
   echG "OS informations"
   echC "  - $(uname -a)"
