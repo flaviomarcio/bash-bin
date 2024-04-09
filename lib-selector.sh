@@ -17,7 +17,6 @@ __selector_environments="testing development staging production"
 
 function __private_print_os_information()
 {
-  local __docker_info="Docker: ${COLOR_YELLOW}"$(docker --version | sed 's/Docker //g')
   local __docker_daemon=/etc/docker/daemon.json
   if [[ -f ${__docker_daemon} ]]; then
     local __docker_root_dir=$(cat ${__docker_daemon} | sed 's/data-root/data_root/g' | jq '.data_root' | sed 's/\"//g')
@@ -29,6 +28,7 @@ function __private_print_os_information()
     local __docker_cert="UNDEFINED"
   fi
 
+  local __docker_info="Docker: ${COLOR_YELLOW}"$(docker --version | sed 's/Docker //g')
   echG "OS informations"
   echC "  - $(uname -a)"
   echC "  - ${__docker_info}${COLOR_CIANO}, IPv4: ${COLOR_YELLOW}${PUBLIC_HOST_IPv4}${COLOR_CIANO}, root-dir: ${COLOR_YELLOW}${__docker_root_dir}"
