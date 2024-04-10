@@ -378,11 +378,3 @@ function deploy()
   echG "  Finished"
   return 1
 }
-
-
-cp -r /mnt/storage/home/person-git/github/erp/erp-containers-infrastructure/stack/activemq.yml /tmp/activemq.yml
-export STACK_INFRA_DEPLOY_SETTINGS_FILE=/mnt/storage/home/person-git/github/erp/erp-containers-infrastructure/conf/deploy-config.json
-export teste=/tmp/activemq.yml
-__docker_compose_parser "activemq" "${teste}"
-echo ${__func_return}
-cat ${teste}

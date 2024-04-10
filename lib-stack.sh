@@ -409,6 +409,19 @@ function stackMkVolumes()
   return 1
 }
 
+function stackEnvironmentConfigure()
+{
+  selector "Select env to edit" "Back testing development staging production" false
+  if [[ ${__selector} == "Back" ]]; then
+    return 1;
+  else
+    printf "set ${__selector}: "
+    read __env_value
+    export ${__selector}=${__env_value}
+    stackPublicEnvsConfigure
+  fi
+}
+
 function stackEnvsIsConfigured()
 {
   unset __func_return
