@@ -411,15 +411,154 @@ function stackMkVolumes()
 
 function stackEnvironmentConfigure()
 {
-  selector "Select env to edit" "Back testing development staging production" false
-  if [[ ${__selector} == "Back" ]]; then
-    return 1;
-  else
-    printf "set ${__selector}: "
-    read __env_value
-    export ${__selector}=${__env_value}
-    stackPublicEnvsConfigure
+  clearTerm
+
+  local __environment=
+  local __target=
+  local __domain=
+
+  echM $'\n'"Configure environments ${STACK_PREFIX}"$'\n'
+
+  function __select_environment()
+  {
+    unset __func_return
+    local __default=testing
+    local options=(Back testing development staging production)
+    echC $'\n'"-Set environment, default: ${COLOR_YELLOW}[${__default}}]"$'\n'
+    PS3=$'\n'"Choose option:"
+    select opt in "${options[@]}"
+    do
+      if [[ ${opt} == "Back" ]]; then
+        retuirn 2
+      else
+        local __env=
+        for __env in ${options[*]};
+        do
+          if [[ "${__env}" == "${opt}" ]]; then
+            export __func_return=${opt}
+            return 1;
+          fi
+        done
+      fi
+    done
+    return 0
+  }
+
+  function __select_target()
+  {
+    unset __func_return
+    local __default=company
+    echC $'\n'"-Set target, default: ${COLOR_YELLOW}[${__default}]"$'\n'
+    read __value
+    if [[ ${__value} == "" ]]; then
+      local __value=${__default}
+    fi
+    export __func_return=${__value}
+    return 1
+  }
+
+  function __select_domain()
+  {
+    unset __func_return
+    local __default=${__target}.local
+    echC $'\n'"-Set domain, default: ${COLOR_YELLOW}[${__default}]"$'\n'
+    read __value
+    if [[ ${__value} == "" ]]; then
+      local __value=${__default}
+    fi
+    export __func_return=${__value}
+    return 1
+  }
+
+  function __select_print()
+  {
+    local __environment=${1}
+    local __target=${2}
+    local __domain=${3}
+    echM "  Values set"
+    echC "    - STACK_ENVIROMENT: ${COLOR_YELLOW}${__environment}"
+    echC "    - STACK_TARGET: ${COLOR_YELLOW}${__target}"
+    echC "    - STACK_DOMAIN: ${COLOR_YELLOW}${__domain}"
+    return 1
+  }
+
+  unset __environment=
+  unset __domain=
+  unset __target=
+
+  echM $'\n'"Configure environments ${STACK_PREFIX}"$'\n'
+  while :
+  do
+    __select_print "${__environment}" "${__target}" "${__domain}"
+    __select_environment
+    local __ret="$?"
+    if [[ "${__ret}" -eq 1 ]]; then
+      local __environment=${__func_return}
+      break
+    elif [[ "${__ret}" -eq 2 ]]; then
+      return 1
+    fi
+  done
+
+  while :
+  do
+    __select_print "${__environment}" "${__target}" "${__domain}"
+    __select_target
+    local __ret="$?"
+    if [[ "${__ret}" -eq 1 ]]; then
+      echB "$(date)"
+      local __target=${__func_return}
+      break
+    elif [[ "${__ret}" -eq 2 ]]; then
+      return 1
+    fi
+  done
+
+  while :
+  do
+    __select_print "${__environment}" "${__target}" "${__domain}"
+    __select_domain
+    local __ret="$?"
+    if [[ "${__ret}" -eq 1 ]]; then
+      local __domain=${__func_return}
+      break
+    elif [[ "${__ret}" -eq 2 ]]; then
+      return 1
+    fi
+  done
+
+  echG "Confirme values to write to ${COLOR_YELLOW}${PUBLIC_STACK_ENVIRONMENTS_FILE}"
+  __select_print "${__environment}" "${__target}" "${__domain}"
+
+  echB ""
+  echo -e -n "${COLOR_CIANO}Choose: ${COLOR_GREEN}Yes(Y|y), ${COLOR_CIANO}default: ${COLOR_YELLOW} [Y|y]: "
+  local __value=
+  read __value
+  if [[  ${__value} == "" ]]; then
+    local __value="Y"
   fi
+  if [[ "${__value}" != "Y" && "${__value}" != "y" ]]; then
+    return 1
+  fi
+  echC "    selected option: ${COLOR_YELLOW}[${__value}]"
+  sleep 1
+
+  sed -i '/STACK_ENVIROMENT/d' -i ${PUBLIC_STACK_ENVIRONMENTS_FILE}
+  sed -i '/STACK_TARGET/d' -i ${PUBLIC_STACK_ENVIRONMENTS_FILE}
+  sed -i '/STACK_DOMAIN/d' -i ${PUBLIC_STACK_ENVIRONMENTS_FILE}
+
+  if [[ -f ${PUBLIC_STACK_ENVIRONMENTS_FILE} ]]; then
+    echo "">${PUBLIC_STACK_ENVIRONMENTS_FILE}
+  fi
+  echo "export STACK_ENVIROMENT=${__environment}">>${PUBLIC_STACK_ENVIRONMENTS_FILE}
+  echo "export STACK_TARGET=${__target}">>${PUBLIC_STACK_ENVIRONMENTS_FILE}
+  echo "export STACK_DOMAIN=${__domain}">>${PUBLIC_STACK_ENVIRONMENTS_FILE}
+
+  echG "  - To check, use the shell command: ${COLOR_YELLOW}# cat ${PUBLIC_STACK_ENVIRONMENTS_FILE}"
+  echG "Successfull"
+  echG $'\n'"[ENTER] to continue"
+  read
+  return 1
 }
 
 function stackEnvsIsConfigured()
@@ -942,3 +1081,6 @@ function stackVaultPush()
   read
   return 1
 }
+
+#export PUBLIC_STACK_ENVIRONMENTS_FILE=/tmp/test.env
+#stackEnvironmentConfigure
