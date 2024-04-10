@@ -113,6 +113,7 @@ function __private_stackEnvsLoadByTarget()
   export STACK_INFRA_DIR="${STACK_TARGET_ROOT_DIR}/infrastructure"
   export STACK_INFRA_CONF_DIR="${STACK_TARGET_ROOT_DIR}/infrastructure/conf"
   export STACK_INFRA_CERT_DIR="${STACK_INFRA_CONF_DIR}/cert"
+  export STACK_INFRA_DEPLOY_SETTINGS_FILE="${STACK_INFRA_CONF_DIR}/deploy-config.json"
   export STACK_TEMPLATES_DIR="${STACK_TARGET_ROOT_DIR}/templates"
   export STACK_TARGET_STORAGE_DIR=${STACK_TARGET_ROOT_DIR}/storage-data
   export STACK_TARGET_STORAGE_NFS=${STACK_TARGET_ROOT_DIR}/storage-nfs
@@ -475,7 +476,6 @@ function stackInitTargetEnvFile()
   local __local_add="
   STACK_TZ
   STACK_DOMAIN
-  STACK_DNS_SERVER_ENABLE
   STACK_PREFIX_HOST_ENABLED
   $(envsGet STACK_ADMIN_ STACK_PROXY_ STACK_DEFAULT_ STACK_SERVICE_DEFAULT_ STACK_SERVICE_HEALTH_ STACK_GOCD_ STACK_SERVICE_IMAGE STACK_VOLUME_ STACK_LDAP_ STACK_TRAEFIK_ POSTGRES_)
   "
@@ -609,7 +609,6 @@ function stackEnvsLoad()
         envsSetIfIsEmpty STACK_ADMIN_USERNAME services
         envsSetIfIsEmpty STACK_ADMIN_PASSWORD services
         envsSetIfIsEmpty STACK_ADMIN_EMAIL services@services.com
-        envsSetIfIsEmpty STACK_DNS_SERVER_ENABLE false
         envsSetIfIsEmpty STACK_DEFAULT_TOKEN "00000000-0000-0000-0000-000000000000"
         envsSetIfIsEmpty STACK_DEFAULT_USERNAME "${STACK_ADMIN_USERNAME}"
         envsSetIfIsEmpty STACK_DEFAULT_PASSWORD "${STACK_ADMIN_PASSWORD}"

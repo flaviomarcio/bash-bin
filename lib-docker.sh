@@ -13,10 +13,6 @@ fi
 . ${BASH_BIN}/lib-system.sh
 . ${BASH_BIN}/lib-util-date.sh
 
-# export DOCKER_OPTION=
-# export DOCKER_SCOPE=
-# export DOCKER_DIR=
-
 function __private_docker_envsubst()
 {
   if [[ ${1} == "" ]]; then
@@ -247,17 +243,12 @@ function dockerSwarmJoinPrint()
   read
 }
 
-
 function dockerSwarmInit()
 {
   local __action=${1}
   local __swarm_ip=${2}
 
-  if [[ ${STACK_DNS_SERVER_ENABLE} == true ]]; then
-    local __cmd="docker swarm init --dns ${STACK_PREFIX_HOST}dnsserver --advertise-addr ${__swarm_ip}"
-  else
-    local __cmd="docker swarm init --advertise-addr ${__swarm_ip}"
-  fi
+  local __cmd="docker swarm init --advertise-addr ${__swarm_ip}"
 
   if [[ ${__action} == true ]]; then
     clearTerm
@@ -492,7 +483,6 @@ function dockerPluginsInstall()
   return 1
 }
 
-
 function dockerNetworkCreate()
 {
   unset __func_return
@@ -511,12 +501,7 @@ function dockerNetworkCreate()
       continue
     fi
 
-    if [[ ${STACK_DNS_SERVER_ENABLE} == true ]]; then
-      #docker --log-level ERROR network create --driver overlay --attachable --opt com.docker.network.bridge.name=my_network --opt com.docker.network.bridge.enable_icc=true --opt com.docker.network.bridge.enable_ip_masquerade=true --opt com.docker.network.bridge.host_binding_ipv4=0.0.0.0 --opt com.docker.network.driver.mtu=1500 --subnet=10.0.0.0/24 --gateway=10.0.0.1 --aux-address=\"host=10.0.0.254\" --aux-address=\"dhcp=10.0.0.253\" --dns=10.0.0.2 my_custom_network
-      local __cmd="docker --log-level ERROR network create --driver overlay --attachable --opt --opt com.docker.network.driver.mtu=1500 --subnet=10.0.0.0/24 --gateway=10.0.0.1 --aux-address=\"host=10.0.0.254\" --aux-address=\"dhcp=10.0.0.253\" --dns=10.0.0.2 my_custom_network"
-    else
-      local __cmd="docker --log-level ERROR network create --driver=overlay ${__name}"
-    fi
+    local __cmd="docker --log-level ERROR network create --driver=overlay ${__name}"
 
     echo $(${__cmd})&>/dev/null
 
@@ -696,11 +681,20 @@ function dockerBuildCompose()
 function dockerRegistryImageCheck()
 {
   unset __func_return
-  local __image=${1}
-  local __check=$(curl -s -H "Accept: application/vnd.docker.distribution.manifest.v2+json" -X GET "http://${STACK_REGISTRY_DNS_PUBLIC}/v2/${__image}/manifests/latest" | jq '.config.mediaType')
-  if [[ ${__check} == "" || ${__check} == "null" ]]; then
-    return 0;
+  local __dns=${1}
+  local __image=${2}
+  if [[ ${__dns} == "" ]]; then
+    export __func_return="Invalid env \${__dns}"
+    return 0
+  elif [[ ${__image} == "" ]]; then
+    export __func_return="Invalid env \${__image}"
+    return 0
+  else
+    local __check=$(curl -s -H "Accept: application/vnd.docker.distribution.manifest.v2+json" -X GET "http://${__dns}/v2/${__image}/manifests/latest" | jq '.config.mediaType')
+    if [[ ${__check} == "" || ${__check} == "null" ]]; then
+      return 0;
+    fi
+    export __func_return=1  
+    return 1;
   fi
-  export __func_return=1  
-  return 1;
 }

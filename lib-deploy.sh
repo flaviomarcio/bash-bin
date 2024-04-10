@@ -15,6 +15,43 @@ fi
 . ${BASH_BIN}/lib-build.sh
 . ${BASH_BIN}/lib-docker.sh
 
+function __docker_compose_parser()
+{
+  unset __func_return
+  local __stack_name=${1}
+  local __compose_file=${2}
+
+  if ! [[ -f ${STACK_INFRA_DEPLOY_SETTINGS_FILE} ]]; then #no check
+    return 1;
+  elif [[ ${__compose_file} == "" ]]; then
+    export __func_return="Invalid env \${__compose_file}"
+    return 0
+  elif ! [[ -f ${__compose_file} ]]; then
+    export __func_return="Invalid docker compose file"
+    return 0
+  else
+    #drop traefik using environment
+    local __check_drop_list=$(cat ${STACK_INFRA_DEPLOY_SETTINGS_FILE} | jq '.testing.traefik.stackIgnoreDrop[]' | sed 's/\"//g')
+    local __check_drop_list=( ${__check_drop_list} )
+    local __check_drop_no=true
+    local __check_env=
+    for __check_env in "${__check_drop_list[@]}"
+    do
+      if ! [[ ${__check_env} == "--all" || ${__check_env} == "${__stack_name}" ]]; then
+        local __check_drop_no=false
+      else
+        local __check_drop_no=true
+      fi
+    done
+
+    if [[ ${__check_drop_no} == true ]]; then #remove traefik labels
+      sed -i "/traefik/d" "${__compose_file}"
+    fi
+
+    return 1
+  fi
+}
+
 function __private_deploy_envsubst()
 {
   if [[ ${1} == "" ]]; then
@@ -341,3 +378,11 @@ function deploy()
   echG "  Finished"
   return 1
 }
+
+
+cp -r /mnt/storage/home/person-git/github/erp/erp-containers-infrastructure/stack/activemq.yml /tmp/activemq.yml
+export STACK_INFRA_DEPLOY_SETTINGS_FILE=/mnt/storage/home/person-git/github/erp/erp-containers-infrastructure/conf/deploy-config.json
+export teste=/tmp/activemq.yml
+__docker_compose_parser "activemq" "${teste}"
+echo ${__func_return}
+cat ${teste}
