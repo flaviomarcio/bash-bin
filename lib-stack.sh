@@ -130,8 +130,8 @@ function __private_stackEnvsLoadByTarget()
   envsSetIfIsEmpty STACK_NETWORK_GRAFANA_K6 "${STACK_NETWORK_PREFIX}-grafana-k6"
   envsSetIfIsEmpty STACK_NETWORK_KONG "${STACK_NETWORK_PREFIX}-kong-net"
 
+  envsSetIfIsEmpty PUBLIC_STACK_FIX_ENVS_FILE "${STACK_ROOT_DIR}/stack_envs.env"
   envsSetIfIsEmpty STACK_REGISTRY_DNS_PUBLIC "${STACK_ENVIRONMENT}-${STACK_TARGET}-registry.${STACK_DOMAIN}:5000"
-  envsSetIfIsEmpty PUBLIC_STACK_ENVS_FILE "${STACK_ROOT_DIR}/stack_envs.env"
   envsSetIfIsEmpty PUBLIC_STACK_ENVS_RESOURCE_FILE "${STACK_ROOT_DIR}/stack_resource.env"
   envsSetIfIsEmpty PUBLIC_STACK_TARGET_ENVS_FILE "${STACK_TARGET_ROOT_DIR}/stack_envs.env"
  
@@ -413,18 +413,44 @@ function stackEnvironmentConfigure()
 {
   clearTerm
 
-  local __environment=
-  local __target=
-  local __domain=
+  local __root_dir=${STACK_ROOT_DIR}
+  local __environment=${STACK_ENVIRONMENT}
+  local __target=${STACK_TARGET}
+  local __domain=${STACK_DOMAIN}
 
   echM $'\n'"Configure environments ${STACK_PREFIX}"$'\n'
+
+  function __select_root_dir()
+  {
+    unset __func_return
+    if [[ ${STACK_ROOT_DIR} != "" ]]; then
+      local __default=${STACK_ROOT_DIR}
+    else
+      local __default=${HOME}/data
+    fi
+    echC ""
+    echM "New value"
+    echC "  - Set root-dir, default: ${COLOR_YELLOW}[${__default}]"$'\n'
+    read __value
+    if [[ ${__value} == "" ]]; then
+      local __value=${__default}
+    fi
+    export __func_return=${__value}
+    return 1
+  }
 
   function __select_environment()
   {
     unset __func_return
-    local __default=testing
+    if [[ ${STACK_DOMAIN} != "" ]]; then
+      local __default=${STACK_ENVIRONMENT}
+    else
+      local __default=testing
+    fi
     local options=(Back testing development staging production)
-    echC $'\n'"-Set environment, default: ${COLOR_YELLOW}[${__default}}]"$'\n'
+    echC ""
+    echM "New value"
+    echC "  - Set environment, default: ${COLOR_YELLOW}[${__default}]"$'\n'
     PS3=$'\n'"Choose option:"
     select opt in "${options[@]}"
     do
@@ -447,8 +473,14 @@ function stackEnvironmentConfigure()
   function __select_target()
   {
     unset __func_return
-    local __default=company
-    echC $'\n'"-Set target, default: ${COLOR_YELLOW}[${__default}]"$'\n'
+    if [[ ${STACK_DOMAIN} != "" ]]; then
+      local __default=${STACK_TARGET}
+    else
+      local __default=company
+    fi
+    echC ""
+    echM "New value"
+    echC "  - Set target, default: ${COLOR_YELLOW}[${__default}]"$'\n'
     read __value
     if [[ ${__value} == "" ]]; then
       local __value=${__default}
@@ -460,8 +492,14 @@ function stackEnvironmentConfigure()
   function __select_domain()
   {
     unset __func_return
-    local __default=${__target}.local
-    echC $'\n'"-Set domain, default: ${COLOR_YELLOW}[${__default}]"$'\n'
+    if [[ ${STACK_DOMAIN} != "" ]]; then
+      local __default=${STACK_DOMAIN}
+    else
+      local __default=${__target}.local
+    fi
+    echM ""
+    echM "New value"
+    echC "  - Set domain, default: ${COLOR_YELLOW}[${__default}]"$'\n'
     read __value
     if [[ ${__value} == "" ]]; then
       local __value=${__default}
@@ -472,24 +510,35 @@ function stackEnvironmentConfigure()
 
   function __select_print()
   {
-    local __environment=${1}
-    local __target=${2}
-    local __domain=${3}
-    echM "  Values set"
-    echC "    - STACK_ENVIROMENT: ${COLOR_YELLOW}${__environment}"
-    echC "    - STACK_TARGET: ${COLOR_YELLOW}${__target}"
-    echC "    - STACK_DOMAIN: ${COLOR_YELLOW}${__domain}"
+    clearTerm
+    local __root_dir=${1}
+    local __environment=${2}
+    local __target=${3}
+    local __domain=${4}
+    echM "Values set"
+    echC "  - STACK_ROOT_DIR: ${COLOR_YELLOW}${__root_dir}"
+    echC "  - STACK_ENVIRONMENT: ${COLOR_YELLOW}${__environment}"
+    echC "  - STACK_TARGET: ${COLOR_YELLOW}${__target}"
+    echC "  - STACK_DOMAIN: ${COLOR_YELLOW}${__domain}"
     return 1
   }
 
-  unset __environment=
-  unset __domain=
-  unset __target=
-
-  echM $'\n'"Configure environments ${STACK_PREFIX}"$'\n'
   while :
   do
-    __select_print "${__environment}" "${__target}" "${__domain}"
+    __select_print "${__root_dir}" "${__environment}" "${__target}" "${__domain}"
+    __select_root_dir
+    local __ret="$?"
+    if [[ "${__ret}" -eq 1 ]]; then
+      local __root_dir=${__func_return}
+      break
+    elif [[ "${__ret}" -eq 2 ]]; then
+      return 1
+    fi
+  done
+
+  while :
+  do
+    __select_print "${__root_dir}" "${__environment}" "${__target}" "${__domain}"
     __select_environment
     local __ret="$?"
     if [[ "${__ret}" -eq 1 ]]; then
@@ -502,7 +551,7 @@ function stackEnvironmentConfigure()
 
   while :
   do
-    __select_print "${__environment}" "${__target}" "${__domain}"
+    __select_print "${__root_dir}" "${__environment}" "${__target}" "${__domain}"
     __select_target
     local __ret="$?"
     if [[ "${__ret}" -eq 1 ]]; then
@@ -516,7 +565,7 @@ function stackEnvironmentConfigure()
 
   while :
   do
-    __select_print "${__environment}" "${__target}" "${__domain}"
+    __select_print "${__root_dir}" "${__environment}" "${__target}" "${__domain}"
     __select_domain
     local __ret="$?"
     if [[ "${__ret}" -eq 1 ]]; then
@@ -527,8 +576,8 @@ function stackEnvironmentConfigure()
     fi
   done
 
-  echG "Confirme values to write to ${COLOR_YELLOW}${PUBLIC_STACK_ENVIRONMENTS_FILE}"
-  __select_print "${__environment}" "${__target}" "${__domain}"
+  echG "Confirme values to write to ${COLOR_YELLOW}${PUBLIC_STACK_FIX_ENVS_FILE}"
+  __select_print "${__root_dir}" "${__environment}" "${__target}" "${__domain}"
 
   echB ""
   echo -e -n "${COLOR_CIANO}Choose: ${COLOR_GREEN}Yes(Y|y), ${COLOR_CIANO}default: ${COLOR_YELLOW} [Y|y]: "
@@ -543,21 +592,30 @@ function stackEnvironmentConfigure()
   echC "    selected option: ${COLOR_YELLOW}[${__value}]"
   sleep 1
 
-  sed -i '/STACK_ENVIROMENT/d' -i ${PUBLIC_STACK_ENVIRONMENTS_FILE}
-  sed -i '/STACK_TARGET/d' -i ${PUBLIC_STACK_ENVIRONMENTS_FILE}
-  sed -i '/STACK_DOMAIN/d' -i ${PUBLIC_STACK_ENVIRONMENTS_FILE}
+  sed -i '/STACK_ROOT_DIR/d' -i ${PUBLIC_STACK_FIX_ENVS_FILE}
+  sed -i '/STACK_ENVIRONMENT/d' -i ${PUBLIC_STACK_FIX_ENVS_FILE}
+  sed -i '/STACK_TARGET/d' -i ${PUBLIC_STACK_FIX_ENVS_FILE}
+  sed -i '/STACK_DOMAIN/d' -i ${PUBLIC_STACK_FIX_ENVS_FILE}
 
-  if [[ -f ${PUBLIC_STACK_ENVIRONMENTS_FILE} ]]; then
-    echo "">${PUBLIC_STACK_ENVIRONMENTS_FILE}
+  if ! [[ -f ${PUBLIC_STACK_FIX_ENVS_FILE} ]]; then
+    echo "#!/bin/bash">${PUBLIC_STACK_FIX_ENVS_FILE}
   fi
-  echo "export STACK_ENVIROMENT=${__environment}">>${PUBLIC_STACK_ENVIRONMENTS_FILE}
-  echo "export STACK_TARGET=${__target}">>${PUBLIC_STACK_ENVIRONMENTS_FILE}
-  echo "export STACK_DOMAIN=${__domain}">>${PUBLIC_STACK_ENVIRONMENTS_FILE}
+  echo "">>${PUBLIC_STACK_FIX_ENVS_FILE}
 
-  echG "  - To check, use the shell command: ${COLOR_YELLOW}# cat ${PUBLIC_STACK_ENVIRONMENTS_FILE}"
+  export STACK_ROOT_DIR=${__root_dir}
+  export STACK_ENVIRONMENT=${__environment}
+  export STACK_TARGET=${__target}
+  export STACK_DOMAIN=${__domain}
+
+  echo "export STACK_ROOT_DIR=${STACK_ROOT_DIR}">>${PUBLIC_STACK_FIX_ENVS_FILE}
+  echo "export STACK_ENVIRONMENT=${STACK_ENVIRONMENT}">>${PUBLIC_STACK_FIX_ENVS_FILE}
+  echo "export STACK_TARGET=${STACK_TARGET}">>${PUBLIC_STACK_FIX_ENVS_FILE}
+  echo "export STACK_DOMAIN=${STACK_DOMAIN}">>${PUBLIC_STACK_FIX_ENVS_FILE}
+
+
+  echG "  - To check, use the shell command: ${COLOR_YELLOW}# cat ${PUBLIC_STACK_FIX_ENVS_FILE}"
+  echG ""
   echG "Successfull"
-  echG $'\n'"[ENTER] to continue"
-  read
   return 1
 }
 
@@ -576,11 +634,6 @@ function stackEnvsIsConfigured()
 
   if [[ ${PUBLIC_STACK_TARGET_ENVS_FILE} == "" ]]; then
     export __func_return="Invalid env \${PUBLIC_STACK_TARGET_ENVS_FILE}"
-    return 0
-  fi
-
-  if ! [[ -f ${PUBLIC_STACK_TARGET_ENVS_FILE} ]]; then
-    export __func_return="Invalid stack environment file: ${PUBLIC_STACK_TARGET_ENVS_FILE}"
     return 0
   fi
 
@@ -692,7 +745,6 @@ function stackEnvsLoad()
   }
   unset __func_return
   unset PUBLIC_STACK_TARGETS_FILE
-  unset PUBLIC_STACK_TARGET_ENVS_FILE
   local __environment=${1}
   local __target=${2}
 
@@ -916,24 +968,24 @@ function stackPublicEnvsConfigure()
 {
   unset __func_return
   local __bashrc="${HOME}/.bashrc"
-  local __envFile=$(basename ${PUBLIC_STACK_ENVS_FILE})
+  local __envFile=$(basename ${PUBLIC_STACK_FIX_ENVS_FILE})
   local __envs_args="STACK_TARGET STACK_ENVIRONMENT STACK_ROOT_DIR QT_VERSION"
   local __envs=(${__envs_args})
-  if ! [[ -f ${PUBLIC_STACK_ENVS_FILE} ]]; then
-    echo "#!/bin/bash">${PUBLIC_STACK_ENVS_FILE}
+  if ! [[ -f ${PUBLIC_STACK_FIX_ENVS_FILE} ]]; then
+    echo "#!/bin/bash">${PUBLIC_STACK_FIX_ENVS_FILE}
   fi
   local __env=
   for __env in ${__envs[*]}; 
   do
     sed -i "/${__env}/d" ${__bashrc}
-    sed -i "/${__env}/d" ${PUBLIC_STACK_ENVS_FILE}
-    echo "export ${__env}=${!__env}">>${PUBLIC_STACK_ENVS_FILE}
+    sed -i "/${__env}/d" ${PUBLIC_STACK_FIX_ENVS_FILE}
+    echo "export ${__env}=${!__env}">>${PUBLIC_STACK_FIX_ENVS_FILE}
   done
 
   sed -i "/${__envFile}/d" ${__bashrc}
-  echo "source ${PUBLIC_STACK_ENVS_FILE}">>${__bashrc}
-  chmod +x ${PUBLIC_STACK_ENVS_FILE}
-  source ${PUBLIC_STACK_ENVS_FILE}
+  echo "source ${PUBLIC_STACK_FIX_ENVS_FILE}">>${__bashrc}
+  chmod +x ${PUBLIC_STACK_FIX_ENVS_FILE}
+  source ${PUBLIC_STACK_FIX_ENVS_FILE}
   utilPrepareInit "${STACK_ENVIRONMENT}" "${STACK_TARGET}"
 }
 
