@@ -5,7 +5,8 @@
 
 function dnsToAddress()
 {
-  echo $(ping -c 1 localhost | grep PING | awk '{print $3}' | tr -d '()')
+  local __host=${1}
+  echo $(ping -c 1 ${__host} | grep PING | awk '{print $3}' | tr -d '()')
 }
 
 
