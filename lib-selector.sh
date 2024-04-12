@@ -36,8 +36,8 @@ function __private_print_os_information()
     echC "    - tls: ${COLOR_YELLOW}${__docker_tls} ${COLOR_CIANO}, cert: ${COLOR_YELLOW}$(dirname ${__docker_cert})"
   fi
   if [[ ${__public_environment} != "" ]]; then
-    echC "  - Stack : - Environment: ${COLOR_YELLOW}${__public_environment}${COLOR_CIANO}, Target: ${COLOR_YELLOW}${__public_target}${COLOR_CIANO}, Prefix: ${COLOR_YELLOW}${__public_environment}-${__public_target}"
-    echC "            - RootDir: ${COLOR_YELLOW}${STACK_TARGET_ROOT_DIR}"
+    echC "  - Stack : Environment: ${COLOR_YELLOW}${__public_environment}${COLOR_CIANO}, Target: ${COLOR_YELLOW}${__public_target}${COLOR_CIANO}, Prefix: ${COLOR_YELLOW}${__public_environment}-${__public_target}"
+    echC "            RootDir: ${COLOR_YELLOW}${STACK_TARGET_ROOT_DIR}${COLOR_CIANO}, Domain: ${COLOR_YELLOW}${STACK_DOMAIN}"
   fi
 }
 

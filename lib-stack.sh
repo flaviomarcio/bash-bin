@@ -555,7 +555,6 @@ function stackEnvironmentConfigure()
     __select_target
     local __ret="$?"
     if [[ "${__ret}" -eq 1 ]]; then
-      echB "$(date)"
       local __target=${__func_return}
       break
     elif [[ "${__ret}" -eq 2 ]]; then
@@ -616,6 +615,15 @@ function stackEnvironmentConfigure()
   echG "  - To check, use the shell command: ${COLOR_YELLOW}# cat ${PUBLIC_STACK_FIX_ENVS_FILE}"
   echG ""
   echG "Successfull"
+
+  if [[ -f ${PUBLIC_STACK_FIX_ENVS_FILE} ]]; then
+    echo ""
+    echM "Run in current terminal:"
+    echY "  - source ${PUBLIC_STACK_FIX_ENVS_FILE}"  
+    echG "Finished"
+    echo ""
+  fi
+
   return 1
 }
 
