@@ -5,32 +5,36 @@
 
 function dnsToAddress()
 {
-  local __host=${1}
-  echo $(ping -c 1 ${__host} | grep PING | awk '{print $3}' | tr -d '()')
+  local __host_address=${1}
+  echo $(ping -c 1 ${__host_address} | grep PING | awk '{print $3}' | tr -d '()' | sed 's/:$//')
 }
-
 
 function hostIsAvailable()
 {
   local __host=${1}
   local __port=${2}
-  if [[ ${__host} == "" ]] ; then
-    echo "Invalid \${__host}";
-    return 0;
+  if [ "${__host}" = "" ]; then
+    echo "Invalid \${__host}"
+    return 0
   fi
 
-  if [[ ${__port} == "" ]] ; then
-    echo "Invalid \${__port}";
-    return 0;
+  if [ "${__port}" = "" ]; then
+    echo "Invalid \${__port}"
+    return 0
   fi
 
-  local __host_address=$(dnsToAddress ${__host})
+  local __host_address=$(dnsToAddress "${__host}")
+  if [ "${__host_address}" = "" ]; then
+    echo "Host ${__host} not found"
+    return 0
+  fi
+
   local __check=$(nc -zv ${__host_address} ${__port} 2>&1)
-  if [[ $(echo ${__check} | grep 'succeeded') == "" ]]; then
-    return 0;
+  if ! echo "${__check}" | grep -q 'succeeded'; then
+    return 0
   fi
 
-  return 1;  
+  return 1
 }
 
 function hostWaitAvailable()
