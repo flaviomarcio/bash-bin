@@ -197,7 +197,7 @@ function dockerSwarmNodesPrint()
     done
   done
 
-  echG "\n[ENTER] para continuar"
+  echG "\n[ENTER] to continue"
   read
   return 1;  
 }
@@ -223,7 +223,7 @@ function dockerSwarmLabelNodesPrint()
     done
   done
 
-  echG "\n[ENTER] para continuar"
+  echG "\n[ENTER] to continue"
   read
   return 1;  
 }

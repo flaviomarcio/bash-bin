@@ -139,7 +139,7 @@ function systemETCHostApply()
   echY "    +          *******          +"
   echY "    +===========================+"
   echo ""
-  echG "       [ENTER] para continuar"
+  echG "       [ENTER] to continue"
   echo ""
   read
   sudoSet
@@ -225,7 +225,7 @@ function systemETCHostRemove()
   echY "    +          *******          +"
   echY "    +===========================+"
   echo ""
-  echG "       [ENTER] para continuar"
+  echG "       [ENTER] to continue"
   echo ""
   read
   sudoSet
