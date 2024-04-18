@@ -12,14 +12,14 @@ fi
 . ${BASH_BIN}/lib-strings.sh
 . ${BASH_BIN}/lib-system.sh
 
-export APP_REQUIRED_NAMES="ip ping telnet curl wget jq mc mcedit zip 7zz tmux git awk"
-export APP_REQUIRED_PACKAGES_APT="coreutils inetutils-ping iputils-ping telnet curl wget jq mc mcedit zip 7zip tmux git nfs-kernel-server nfs-common"
+export APP_REQUIRED_NAMES="ip ping telnet curl wget jq mc mcedit zip 7zz tmux git awk yarnpkg mvn"
+export APP_REQUIRED_PACKAGES_APT="coreutils inetutils-ping iputils-ping telnet curl wget jq mc mcedit zip 7zip tmux git nfs-kernel-server nfs-common yarnpkg maven libyaml-cpp-dev"
 
-export APP_SERVER_NAMES="htop atop ufw libyaml-cpp-dev"
-export APP_SERVER_PACKAGES_APT="htop atop ufw libyaml-cpp-dev"
+export APP_SERVER_NAMES="htop atop ufw"
+export APP_SERVER_PACKAGES_APT="htop atop ufw"
 
-export APP_DEVELOPMENT_NAMES="yarnpkg meld sdkmanager"
-export APP_DEVELOPMENT_PACKAGES_APT="yarnpkg meld sdkmanager"
+export APP_DEVELOPMENT_NAMES="meld sdkmanager"
+export APP_DEVELOPMENT_PACKAGES_APT="meld sdkmanager"
 
 export APP_NAMES="${APP_REQUIRED_NAMES} ${APP_DEVELOPMENT_NAMES} ${APP_SERVER_NAMES}"
 export APP_NAMES_PACKAGES_APT="${APP_REQUIRED_PACKAGES_APT} ${APP_SERVER_PACKAGES_APT} ${APP_DEVELOPMENT_PACKAGES_APT}"
