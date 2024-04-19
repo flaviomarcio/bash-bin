@@ -599,7 +599,7 @@ function dockerBuildCompose()
   local __cmd_2="docker --log-level ERROR image tag ${__service} ${__image}"
   local __cmd_3="docker --log-level ERROR push ${__image}"
   local __cmd_4="docker --log-level ERROR stack rm ${__service}"
-  local __cmd_5="docker --log-level ERROR stack deploy --compose-file $(basename ${__compose_file}) ${__service}"
+  local __cmd_5="docker --log-level ERROR stack deploy --detach=true --compose-file $(basename ${__compose_file}) ${__service}"
   local __cmd_6="docker service logs -f ${__service}"
   
   echB "      Information"
