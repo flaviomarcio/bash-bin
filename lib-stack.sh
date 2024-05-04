@@ -53,6 +53,7 @@ function __private_stackEnvsLoadByStack()
     export STACK_SERVICE_STORAGE_BACKUP_DIR=${__storage}/backup
     export STACK_SERVICE_STORAGE_EXTENSION_DIR=${__storage}/extension
     export STACK_SERVICE_STORAGE_PLUGIN_DIR=${__storage}/plugin
+    export STACK_SERVICE_STORAGE_ADDON_DIR=${__storage}/addon
     export STACK_SERVICE_STORAGE_IMPORT_DIR=${__storage}/import
     export STACK_SERVICE_STORAGE_PROVIDER_DIR=${__storage}/provider
     export STACK_SERVICE_STORAGE_CERT_DIR=${__storage}/certificates
@@ -66,6 +67,7 @@ function __private_stackEnvsLoadByStack()
   STACK_SERVICE_STORAGE_BACKUP_DIR \
   STACK_SERVICE_STORAGE_EXTENSION_DIR \
   STACK_SERVICE_STORAGE_PLUGIN_DIR \
+  STACK_SERVICE_STORAGE_ADDON_DIR \
   STACK_SERVICE_STORAGE_IMPORT_DIR \
   STACK_SERVICE_STORAGE_PROVIDER_DIR \
   STACK_SERVICE_STORAGE_CERT_DIR \
