@@ -154,26 +154,39 @@ function dockerSwarmNodeLabelInit()
   local __nodes=($(docker node ls --quiet))
   local __labels=($(dockerSwarmNodeLabels))
   local __node_count=${#__nodes[@]}
-
   if [[ ${__node_count} == 1 ]]; then    
-    local __node=
-    for __node in "${__nodes[@]}"
-    do
-      local __label=
-      for __label in "${__labels[@]}"
+    if [[ ${STACK_ENVIRONMENT} != "production" ]]; then
+
+      local __node=
+      for __node in "${__nodes[@]}"
       do
-        local __label_value=$(dockerSwarmNodeLabelValue ${__node} ${__label})
-        if [[ ${__label_value} == true ]]; then
-          continue;
-        fi
-        $(docker node update --label-add "${__label}=true" ${__node})>/dev/null 2>&1
-        local __label_value=$(dockerSwarmNodeLabelValue ${__node} ${__label})
-        if [[ ${__label_value} != true ]]; then
-          export __func_return="Error on set: ${__cmd}"
-          return 0
-        fi
+        local __label=
+        for __label in "${__labels[@]}"
+        do
+          $(docker node update --label-add "${__label}=true" ${__node})>/dev/null 2>&1
+        done
       done
-    done
+
+    else
+      local __node=
+      for __node in "${__nodes[@]}"
+      do
+        local __label=
+        for __label in "${__labels[@]}"
+        do
+          local __label_value=$(dockerSwarmNodeLabelValue ${__node} ${__label})
+          if [[ ${__label_value} == true ]]; then
+            continue;
+          fi
+          $(docker node update --label-add "${__label}=true" ${__node})>/dev/null 2>&1
+          local __label_value=$(dockerSwarmNodeLabelValue ${__node} ${__label})
+          if [[ ${__label_value} != true ]]; then
+            export __func_return="Error on set: ${__cmd}"
+            return 0
+          fi
+        done
+      done
+    fi
   fi
   return 1;
 }
