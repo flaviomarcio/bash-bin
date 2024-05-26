@@ -117,14 +117,8 @@ function __private_stackEnvsLoadByTarget()
   export STACK_INFRA_CERT_DIR="${STACK_INFRA_CONF_DIR}/cert"
   export STACK_INFRA_DEPLOY_SETTINGS_FILE="${STACK_INFRA_CONF_DIR}/deploy-config.json"
   export STACK_TEMPLATES_DIR="${STACK_TARGET_ROOT_DIR}/templates"
-
-  #replace por storage data customizado
-  if [[ ${STACK_STORAGE_DIR} != "" ]]; then
-    export STACK_TARGET_STORAGE_DIR=${STACK_STORAGE_DIR}/storage-data
-  else  
-    export STACK_TARGET_STORAGE_DIR=${STACK_TARGET_ROOT_DIR}/storage-data
-  fi
-
+  export STACK_TARGET_STORAGE_DIR=${STACK_TARGET_ROOT_DIR}/storage-data
+  
   stackMkDir 755 "${STACK_TARGET_ROOT_DIR} ${STACK_INFRA_CERT_DIR} ${STACK_INFRA_DIR} ${STACK_INFRA_CONF_DIR} ${STACK_TARGET_STORAGE_DIR}"
 
   envsSetIfIsEmpty STACK_NETWORK_PREFIX "${STACK_ENVIRONMENT}-${STACK_TARGET}"
