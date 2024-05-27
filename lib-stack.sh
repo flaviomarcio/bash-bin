@@ -124,8 +124,9 @@ function __private_stackEnvsLoadByTarget()
   export STACK_INFRA_DEPLOY_SETTINGS_FILE="${STACK_INFRA_CONF_DIR}/deploy-config.json"
   export STACK_TEMPLATES_DIR="${STACK_TARGET_ROOT_DIR}/templates"
   export STACK_TARGET_STORAGE_DIR=${STACK_TARGET_ROOT_DIR}/storage-data
+  export STACK_TARGET_STORAGE_VOL=${STACK_TARGET_ROOT_DIR}/storage-volumes
   
-  stackMkDir 755 "${STACK_TARGET_ROOT_DIR} ${STACK_INFRA_CERT_DIR} ${STACK_INFRA_DIR} ${STACK_INFRA_CONF_DIR} ${STACK_TARGET_STORAGE_DIR}"
+  stackMkDir 755 "${STACK_TARGET_ROOT_DIR} ${STACK_INFRA_CERT_DIR} ${STACK_INFRA_DIR} ${STACK_INFRA_CONF_DIR} ${STACK_TARGET_STORAGE_DIR} ${STACK_TARGET_STORAGE_VOL}"
 
   envsSetIfIsEmpty STACK_NETWORK_PREFIX "${STACK_ENVIRONMENT}-${STACK_TARGET}"
   envsSetIfIsEmpty STACK_NETWORK_DEFAULT "${STACK_NETWORK_PREFIX}-inbound"
@@ -655,7 +656,7 @@ function stackEnvsLoad()
     envsSetIfIsEmpty STACK_NFS_ENABLED false
     envsSetIfIsEmpty STACK_NFS_SERVER 127.0.0.1
     envsSetIfIsEmpty STACK_NFS_MOUNT_DIR /data
-    envsSetIfIsEmpty STACK_NFS_REMOTE_DATA_DIR /data
+    envsSetIfIsEmpty STACK_NFS_REMOTE_DATA_DIR /mnt/stack-data/
 
   }
   unset __func_return
