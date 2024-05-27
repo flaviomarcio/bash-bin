@@ -53,10 +53,10 @@ function nfsMount()
   nfsIsMounted
   if ! [ "$?" -eq 1 ]; then
     mkdir -p ${NFS_MOUNT_DIR}
-    sudo mount -t nfs ${NFS_SERVER}:${NFS_REMOTE_DATA_DIR} ${NFS_MOUNT_DIR}
+    sudo mount -t nfs ${NFS_SERVER}:${NFS_REMOTE_DATA_DIR} ${NFS_MOUNT_DIR} -o rw,sync
     nfsIsMounted
     if ! [ "$?" -eq 1 ]; then
-        export __func_return="NFS unmounted: ${__func_return}, mount -t nfs ${NFS_SERVER}:${NFS_REMOTE_DATA_DIR} ${NFS_MOUNT_DIR}"
+        export __func_return="NFS unmounted: ${__func_return}, mount -t nfs ${NFS_SERVER}:${NFS_REMOTE_DATA_DIR} ${NFS_MOUNT_DIR} -o rw,sync"
         return 0;
     fi
   fi
