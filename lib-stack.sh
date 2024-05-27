@@ -46,6 +46,9 @@ function __private_stackEnvsLoadByStack()
     local __storage=${STACK_TARGET_STORAGE_DIR}/${STACK_SERVICE_NAME}
 
     #stograge
+
+    export STACK_SERVICE_VOLUME_DATA_DIR="$(echo ${STACK_SERVICE_NAME} | sed 's/_/-/g')_DATA"
+
     export STACK_SERVICE_STORAGE_DATA_DIR=${__storage}/data
     export STACK_SERVICE_STORAGE_DB_DIR=${__storage}/db
     export STACK_SERVICE_STORAGE_LOG_DIR=${__storage}/log
