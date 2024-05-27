@@ -16,14 +16,14 @@ fi
 function __nfs_env_check()
 {
   unset __func_return  
-  if [[ ${NFS_ENABLED} != true ]]; then
-    export __func_return="NFS is not enabled, check env \${NFS_ENABLED}"  
-  elif [[ ${NFS_SERVER} == "" ]]; then
-    export __func_return="Invalid env \${NFS_SERVER}"    
-  elif [[ ${NFS_MOUNT_DIR} == "" ]]; then
-    export __func_return="Invalid env \${NFS_MOUNT_DIR}"  
-  elif [[ ${NFS_REMOTE_DATA_DIR} == "" ]]; then
-    export __func_return="Invalid env \${NFS_REMOTE_DATA_DIR}"
+  if [[ ${STACK_NFS_ENABLED} != true ]]; then
+    export __func_return="NFS is not enabled, check env \${STACK_NFS_ENABLED}"  
+  elif [[ ${STACK_NFS_SERVER} == "" ]]; then
+    export __func_return="Invalid env \${STACK_NFS_SERVER}"    
+  elif [[ ${STACK_NFS_MOUNT_DIR} == "" ]]; then
+    export __func_return="Invalid env \${STACK_NFS_MOUNT_DIR}"  
+  elif [[ ${STACK_NFS_REMOTE_DATA_DIR} == "" ]]; then
+    export __func_return="Invalid env \${STACK_NFS_REMOTE_DATA_DIR}"
   else
     return 1;
   fi
@@ -36,7 +36,7 @@ function nfsIsMounted()
   if ! [ "$?" -eq 1 ]; then
     return 0;
   fi
-  local __check=$(mount | grep "${NFS_MOUNT_DIR}")
+  local __check=$(mount | grep "${STACK_NFS_MOUNT_DIR}")
   if [[ ${__check} == "" ]]; then
     return 0;
   fi
@@ -52,11 +52,11 @@ function nfsMount()
   unset __func_return
   nfsIsMounted
   if ! [ "$?" -eq 1 ]; then
-    mkdir -p ${NFS_MOUNT_DIR}
-    sudo mount -t nfs ${NFS_SERVER}:${NFS_REMOTE_DATA_DIR} ${NFS_MOUNT_DIR} -o rw,sync
+    mkdir -p ${STACK_NFS_MOUNT_DIR}
+    sudo mount -t nfs ${STACK_NFS_SERVER}:${STACK_NFS_REMOTE_DATA_DIR} ${STACK_NFS_MOUNT_DIR} -o rw,sync
     nfsIsMounted
     if ! [ "$?" -eq 1 ]; then
-        export __func_return="NFS unmounted: ${__func_return}, mount -t nfs ${NFS_SERVER}:${NFS_REMOTE_DATA_DIR} ${NFS_MOUNT_DIR} -o rw,sync"
+        export __func_return="NFS unmounted: ${__func_return}, mount -t nfs ${STACK_NFS_SERVER}:${STACK_NFS_REMOTE_DATA_DIR} ${STACK_NFS_MOUNT_DIR} -o rw,sync"
         return 0;
     fi
   fi
@@ -75,7 +75,7 @@ function nfsMountPoint()
 function nfsVerify()
 {
   unset __func_return
-  if [[ ${NFS_ENABLED} != true ]]; then
+  if [[ ${STACK_NFS_ENABLED} != true ]]; then
     return 1;
   fi
 
@@ -112,11 +112,11 @@ function nfsVerify()
     else
       echB "  Mounting"
       echB "    NFS:"
-      echC "      - server......: ${COLOR_YELLOW}${NFS_SERVER}"
-      echC "      - remote-dir..: ${COLOR_YELLOW}${NFS_REMOTE_DATA_DIR}"
-      echC "      - mount-point.: ${COLOR_YELLOW}${NFS_MOUNT_DIR}"
+      echC "      - server......: ${COLOR_YELLOW}${STACK_NFS_SERVER}"
+      echC "      - remote-dir..: ${COLOR_YELLOW}${STACK_NFS_REMOTE_DATA_DIR}"
+      echC "      - mount-point.: ${COLOR_YELLOW}${STACK_NFS_MOUNT_DIR}"
       echY "      - Executing:"
-      echC "        - ${COLOR_BLUE}mount ${COLOR_CIANO}-t nfs ${COLOR_YELLOW}${NFS_SERVER}${COLOR_CIANO}:${COLOR_YELLOW}${NFS_REMOTE_DATA_DIR} ${NFS_MOUNT_DIR}"
+      echC "        - ${COLOR_BLUE}mount ${COLOR_CIANO}-t nfs ${COLOR_YELLOW}${STACK_NFS_SERVER}${COLOR_CIANO}:${COLOR_YELLOW}${STACK_NFS_REMOTE_DATA_DIR} ${STACK_NFS_MOUNT_DIR}"
       nfsMount
       if ! [ "$?" -eq 1 ]; then
         echR "  fail on calling nfsMount: ${__func_return}"
@@ -131,9 +131,9 @@ function nfsVerify()
   return 1;
 }
 
-# export NFS_ENABLED=true
-# export NFS_SERVER=192.168.0.67
-# export NFS_MOUNT_DIR=${HOME}/nfs/stack-nfs
-# export NFS_REMOTE_DATA_DIR=/mnt/DATAPTG/testing-company/docker-data
+#export STACK_NFS_ENABLED=true
+#export STACK_NFS_SERVER=192.168.0.67
+#export STACK_NFS_MOUNT_DIR=/mnt/stack-data
+#export STACK_NFS_REMOTE_DATA_DIR=/mnt/DATAPTG/testing-company/docker-data
 
 # nfsVerify

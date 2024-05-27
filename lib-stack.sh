@@ -45,22 +45,25 @@ function __private_stackEnvsLoadByStack()
 
     local __storage=${STACK_TARGET_STORAGE_DIR}/${STACK_SERVICE_NAME}
 
-    #stograge
+    #storage
+    if [[ ${STACK_NFS_ENABLED} == true ]]; then
+      local __storage_base_dir="$(echo ${STACK_SERVICE_NAME} | sed 's/-/_/g')_"
+    else
+      local __storage_base_dir="${__storage}/"
+    fi
 
-    export STACK_SERVICE_VOLUME_DATA_DIR="$(echo ${STACK_SERVICE_NAME} | sed 's/_/-/g')_DATA"
-
-    export STACK_SERVICE_STORAGE_DATA_DIR=${__storage}/data
-    export STACK_SERVICE_STORAGE_DB_DIR=${__storage}/db
-    export STACK_SERVICE_STORAGE_LOG_DIR=${__storage}/log
-    export STACK_SERVICE_STORAGE_CONFIG_DIR=${__storage}/config
-    export STACK_SERVICE_STORAGE_BACKUP_DIR=${__storage}/backup
-    export STACK_SERVICE_STORAGE_EXTENSION_DIR=${__storage}/extension
-    export STACK_SERVICE_STORAGE_PLUGIN_DIR=${__storage}/plugin
-    export STACK_SERVICE_STORAGE_ADDON_DIR=${__storage}/addon
-    export STACK_SERVICE_STORAGE_IMPORT_DIR=${__storage}/import
-    export STACK_SERVICE_STORAGE_PROVIDER_DIR=${__storage}/provider
-    export STACK_SERVICE_STORAGE_CERT_DIR=${__storage}/certificates
-    export STACK_SERVICE_STORAGE_THEME_DIR=${__storage}/theme
+    export STACK_SERVICE_STORAGE_DATA_DIR="${__storage_base_dir}data"
+    export STACK_SERVICE_STORAGE_DB_DIR="${__storage_base_dir}db"
+    export STACK_SERVICE_STORAGE_LOG_DIR="${__storage_base_dir}log"
+    export STACK_SERVICE_STORAGE_CONFIG_DIR="${__storage_base_dir}config"
+    export STACK_SERVICE_STORAGE_BACKUP_DIR="${__storage_base_dir}backup"
+    export STACK_SERVICE_STORAGE_EXTENSION_DIR="${__storage_base_dir}extension"
+    export STACK_SERVICE_STORAGE_PLUGIN_DIR="${__storage_base_dir}plugin"
+    export STACK_SERVICE_STORAGE_ADDON_DIR="${__storage_base_dir}addon"
+    export STACK_SERVICE_STORAGE_IMPORT_DIR="${__storage_base_dir}import"
+    export STACK_SERVICE_STORAGE_PROVIDER_DIR="${__storage_base_dir}provider"
+    export STACK_SERVICE_STORAGE_CERT_DIR="${__storage_base_dir}certificates"
+    export STACK_SERVICE_STORAGE_THEME_DIR="${__storage_base_dir}theme"
 
     local __dirs="
   STACK_SERVICE_STORAGE_DATA_DIR \
@@ -285,132 +288,24 @@ function stackMkVolumes()
 
   if [[ ${__service_name} == "" ]]; then
     export __func_return="Invalid env \${__service_name}"
-    return 0
   elif [[ ${__env_dirs} == "" ]]; then
     export __func_return="Invalid env \${__env_dirs}"
-    return 0
+  else
+    if [[ ${__storage_type} == "" ]]; then
+      local __storage_type=sshfs
+    fi
+
+    local __env=
+    for __env in ${__env_dirs[*]};
+    do
+      local __dir=${!__env}
+      local __block=${!__env}.raw
+      stackMkDir 777 "${__dir}"
+    done
+
+    return 1
   fi
-
-  if [[ ${__storage_type} == "" ]]; then
-    local __storage_type=sshfs
-  fi
-
-  # if [[ ${STACK_SERVICE_VOLUME_TYPE} != "local" ]]; then
-  #   return 1;
-  # fi
-#===================*===================*===================*===================*===================*===================*
-#REF 
-#   https://docs.docker.com/storage/volumes/
-#   https://docs.docker.com/compose/compose-file/07-volumes/
-#===================*===================*===================*===================*===================*===================*
-
-#===================*===================*===================*===================*===================*===================*
-# Create a volume using a volume driver
-#===================*===================*===================*===================*===================*===================*
-#  docker plugin install --grant-all-permissions vieux/sshfs
-# This example specifies an SSH password, but if the two hosts have shared keys configured, you can exclude the password. Each volume driver may have zero or more configurable options, you specify each of them using an -o flag.
-
-#  docker volume create --driver vieux/sshfs \
-#   -o sshcmd=test@node2:/home/test \
-#   -o password=testpassword \
-#   sshvolume
-#
-#===================*===================*===================*===================*===================*===================*
-# Create CIFS/Samba volumes
-#===================*===================*===================*===================*===================*===================*
-# You can mount a Samba share directly in Docker without configuring a mount point on your host.
-#  docker volume create \
-# 	--driver local \
-# 	--opt type=cifs \
-# 	--opt device=//uxxxxx.your-server.de/backup \
-# 	--opt o=addr=uxxxxx.your-server.de,username=uxxxxxxx,password=*****,file_mode=0777,dir_mode=0777 \
-# 	--name cif-volume
-
-#===================*===================*===================*===================*===================*===================*
-#Block storage devices
-#===================*===================*===================*===================*===================*===================*
-# mount -t ext4 /dev/loop5 /external-drive
-# docker run --mount='type=volume,dst=/external-drive,volume-driver=local,volume-opt=device=/dev/loop5,volume-opt=type=ext4'
-# OR
-#
-# fallocate -l 1G disk.raw
-# mkfs.ext4 disk.raw
-# losetup -f --show disk.raw
-# >/dev/loop5
-# docker run -it --rm --mount='type=volume,dst=/external-drive,volume-driver=local,volume-opt=device=/dev/loop5,volume-opt=type=ext4' ubuntu bash
-# losetup -d /dev/loop5
-
-  local __env=
-  for __env in ${__env_dirs[*]};
-  do
-    local __dir=${!__env}
-    local __block=${!__env}.raw
-    stackMkDir 777 "${__dir}"
-
-    # local __dir_nfs="${STACK_TARGET_STORAGE_NFS}/$(basename ${__dir})"
-    # mkdir -p ${__dir_nfs}
-    
-
-    # if [[ ${__storage_type} == "sshfs" ]]; then
-    #   local __block=${__dir}.raw
-    #   if [[ -f ${__block} ]]l then
-    #     continue;
-    #   fi
-    #   fallocate -l 1G ${__block}
-    #   mkfs.ext4 ${__block}
-    #   losetup -f --show ${__block}
-    #   # >/dev/loop5
-    #   # docker run -it --rm --mount='type=volume,dst=/external-drive,volume-driver=local,volume-opt=device=/dev/loop5,volume-opt=type=ext4' ubuntu bash
-    #   # losetup -d /dev/loop5
-
-    #   docker volume create --driver vieux/sshfs \
-    #   #   -o sshcmd=test@node2:/home/test \
-    #   #   -o password=testpassword \
-    #   #   sshvolume
-    # fi
-
-
-
-    # local __vol=$(echo ${__env} | sed 's/_DIR//g' | sed 's/_STORAGE_/_VOLUME_/g' )
-    # local __vol_remote=":/${__service_name}"
-
-
-
-    # echo "docker volume create --driver local --opt type=nfs --opt o=addr=IP_DO_SERVIDOR,rw --opt device=${__vol_remote} ${__vol}"
-    
-    # docker run --mount='type=volume,dst=/external-drive,volume-driver=local,volume-opt=device=/dev/loop5,volume-opt=type=ext4'
-
-  done
-
-  # if ! [ "$?" -eq 1 ]; then
-  #   export __func_return="No create \${STACK_ROOT_DIR}: ${STACK_ROOT_DIR}"
-  #   return 0;
-  # fi
-
-
-# docker service create \
-#  --mount 'type=volume,src=<VOLUME-NAME>,dst=<CONTAINER-PATH>,volume-driver=local,volume-opt=type=nfs,volume-opt=device=<nfs-server>:<nfs-path>,"volume-opt=o=addr=<nfs-address>,vers=4,soft,timeo=180,bg,tcp,rw"'
-#  --name myservice \
-#  IMAGE
-
-
-  # local __dirs=(${__dirs})
-  # local __dir=
-  # for __dir in ${__dirs[*]}; 
-  # do
-  #   if [[ -d ${__dir} ]]; then
-  #     continue
-  #   fi
-  #   mkdir -p ${__dir}
-  #   chmod ${__permission} ${__dir}
-  #   if ! [[ -d ${__dir} ]]; then
-  #     export __func_return="No create dir: env \${__dir}:${__dir}"
-  #     return 0
-  #   fi    
-  # done 
-
-
-  return 1
+  return 0
 }
 
 function stackEnvironmentConfigure()
@@ -694,7 +589,7 @@ function stackInitTargetEnvFile()
   STACK_TZ
   STACK_DOMAIN
   STACK_PREFIX_HOST_ENABLED
-  $(envsGet STACK_ADMIN_ STACK_PROXY_ STACK_DEFAULT_ STACK_SERVICE_DEFAULT_ STACK_SERVICE_HEALTH_ STACK_GOCD_ STACK_SERVICE_IMAGE STACK_VOLUME_ STACK_LDAP_ STACK_TRAEFIK_ POSTGRES_)
+  $(envsGet STACK_ADMIN_ STACK_PROXY_ STACK_DEFAULT_ STACK_SERVICE_DEFAULT_ STACK_SERVICE_HEALTH_ STACK_GOCD_ STACK_SERVICE_IMAGE STACK_VOLUME_ STACK_LDAP_ STACK_TRAEFIK_ STACK_NFS_ POSTGRES_)
   "
 
   # save envs
@@ -755,7 +650,13 @@ function stackEnvsLoad()
     envsSetIfIsEmpty STACK_DEFAULT_DEPLOY_REPLICAS 1
 
     envsSetIfIsEmpty STACK_HAPROXY_CERT_DIR "${STACK_INFRA_CONF_DIR}/haproxy/cert"
-    envsSetIfIsEmpty STACK_HAPROXY_CONFIG_FILE "${STACK_INFRA_CONF_DIR}/haproxy/haproxy.cfg"
+    envsSetIfIsEmpty STACK_HAPROXY_CONFIG_FILE "${STACK_INFRA_CONF_DIR}/haproxy/haproxy.cfg"\
+
+    envsSetIfIsEmpty STACK_NFS_ENABLED false
+    envsSetIfIsEmpty STACK_NFS_SERVER 127.0.0.1
+    envsSetIfIsEmpty STACK_NFS_MOUNT_DIR /data
+    envsSetIfIsEmpty STACK_NFS_REMOTE_DATA_DIR /data
+
   }
   unset __func_return
   unset PUBLIC_STACK_TARGETS_FILE
