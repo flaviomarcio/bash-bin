@@ -43,43 +43,23 @@ function __private_stackEnvsLoadByStack()
     export STACK_SERVICE_HOSTNAME_PROXY=${STACK_SERVICE_NAME}
     export STACK_SERVICE_HOSTNAME_PUBLIC=${STACK_SERVICE_NAME}.${STACK_DOMAIN}
 
-    local __storage=${STACK_TARGET_STORAGE_DIR}/${STACK_SERVICE_NAME}
+    local __storage_base_dir="${STACK_TARGET_STORAGE_DIR}/${STACK_SERVICE_NAME}"
 
-    #storage
-    if [[ ${STACK_NFS_ENABLED} == true ]]; then
-      local __storage_base_dir="$(echo ${STACK_SERVICE_NAME} | sed 's/-/_/g')_"
-    else
-      local __storage_base_dir="${__storage}/"
-    fi
+    # export STACK_SERVICE_STORAGE_DATA_DIR="${__storage_base_dir}data"
+    # export STACK_SERVICE_STORAGE_DB_DIR="${__storage_base_dir}db"
+    # export STACK_SERVICE_STORAGE_LOG_DIR="${__storage_base_dir}log"
+    # export STACK_SERVICE_STORAGE_CONFIG_DIR="${__storage_base_dir}config"
+    # export STACK_SERVICE_STORAGE_BACKUP_DIR="${__storage_base_dir}backup"
+    # export STACK_SERVICE_STORAGE_EXTENSION_DIR="${__storage_base_dir}extension"
+    # export STACK_SERVICE_STORAGE_PLUGIN_DIR="${__storage_base_dir}plugin"
+    # export STACK_SERVICE_STORAGE_ADDON_DIR="${__storage_base_dir}addon"
+    # export STACK_SERVICE_STORAGE_IMPORT_DIR="${__storage_base_dir}import"
+    # export STACK_SERVICE_STORAGE_PROVIDER_DIR="${__storage_base_dir}provider"
+    # export STACK_SERVICE_STORAGE_CERT_DIR="${__storage_base_dir}certificates"
+    # export STACK_SERVICE_STORAGE_THEME_DIR="${__storage_base_dir}theme"
 
-    export STACK_SERVICE_STORAGE_DATA_DIR="${__storage_base_dir}data"
-    export STACK_SERVICE_STORAGE_DB_DIR="${__storage_base_dir}db"
-    export STACK_SERVICE_STORAGE_LOG_DIR="${__storage_base_dir}log"
-    export STACK_SERVICE_STORAGE_CONFIG_DIR="${__storage_base_dir}config"
-    export STACK_SERVICE_STORAGE_BACKUP_DIR="${__storage_base_dir}backup"
-    export STACK_SERVICE_STORAGE_EXTENSION_DIR="${__storage_base_dir}extension"
-    export STACK_SERVICE_STORAGE_PLUGIN_DIR="${__storage_base_dir}plugin"
-    export STACK_SERVICE_STORAGE_ADDON_DIR="${__storage_base_dir}addon"
-    export STACK_SERVICE_STORAGE_IMPORT_DIR="${__storage_base_dir}import"
-    export STACK_SERVICE_STORAGE_PROVIDER_DIR="${__storage_base_dir}provider"
-    export STACK_SERVICE_STORAGE_CERT_DIR="${__storage_base_dir}certificates"
-    export STACK_SERVICE_STORAGE_THEME_DIR="${__storage_base_dir}theme"
-
-    local __dirs="
-  STACK_SERVICE_STORAGE_DATA_DIR \
-  STACK_SERVICE_STORAGE_DB_DIR \
-  STACK_SERVICE_STORAGE_LOG_DIR \
-  STACK_SERVICE_STORAGE_CONFIG_DIR \
-  STACK_SERVICE_STORAGE_BACKUP_DIR \
-  STACK_SERVICE_STORAGE_EXTENSION_DIR \
-  STACK_SERVICE_STORAGE_PLUGIN_DIR \
-  STACK_SERVICE_STORAGE_ADDON_DIR \
-  STACK_SERVICE_STORAGE_IMPORT_DIR \
-  STACK_SERVICE_STORAGE_PROVIDER_DIR \
-  STACK_SERVICE_STORAGE_CERT_DIR \
-  STACK_SERVICE_STORAGE_THEME_DIR"
-    
-    stackMkVolumes "${STACK_SERVICE_NAME}" "${__dirs}"
+   
+    stackMkVolumes "${STACK_SERVICE_NAME}" "${__storage_base_dir}" 
 
     if ! [ "$?" -eq 1 ]; then
       export __func_return="fail on calling stackMkVolumes, ${__func_return}"
@@ -272,41 +252,33 @@ function stackMkVolumes()
   unset __func_return
   unset __service_name
   unset __env_dirs
-  unset __storage_type
 
-  local __i=0
-  for __arg in "$@"
-  do
-    if [[ ${__i} == 0 ]]; then
-      local __service_name=${__arg}
-    # elif [[ ${__i} == 1 ]]; then
-    #   local __storage_type=${__arg}
-    else
-      local __env_dirs="${__env_dirs} ${__arg}"
-    fi
-    local __i=1
-  done
+  local __vol_name=${1}
+  local __vol_dir=${2}
 
-  if [[ ${__service_name} == "" ]]; then
-    export __func_return="Invalid env \${__service_name}"
-  elif [[ ${__env_dirs} == "" ]]; then
-    export __func_return="Invalid env \${__env_dirs}"
+  if [[ ${__vol_name} == "" ]]; then
+    export __func_return="Invalid env \${__vol_name}"
+    return 0;
+  elif [[ ${__vol_dir} == "" ]]; then
+    export __func_return="Invalid env \${__vol_dir}"
+    return 0;
   else
-    if [[ ${__storage_type} == "" ]]; then
-      local __storage_type=sshfs
-    fi
-
-    local __env=
-    for __env in ${__env_dirs[*]};
+    local __vol_paths=(${__vol_paths})
+    local __vol_subdirs=(data db log config backup extension plugin addon import provider cert theme)
+    local __vol_subir=
+    for __vol_subir in ${__vol_subdirs[*]};
     do
-      local __dir=${!__env}
-      local __block=${!__env}.raw
-      stackMkDir 777 "${__dir}"
+      local __env_name=$(toUpper STACK_SERVICE_STORAGE_${__vol_subir}_DIR)
+      local __env_value=$(toLower "${__vol_name}_${__vol_subir}" | sed 's/-/_/g')
+      local __vol_dir="${__vol_dir}/${__vol_subir}"
+      if [[ ${STACK_NFS_ENABLED} == true ]]; then
+        export ${__env_name}=${__env_value}
+      else
+        export ${__env_name}=${__vol_dir}
+      fi
     done
-
     return 1
   fi
-  return 0
 }
 
 function stackEnvironmentConfigure()
@@ -1050,5 +1022,6 @@ function stackVaultPush()
   return 1
 }
 
-#export PUBLIC_STACK_ENVIRONMENTS_FILE=/tmp/test.env
-#stackEnvironmentConfigure
+
+   
+#stackMkVolumes testing_company_app "${HOME}/tmp/testing_company_app"

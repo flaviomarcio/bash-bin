@@ -403,16 +403,19 @@ function dockerCleanup()
 
 function dockerPrune()
 {
-  local __cmd="docker --log-level ERROR system prune --all --volumes --force"
+  local __cmd_1="docker --log-level ERROR system prune --all --volumes --force"
+  local __cmd_2="docker --log-level ERRORvolume rm \$(docker volume ls --quiet)"
   echM "    Docker prune"
   echR "      Removing ..."
-  echY "        - ${__cmd}"
+  echY "        - ${__cmd_1}"
+  echY "        - ${__cmd_2}"
   sleep 2
   local i=
   for i in {1..5}
   do
     echB "        - step: ${i}"
-    echo $(${__cmd})&>/dev/null
+    echo $(${__cmd_1})&>/dev/null
+    echo $(${__cmd_2})&>/dev/null
     sleep 1
   done
   echG "    Finished"
@@ -711,4 +714,47 @@ function dockerRegistryImageCheck()
     export __func_return=1  
     return 1;
   fi
+}
+
+function dockerVolumeCreateLocal()
+{
+  unset __func_return
+  local __vol_name=${1}
+  local __vol_dir=${2}
+  if [[ ${__vol_name} == "" ]]; then
+    export __func_return="Invalid env \${__vol_name}"
+  elif [[ ${__vol_dir} == "" ]]; then
+    export __func_return="Invalid env \${__vol_dir}"
+  else
+    mkdir -p ${__vol_dir}
+    chmod 777 ${__vol_dir}
+    local __check=$(docker volume ls | grep ${__vol_name})
+    if [[ ${__check} == "" ]]; then
+      docker volume create --driver local --opt type=none --opt o=bind --opt device=${__vol_dir} ${__vol_name}> /dev/null
+    fi
+    return 1;
+  fi
+  return 0
+}
+
+function dockerVolumeCreateNFS()
+{
+  unset __func_return
+  local __vol_server=${1}
+  local __vol_name=${2}
+  local __vol_dir=${3}
+  if [[ ${__vol_server} == "" ]]; then
+    export __func_return="Invalid env \${__vol_server}"
+  elif [[ ${__vol_name} == "" ]]; then
+    export __func_return="Invalid env \${__vol_name}"
+  elif [[ ${__vol_dir} == "" ]]; then
+    export __func_return="Invalid env \${__vol_dir}"
+  else
+    local __check=$(docker volume ls | grep ${__vol_name})
+    if [[ ${__check} == "" ]]; then
+      docker volume create --driver local --opt type=nfs --opt o=addr=${__vol_server},rw,sync --opt device=:${__env_dir} ${__vol_name}> /dev/null
+    fi
+    return 1;
+  fi
+  return 0
 }
