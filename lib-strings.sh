@@ -445,7 +445,7 @@ function envsSetIfIsEmpty()
   local __env_value=${2}
   local __check=${!__env_name}
   if [[ ${__check} == "" ]]; then
-    __check=$(echo ${__env_value} | grep ' ')
+    local __check=$(echo ${__env_value} | grep ' ')
     if [[ ${__check} != "" ]]; then
       __env_value=$(echo "${__env_value}" | sed 's/"//g' )
       export ${__env_name}="\"${__env_value}\""

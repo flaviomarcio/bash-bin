@@ -183,7 +183,7 @@ function __private_stackEnvsDefaultByStack()
   envsSetIfIsEmpty APPLICATION_DEPLOY_VAULT_ENABLED "${STACK_VAULT_ENABLED}"
 }
 
-function __configure()
+function __private_stack_clear_configure()
 {
   unset __func_return
   envsSetIfIsEmpty STACK_LIB_DIR "${ROOT_APPLICATIONS_DIR}/lib"
@@ -196,14 +196,14 @@ function __configure()
     return 1;
   fi
 
-  local __configure_dirs=("/data/lib" "/data/lib.dir" "/mnt/storage/lib.dir")
-  local __configure_dir=
-  for __configure_dir in "${__configure_dirs[@]}"
+  local __dirs=("/data/lib" "/data/lib.dir" "/mnt/storage/lib.dir")
+  local __dir=
+  for __dir in "${__dirs[@]}"
   do
-    if ! [[ -d ${__configure_dir} ]]; then
+    if ! [[ -d ${__dir} ]]; then
       continue;
     fi
-    echo $(ln -s ${__configure_dir} ${STACK_LIB_DIR})&>/dev/null
+    echo $(ln -s ${__dir} ${STACK_LIB_DIR})&>/dev/null
     break;
   done
   if ! [[ -d ${STACK_LIB_DIR} ]]; then
@@ -271,6 +271,7 @@ function stackMkVolumes()
       local __env_name=$(toUpper STACK_SERVICE_STORAGE_${__vol_subir}_DIR)
       local __env_value=$(toLower "${__vol_name}_${__vol_subir}" | sed 's/-/_/g')
       local __vol_dir="${__vol_dir}/${__vol_subir}"
+
       if [[ ${STACK_NFS_ENABLED} == true ]]; then
         export ${__env_name}=${__env_value}
       else
@@ -478,10 +479,10 @@ function stackEnvironmentConfigure()
   export STACK_TARGET=${__target}
   export STACK_DOMAIN=${__domain}
 
-  echo "export STACK_ROOT_DIR=${STACK_ROOT_DIR}">>${PUBLIC_STACK_FIX_ENVS_FILE}
-  echo "export STACK_ENVIRONMENT=${STACK_ENVIRONMENT}">>${PUBLIC_STACK_FIX_ENVS_FILE}
-  echo "export STACK_TARGET=${STACK_TARGET}">>${PUBLIC_STACK_FIX_ENVS_FILE}
-  echo "export STACK_DOMAIN=${STACK_DOMAIN}">>${PUBLIC_STACK_FIX_ENVS_FILE}
+  # echo "export STACK_ROOT_DIR=${STACK_ROOT_DIR}">>${PUBLIC_STACK_FIX_ENVS_FILE}
+  # echo "export STACK_ENVIRONMENT=${STACK_ENVIRONMENT}">>${PUBLIC_STACK_FIX_ENVS_FILE}
+  # echo "export STACK_TARGET=${STACK_TARGET}">>${PUBLIC_STACK_FIX_ENVS_FILE}
+  # echo "export STACK_DOMAIN=${STACK_DOMAIN}">>${PUBLIC_STACK_FIX_ENVS_FILE}
 
 
   echG "  - To check, use the shell command: ${COLOR_YELLOW}# cat ${PUBLIC_STACK_FIX_ENVS_FILE}"
@@ -533,10 +534,9 @@ function stackStorageMake()
   stackMkDir 755 "${ROOT_APPLICATIONS_DIR} ${STACK_TARGET_ROOT_DIR} ${STACK_CERT_DEFAULT_DIR} ${ROOT_ENVIRONMENT_DIR} ${STACK_INFRA_DIR}"
   stackMkDir 777 "${STORAGE_SERVICE_DIR}"
 
-
-  __configure
+  __private_stack_clear_configure
   if ! [ "$?" -eq 1 ]; then
-    export __func_return="fail on calling __configure: ${__func_return}"
+    export __func_return="fail on calling __private_stack_clear_configure: ${__func_return}"
     return 0;
   fi
   return 1
@@ -626,6 +626,7 @@ function stackEnvsLoad()
     envsSetIfIsEmpty STACK_HAPROXY_CONFIG_FILE "${STACK_INFRA_CONF_DIR}/haproxy/haproxy.cfg"\
 
     envsSetIfIsEmpty STACK_NFS_ENABLED false
+
     envsSetIfIsEmpty STACK_NFS_SERVER 127.0.0.1
     envsSetIfIsEmpty STACK_NFS_MOUNT_DIR /data
     envsSetIfIsEmpty STACK_NFS_REMOTE_DATA_DIR /mnt/stack-data/

@@ -130,10 +130,3 @@ function nfsVerify()
   echG "Finished"
   return 1;
 }
-
-#export STACK_NFS_ENABLED=true
-#export STACK_NFS_SERVER=192.168.0.67
-#export STACK_NFS_MOUNT_DIR=/mnt/stack-data
-#export STACK_NFS_REMOTE_DATA_DIR=/mnt/DATAPTG/testing-company/docker-data
-
-# nfsVerify
