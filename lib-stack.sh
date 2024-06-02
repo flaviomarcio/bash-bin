@@ -215,11 +215,10 @@ function stackMkVolumes()
     return 0;
   else
     if [[ ${STACK_NFS_ENABLED} == true ]]; then
-      local __storage_base_dir="${STACK_NFS_REMOTE_DATA_DIR}/storage-volumes"
+      local __storage_base_dir="${STACK_NFS_REMOTE_DATA_DIR}/storage-data"
     else
       local __storage_base_dir="${STACK_STORAGE_DIR}"
     fi
-    local __storage_base_dir="${__storage_base_dir}/${__vol_name}"
 
     local __vol_paths=(${__vol_paths})
     local __vol_subdirs=(data db log config backup extension plugin addon import provider cert theme)
@@ -237,13 +236,13 @@ function stackMkVolumes()
     do
       local __env_name=$(toUpper STACK_SERVICE_STORAGE_${__vol_subir}_DIR)
       local __env_value=$(toLower "${__vol_name}_${__vol_subir}" | sed 's/-/_/g')
-      local __vol_dir="${__storage_base_dir}/${__vol_subir}"
+      local __vol_dir="${__storage_base_dir}/${__vol_name}/${__vol_subir}"
 
       local __check=$(cat ${__yml_file} | grep ${__env_name})
       if [[ ${__check} != "" ]]; then
         export ${__env_name}=${__env_value}
         if [[ ${STACK_NFS_ENABLED} == true ]]; then
-          dockerVolumeCreateNFS "${__env_value}" "${__vol_dir}" "${STACK_NFS_SERVER}"
+          dockerVolumeCreateNFS "${__env_value}" "${STACK_NFS_SERVER}" "${__vol_dir}"
           if ! [ "$?" -eq 1 ]; then
             export __func_return="fail on calling dockerVolumeCreateNFS, ${__func_return}"
             return 0;

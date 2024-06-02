@@ -741,8 +741,8 @@ function dockerVolumeCreateNFS()
 {
   unset __func_return
   local __vol_name=${1}
-  local __vol_dir=${2}
-  local __vol_server=${3}
+  local __vol_server=${2}
+  local __vol_dir=${3}
   if [[ ${__vol_server} == "" ]]; then
     export __func_return="Invalid env \${__vol_server}"
   elif [[ ${__vol_name} == "" ]]; then
@@ -752,7 +752,7 @@ function dockerVolumeCreateNFS()
   else
     local __check=$(docker volume ls | grep ${__vol_name})
     if [[ ${__check} == "" ]]; then
-      docker volume create --driver local --opt type=nfs --opt o=addr=${__vol_server},rw,sync --opt device=:${__env_dir} ${__vol_name}> /dev/null
+      docker volume create --driver local --opt type=nfs --opt o=addr=${__vol_server},rw,sync --opt device=:${__vol_dir} ${__vol_name}> /dev/null
     fi
     return 1;
   fi
