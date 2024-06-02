@@ -94,9 +94,8 @@ function __private_stackEnvsLoadByTarget()
   export STACK_INFRA_CERT_DIR="${STACK_INFRA_CONF_DIR}/cert"
   export STACK_INFRA_DEPLOY_SETTINGS_FILE="${STACK_INFRA_CONF_DIR}/deploy-config.json"
   export STACK_TEMPLATES_DIR="${STACK_TARGET_ROOT_DIR}/templates"
-  export STACK_TARGET_STORAGE_DIR=${STACK_TARGET_ROOT_DIR}/storage-data
   
-  stackMkDir 755 "${STACK_TARGET_ROOT_DIR} ${STACK_INFRA_CERT_DIR} ${STACK_INFRA_DIR} ${STACK_INFRA_CONF_DIR} ${STACK_TARGET_STORAGE_DIR}"
+  stackMkDir 755 "${STACK_TARGET_ROOT_DIR} ${STACK_INFRA_CERT_DIR} ${STACK_INFRA_DIR} ${STACK_INFRA_CONF_DIR} ${STACK_STORAGE_DIR}"
 
   envsSetIfIsEmpty STACK_NETWORK_PREFIX "${STACK_ENVIRONMENT}-${STACK_TARGET}"
   envsSetIfIsEmpty STACK_NETWORK_DEFAULT "${STACK_NETWORK_PREFIX}-inbound"
@@ -108,9 +107,8 @@ function __private_stackEnvsLoadByTarget()
   envsSetIfIsEmpty STACK_NETWORK_GRAFANA_K6 "${STACK_NETWORK_PREFIX}-grafana-k6"
   envsSetIfIsEmpty STACK_NETWORK_KONG "${STACK_NETWORK_PREFIX}-kong-net"
 
-  envsSetIfIsEmpty PUBLIC_STACK_FIX_ENVS_FILE "${STACK_ROOT_DIR}/stack_envs.env"
+  envsSetIfIsEmpty PUBLIC_STACK_FIX_ENVS_FILE "${STACK_DATA_DIR}/stack_envs.env"
   envsSetIfIsEmpty STACK_REGISTRY_DNS_PUBLIC "${STACK_ENVIRONMENT}-${STACK_TARGET}-registry.${STACK_DOMAIN}:5000"
-  envsSetIfIsEmpty PUBLIC_STACK_ENVS_RESOURCE_FILE "${STACK_ROOT_DIR}/stack_resource.env"
   envsSetIfIsEmpty PUBLIC_STACK_TARGET_ENVS_FILE "${STACK_TARGET_ROOT_DIR}/stack_envs.env"
  
   
@@ -219,12 +217,22 @@ function stackMkVolumes()
     if [[ ${STACK_NFS_ENABLED} == true ]]; then
       local __storage_base_dir="${STACK_NFS_REMOTE_DATA_DIR}/storage-volumes"
     else
-      local __storage_base_dir="${STACK_TARGET_STORAGE_DIR}"
+      local __storage_base_dir="${STACK_STORAGE_DIR}"
     fi
     local __storage_base_dir="${__storage_base_dir}/${__vol_name}"
+
     local __vol_paths=(${__vol_paths})
     local __vol_subdirs=(data db log config backup extension plugin addon import provider cert theme)
     local __vol_subir=
+
+    local __vol_dir=
+    #criar localmente os diretorios remotos
+    for __vol_subir in ${__vol_subdirs[*]};
+    do
+      mkdir -p "${STACK_STORAGE_DIR}/${__vol_name}/${__vol_subir}"
+    done
+
+    #loop para criar apenas os volumes defininos no docker-compose.yml
     for __vol_subir in ${__vol_subdirs[*]};
     do
       local __env_name=$(toUpper STACK_SERVICE_STORAGE_${__vol_subir}_DIR)
@@ -257,7 +265,7 @@ function stackEnvironmentConfigure()
 {
   clearTerm
 
-  local __root_dir=${STACK_ROOT_DIR}
+  local __root_dir=${STACK_DATA_DIR}
   local __environment=${STACK_ENVIRONMENT}
   local __target=${STACK_TARGET}
   local __domain=${STACK_DOMAIN}
@@ -270,7 +278,7 @@ function stackEnvironmentConfigure()
     if [[ ${STACK_ROOT_DIR} != "" ]]; then
       local __default=${STACK_ROOT_DIR}
     else
-      local __default=${HOME}/data
+      local __default=${HOME}/stack-root-dir
     fi
     echC ""
     echM "New value"
@@ -439,6 +447,8 @@ function stackEnvironmentConfigure()
   sed -i '/STACK_ENVIRONMENT/d' -i ${PUBLIC_STACK_FIX_ENVS_FILE}
   sed -i '/STACK_TARGET/d' -i ${PUBLIC_STACK_FIX_ENVS_FILE}
   sed -i '/STACK_DOMAIN/d' -i ${PUBLIC_STACK_FIX_ENVS_FILE}
+  sed -i '/STACK_DATA_DIR/d' -i ${PUBLIC_STACK_FIX_ENVS_FILE}
+  sed -i '/STACK_STORAGE_DIR/d' -i ${PUBLIC_STACK_FIX_ENVS_FILE}
 
   if ! [[ -f ${PUBLIC_STACK_FIX_ENVS_FILE} ]]; then
     echo "#!/bin/bash">${PUBLIC_STACK_FIX_ENVS_FILE}
@@ -449,12 +459,6 @@ function stackEnvironmentConfigure()
   export STACK_ENVIRONMENT=${__environment}
   export STACK_TARGET=${__target}
   export STACK_DOMAIN=${__domain}
-
-  # echo "export STACK_ROOT_DIR=${STACK_ROOT_DIR}">>${PUBLIC_STACK_FIX_ENVS_FILE}
-  # echo "export STACK_ENVIRONMENT=${STACK_ENVIRONMENT}">>${PUBLIC_STACK_FIX_ENVS_FILE}
-  # echo "export STACK_TARGET=${STACK_TARGET}">>${PUBLIC_STACK_FIX_ENVS_FILE}
-  # echo "export STACK_DOMAIN=${STACK_DOMAIN}">>${PUBLIC_STACK_FIX_ENVS_FILE}
-
 
   echG "  - To check, use the shell command: ${COLOR_YELLOW}# cat ${PUBLIC_STACK_FIX_ENVS_FILE}"
   echG ""
@@ -495,16 +499,13 @@ function stackEnvsIsConfigured()
 function stackStorageMake()
 {
   unset __func_return
-  #stack dirs
-  stackMkDir 755 "${STACK_ROOT_DIR}"
+  stackMkDir 755 "${STACK_DATA_DIR} ${STACK_STORAGE_DIR}"
   if ! [ "$?" -eq 1 ]; then
-    export __func_return="No create \${STACK_ROOT_DIR}: ${STACK_ROOT_DIR}"
+    export __func_return="No create \${STACK_DATA_DIR} \${STACK_STORAGE_DIR}"
     return 0;
   fi
-
   stackMkDir 755 "${ROOT_APPLICATIONS_DIR} ${STACK_TARGET_ROOT_DIR} ${STACK_CERT_DEFAULT_DIR} ${ROOT_ENVIRONMENT_DIR} ${STACK_INFRA_DIR}"
   stackMkDir 777 "${STORAGE_SERVICE_DIR}"
-
   return 1
 }
 
@@ -589,13 +590,13 @@ function stackEnvsLoad()
     envsSetIfIsEmpty STACK_DEFAULT_DEPLOY_REPLICAS 1
 
     envsSetIfIsEmpty STACK_HAPROXY_CERT_DIR "${STACK_INFRA_CONF_DIR}/haproxy/cert"
-    envsSetIfIsEmpty STACK_HAPROXY_CONFIG_FILE "${STACK_INFRA_CONF_DIR}/haproxy/haproxy.cfg"\
+    envsSetIfIsEmpty STACK_HAPROXY_CONFIG_FILE "${STACK_INFRA_CONF_DIR}/haproxy/haproxy.cfg"
 
     envsSetIfIsEmpty STACK_NFS_ENABLED false
 
     envsSetIfIsEmpty STACK_NFS_SERVER 127.0.0.1
     envsSetIfIsEmpty STACK_NFS_MOUNT_DIR /data
-    envsSetIfIsEmpty STACK_NFS_REMOTE_DATA_DIR "/mnt/stack-data"
+    envsSetIfIsEmpty STACK_NFS_REMOTE_DATA_DIR "/mnt/NFSPOOL"
 
   }
   unset __func_return
@@ -623,15 +624,16 @@ function stackEnvsLoad()
       export STACK_PREFIX_HOST="int-"
     fi
 
-    envsSetIfIsEmpty STACK_ROOT_DIR "${HOME}/data"
-    #remove barra no final
-    export STACK_ROOT_DIR=$(dirname ${STACK_ROOT_DIR}/ignore)
-    export ROOT_APPLICATIONS_DIR="${STACK_ROOT_DIR}/applications"
+    envsSetIfIsEmpty STACK_ROOT_DIR "${HOME}/stack-root-dir"
+    export STACK_DATA_DIR=${STACK_ROOT_DIR}/data
+    export STACK_STORAGE_DIR=${STACK_ROOT_DIR}/storage-data
+    export ROOT_APPLICATIONS_DIR="${STACK_DATA_DIR}/applications"
     export ROOT_ENVIRONMENT_DIR=${ROOT_APPLICATIONS_DIR}/${STACK_ENVIRONMENT}
     export STACK_CERT_DEFAULT_DIR="${ROOT_APPLICATIONS_DIR}/certs"
     export PUBLIC_STACK_TARGETS_FILE="${ROOT_APPLICATIONS_DIR}/stack_targets.env"
     export PUBLIC_STACK_ENVIRONMENTS_FILE="${ROOT_APPLICATIONS_DIR}/stack_environments.env"
 
+    mkdir -p ${STACK_STORAGE_DIR}
     mkdir -p ${ROOT_APPLICATIONS_DIR}
 
     if ! [[ -f ${PUBLIC_STACK_ENVIRONMENTS_FILE} ]]; then
@@ -821,7 +823,7 @@ function stackPublicEnvsConfigure()
   unset __func_return
   local __bashrc="${HOME}/.bashrc"
   local __envFile=$(basename ${PUBLIC_STACK_FIX_ENVS_FILE})
-  local __envs_args="STACK_TARGET STACK_ENVIRONMENT STACK_ROOT_DIR QT_VERSION"
+  local __envs_args="STACK_TARGET STACK_ENVIRONMENT STACK_DATA_DIR QT_VERSION"
   local __envs=(${__envs_args})
   if ! [[ -f ${PUBLIC_STACK_FIX_ENVS_FILE} ]]; then
     echo "#!/bin/bash">${PUBLIC_STACK_FIX_ENVS_FILE}

@@ -32,6 +32,7 @@ function __nfs_env_check()
 
 function nfsIsMounted()
 {
+  echo "mount | grep \"${STACK_NFS_MOUNT_DIR}\""
   __nfs_env_check
   if ! [ "$?" -eq 1 ]; then
     return 0;
