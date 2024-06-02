@@ -740,9 +740,9 @@ function dockerVolumeCreateLocal()
 function dockerVolumeCreateNFS()
 {
   unset __func_return
-  local __vol_server=${1}
-  local __vol_name=${2}
-  local __vol_dir=${3}
+  local __vol_name=${1}
+  local __vol_dir=${2}
+  local __vol_server=${3}
   if [[ ${__vol_server} == "" ]]; then
     export __func_return="Invalid env \${__vol_server}"
   elif [[ ${__vol_name} == "" ]]; then

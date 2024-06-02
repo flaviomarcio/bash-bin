@@ -43,7 +43,6 @@ function __private_stackEnvsLoadByStack()
     export STACK_SERVICE_HOSTNAME_PROXY=${STACK_SERVICE_NAME}
     export STACK_SERVICE_HOSTNAME_PUBLIC=${STACK_SERVICE_NAME}.${STACK_DOMAIN}
 
-    local __storage_base_dir="${STACK_TARGET_STORAGE_DIR}/${STACK_SERVICE_NAME}"
 
     # export STACK_SERVICE_STORAGE_DATA_DIR="${__storage_base_dir}data"
     # export STACK_SERVICE_STORAGE_DB_DIR="${__storage_base_dir}db"
@@ -57,14 +56,6 @@ function __private_stackEnvsLoadByStack()
     # export STACK_SERVICE_STORAGE_PROVIDER_DIR="${__storage_base_dir}provider"
     # export STACK_SERVICE_STORAGE_CERT_DIR="${__storage_base_dir}certificates"
     # export STACK_SERVICE_STORAGE_THEME_DIR="${__storage_base_dir}theme"
-
-   
-    stackMkVolumes "${STACK_SERVICE_NAME}" "${__storage_base_dir}" 
-
-    if ! [ "$?" -eq 1 ]; then
-      export __func_return="fail on calling stackMkVolumes, ${__func_return}"
-      return 0;
-    fi
 
     #image
     export STACK_SERVICE_IMAGE="${STACK_SERVICE_NAME}"
@@ -104,9 +95,8 @@ function __private_stackEnvsLoadByTarget()
   export STACK_INFRA_DEPLOY_SETTINGS_FILE="${STACK_INFRA_CONF_DIR}/deploy-config.json"
   export STACK_TEMPLATES_DIR="${STACK_TARGET_ROOT_DIR}/templates"
   export STACK_TARGET_STORAGE_DIR=${STACK_TARGET_ROOT_DIR}/storage-data
-  export STACK_TARGET_STORAGE_VOL=${STACK_TARGET_ROOT_DIR}/storage-volumes
   
-  stackMkDir 755 "${STACK_TARGET_ROOT_DIR} ${STACK_INFRA_CERT_DIR} ${STACK_INFRA_DIR} ${STACK_INFRA_CONF_DIR} ${STACK_TARGET_STORAGE_DIR} ${STACK_TARGET_STORAGE_VOL}"
+  stackMkDir 755 "${STACK_TARGET_ROOT_DIR} ${STACK_INFRA_CERT_DIR} ${STACK_INFRA_DIR} ${STACK_INFRA_CONF_DIR} ${STACK_TARGET_STORAGE_DIR}"
 
   envsSetIfIsEmpty STACK_NETWORK_PREFIX "${STACK_ENVIRONMENT}-${STACK_TARGET}"
   envsSetIfIsEmpty STACK_NETWORK_DEFAULT "${STACK_NETWORK_PREFIX}-inbound"
@@ -183,41 +173,6 @@ function __private_stackEnvsDefaultByStack()
   envsSetIfIsEmpty APPLICATION_DEPLOY_VAULT_ENABLED "${STACK_VAULT_ENABLED}"
 }
 
-function __private_stack_clear_configure()
-{
-  unset __func_return
-  envsSetIfIsEmpty STACK_LIB_DIR "${ROOT_APPLICATIONS_DIR}/lib"
-  if [[ ${STACK_LIB_DIR} == "" ]]; then
-    export __func_return="invalid env \${STACK_LIB_DIR}"
-    return 0;
-  fi
-
-  if [[ -d ${STACK_LIB_DIR} ]]; then
-    return 1;
-  fi
-
-  local __dirs=("/data/lib" "/data/lib.dir" "/mnt/storage/lib.dir")
-  local __dir=
-  for __dir in "${__dirs[@]}"
-  do
-    if ! [[ -d ${__dir} ]]; then
-      continue;
-    fi
-    echo $(ln -s ${__dir} ${STACK_LIB_DIR})&>/dev/null
-    break;
-  done
-  if ! [[ -d ${STACK_LIB_DIR} ]]; then
-    mkdir -p ${STACK_LIB_DIR}
-  fi
-
-  if ! [[ -d ${STACK_LIB_DIR} ]]; then
-    export __func_return="invalid lib dir \${STACK_LIB_DIR}: ${STACK_LIB_DIR}"
-    return 0
-  fi
-
-  return 1;
-}
-
 function stackMkDir()
 {
   unset __func_return
@@ -250,19 +205,23 @@ function stackMkDir()
 function stackMkVolumes()
 {
   unset __func_return
-  unset __service_name
-  unset __env_dirs
 
   local __vol_name=${1}
-  local __vol_dir=${2}
+  local __yml_file=${2}
 
   if [[ ${__vol_name} == "" ]]; then
     export __func_return="Invalid env \${__vol_name}"
     return 0;
-  elif [[ ${__vol_dir} == "" ]]; then
-    export __func_return="Invalid env \${__vol_dir}"
+  elif ! [[ -f ${__yml_file} ]]; then
+    export __func_return="Invalid env \${__yml_file}"
     return 0;
   else
+    if [[ ${STACK_NFS_ENABLED} == true ]]; then
+      local __storage_base_dir="${STACK_NFS_REMOTE_DATA_DIR}/storage-volumes"
+    else
+      local __storage_base_dir="${STACK_TARGET_STORAGE_DIR}"
+    fi
+    local __storage_base_dir="${__storage_base_dir}/${__vol_name}"
     local __vol_paths=(${__vol_paths})
     local __vol_subdirs=(data db log config backup extension plugin addon import provider cert theme)
     local __vol_subir=
@@ -270,12 +229,24 @@ function stackMkVolumes()
     do
       local __env_name=$(toUpper STACK_SERVICE_STORAGE_${__vol_subir}_DIR)
       local __env_value=$(toLower "${__vol_name}_${__vol_subir}" | sed 's/-/_/g')
-      local __vol_dir="${__vol_dir}/${__vol_subir}"
+      local __vol_dir="${__storage_base_dir}/${__vol_subir}"
 
-      if [[ ${STACK_NFS_ENABLED} == true ]]; then
+      local __check=$(cat ${__yml_file} | grep ${__env_name})
+      if [[ ${__check} != "" ]]; then
         export ${__env_name}=${__env_value}
-      else
-        export ${__env_name}=${__vol_dir}
+        if [[ ${STACK_NFS_ENABLED} == true ]]; then
+          dockerVolumeCreateNFS "${__env_value}" "${__vol_dir}" "${STACK_NFS_SERVER}"
+          if ! [ "$?" -eq 1 ]; then
+            export __func_return="fail on calling dockerVolumeCreateNFS, ${__func_return}"
+            return 0;
+          fi
+        else
+          dockerVolumeCreateLocal "${__env_value}" "${__vol_dir}"
+          if ! [ "$?" -eq 1 ]; then
+            export __func_return="fail on calling dockerVolumeCreateLocal, ${__func_return}"
+            return 0;
+          fi
+        fi
       fi
     done
     return 1
@@ -534,11 +505,6 @@ function stackStorageMake()
   stackMkDir 755 "${ROOT_APPLICATIONS_DIR} ${STACK_TARGET_ROOT_DIR} ${STACK_CERT_DEFAULT_DIR} ${ROOT_ENVIRONMENT_DIR} ${STACK_INFRA_DIR}"
   stackMkDir 777 "${STORAGE_SERVICE_DIR}"
 
-  __private_stack_clear_configure
-  if ! [ "$?" -eq 1 ]; then
-    export __func_return="fail on calling __private_stack_clear_configure: ${__func_return}"
-    return 0;
-  fi
   return 1
 }
 
@@ -629,7 +595,7 @@ function stackEnvsLoad()
 
     envsSetIfIsEmpty STACK_NFS_SERVER 127.0.0.1
     envsSetIfIsEmpty STACK_NFS_MOUNT_DIR /data
-    envsSetIfIsEmpty STACK_NFS_REMOTE_DATA_DIR /mnt/stack-data/
+    envsSetIfIsEmpty STACK_NFS_REMOTE_DATA_DIR "/mnt/stack-data"
 
   }
   unset __func_return
@@ -815,9 +781,6 @@ function stackEnvsLoadByStack()
         return 0;
       elif [[ ${STACK_ENVIRONMENT} == "" ]]; then
         export __func_return="fail on calling stackEnvsLoad, env \${STACK_ENVIRONMENT} not found"
-        return 0;
-      elif [[ ${STACK_LIB_DIR} == "" ]]; then
-        export __func_return="fail on calling stackEnvsLoad, env \${STACK_LIB_DIR} not found"
         return 0;
       elif [[ ${STACK_NAME} == "" ]]; then
         export __func_return="fail on calling __private_stackEnvsLoadByStack, env \${STACK_NAME} not found"
@@ -1022,7 +985,3 @@ function stackVaultPush()
   read
   return 1
 }
-
-
-   
-#stackMkVolumes testing_company_app "${HOME}/tmp/testing_company_app"
