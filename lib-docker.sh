@@ -726,8 +726,10 @@ function dockerVolumeCreateLocal()
   elif [[ ${__vol_dir} == "" ]]; then
     export __func_return="Invalid env \${__vol_dir}"
   else
-    mkdir -p ${__vol_dir}
-    chmod 777 ${__vol_dir}
+    if ! [[ -d ${__vol_dir} ]]; then
+      mkdir -p ${__vol_dir}
+      chmod 777 ${__vol_dir}
+    fi
     local __check=$(docker volume ls | grep ${__vol_name})
     if [[ ${__check} == "" ]]; then
       docker volume create --driver local --opt type=none --opt o=bind --opt device=${__vol_dir} ${__vol_name}> /dev/null
