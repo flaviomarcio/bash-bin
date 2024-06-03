@@ -228,6 +228,7 @@ function stackMkVolumes()
     #criar localmente os diretorios remotos
     for __vol_subir in ${__vol_subdirs[*]};
     do
+      echo "mkdir -p \"${STACK_STORAGE_DIR}/${__vol_name}/${__vol_subir}\""
       mkdir -p "${STACK_STORAGE_DIR}/${__vol_name}/${__vol_subir}"
     done
 
