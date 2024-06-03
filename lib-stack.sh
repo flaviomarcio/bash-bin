@@ -238,8 +238,7 @@ function stackMkVolumes()
       local __env_value=$(toLower "${__vol_name}_${__vol_subir}" | sed 's/-/_/g')
       local __vol_dir="${__storage_base_dir}/${__vol_name}/${__vol_subir}"
 
-      echo "__env_name: ${__env_name}, __env_value: ${__env_value}"
-
+      cat ${__yml_file} | grep ${__env_name}
       local __check=$(cat ${__yml_file} | grep ${__env_name})
       if [[ ${__check} != "" ]]; then
         export ${__env_name}=${__env_value}
