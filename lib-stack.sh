@@ -126,7 +126,6 @@ function __private_stackEnvsDefaultByStack()
   local __name=${3}
 
   local __service=${__environment}_${__target}_${__name}
-  
   export APPLICATION_STACK_NAME=${__name}
   export APPLICATION_DEPLOY_NAME=${__service}
   export APPLICATION_DEPLOY_HOSTNAME=${__service}  
@@ -229,7 +228,6 @@ function stackMkVolumes()
     #criar localmente os diretorios remotos
     for __vol_subir in ${__vol_subdirs[*]};
     do
-      echo "mkdir -p \"${STACK_STORAGE_DIR}/${__vol_name}/${__vol_subir}\""
       mkdir -p "${STACK_STORAGE_DIR}/${__vol_name}/${__vol_subir}"
     done
 
