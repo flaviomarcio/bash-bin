@@ -513,7 +513,7 @@ function selectorWaitSeconds()
   fi
 
   if [[ ${__selectorWaitSeconds_title} == "" ]]; then
-    local __selectorWaitSeconds_title="Wainting ${__selectorWaitSeconds_seconds} seconds, use [CTRL+C] to abort..."
+    local __selectorWaitSeconds_title="Wainting ${COLOR_YELLOW}${__selectorWaitSeconds_seconds}${COLOR_BLUE_B} seconds, use ${COLOR_GREEN}[CTRL+C] ${COLOR_BLUE_B}to abort..."
   fi
 
   if [[ ${__selectorWaitSeconds_color} == "" ]]; then

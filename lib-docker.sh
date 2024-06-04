@@ -358,14 +358,30 @@ function dockerCleanup()
   local __removed=false
   if [[ ${__tags} == "" ]]; then
     local __tags=($(docker service ls --quiet))
-    local __tag=
-    for __tag in "${__tags[@]}"
-    do
-      local __tag=$(docker service inspect ${__tag} --format '{{ .Spec.Name }}')
-      echR "      Removing service [${__tag}]..."
-      echo $(docker --log-level ERROR service rm ${__tag} )&>/dev/null
-      local __removed=true
-    done
+    if [[ ${__tags} != "" ]]; then
+      echM "      Removing services"
+      local __tag=
+      for __tag in "${__tags[@]}"
+      do
+        local __tag=$(docker service inspect ${__tag} --format '{{ .Spec.Name }}')
+        echR "        [${__tag}]..."
+        echo $(docker --log-level ERROR service rm ${__tag} )&>/dev/null
+        local __removed=true
+      done
+      sleep 2
+    fi
+    local __tags=($(docker volume ls --quiet))
+    if [[ ${__tags} != "" ]]; then
+      echM "      Removing volumes"
+      local __tag=
+      for __tag in "${__tags[@]}"
+      do
+        local __tag=$(docker volume inspect ${__tag} --format '{{ .Name }}')
+        echR "        [${__tag}]..."
+        echo $(docker --log-level ERROR volume rm ${__tag} )&>/dev/null
+        local __removed=true
+      done
+    fi
   else
     local __tags=($(__private_dockerParserServiceName ${__tags}))
     local __tag=
@@ -392,11 +408,13 @@ function dockerCleanup()
     done
 
   fi
-    if [[ ${__removed} == false ]]; then
-      echC "      - No services to clear"
-      echG "    Finished"
-      return 1
-    fi
+
+  if [[ ${__removed} == false ]]; then
+    echC "      - No services to clear"
+    echG "    Finished"
+    return 1
+  fi
+
   echG "    Finished"
   return 1
 }
@@ -404,16 +422,14 @@ function dockerCleanup()
 function dockerPrune()
 {
   local __cmd_1="docker --log-level ERROR system prune --all --volumes --force"
-  local __cmd_2="docker --log-level ERRORvolume rm \$(docker volume ls --quiet)"
   echM "    Docker prune"
   echR "      Removing ..."
   echY "        - ${__cmd_1}"
-  echY "        - ${__cmd_2}"
   sleep 2
   local i=
   for i in {1..5}
   do
-    echB "        - step: ${i}"
+    echB "        - step: ${COLOR_YELLOW}${i}"
     echo $(${__cmd_1})&>/dev/null
     echo $(${__cmd_2})&>/dev/null
     sleep 1
