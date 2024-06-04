@@ -402,7 +402,7 @@ function selectorEnvironment()
   select opt in "${options[@]}"
   do
     export __selector=${opt}
-    case $opt in
+    case ${opt} in
         "development")
           break
             ;;
@@ -418,7 +418,7 @@ function selectorEnvironment()
         "quit")
           return 0
             ;;
-        *) echo "invalid option $opt";
+        *) echo "invalid option ${opt}";
     esac
   done
   return 1
