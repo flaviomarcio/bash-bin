@@ -526,6 +526,7 @@ function stackInitTargetEnvFile()
   #stack defaults
   local __local_add="
   STACK_TZ
+  STACK_NO_DOCKER_RESET
   STACK_DOMAIN
   STACK_PREFIX_HOST_ENABLED
   $(envsGet STACK_ADMIN_ STACK_PROXY_ STACK_DEFAULT_ STACK_SERVICE_DEFAULT_ STACK_SERVICE_HEALTH_ STACK_GOCD_ STACK_SERVICE_IMAGE STACK_VOLUME_ STACK_LDAP_ STACK_TRAEFIK_ STACK_NFS_ POSTGRES_)
@@ -541,6 +542,7 @@ function stackEnvsLoad()
 {
   function __defaultCheck()
   {
+    envsSetIfIsEmpty STACK_NO_DOCKER_RESET true
     #obrigatory envs
     envsSetIfIsEmpty STACK_TZ "America/Sao_Paulo"
     envsSetIfIsEmpty STACK_TARGET undefined
