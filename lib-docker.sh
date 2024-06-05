@@ -122,6 +122,7 @@ function dockerSwarmVerify()
 function dockerSwarmNodeLabels()
 {
   echo "stack-type-master
+ stack-type-global
  stack-type-infrastructure
  stack-type-waf
  stack-type-fw
