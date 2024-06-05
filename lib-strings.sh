@@ -556,23 +556,22 @@ function envsExtractStatic()
   return 1
 }
 
-function runSource()
-{
-  unset __func_return
-  local __file_name="${1}"
-  local __file_params="${2}"
-  if [[ ${__file_name} == "" ]]; then
-    return 0
-  fi
+# function runSource()
+# {
+#   unset __func_return
+#   local __file_name="${1}"
+#   local __file_params="${2}"
+#   if [[ ${__file_name} == "" ]]; then
+#     return 0
+#   fi
 
-  if ! [[ -f ${__file_name} ]]; then
-    return 0
-  fi
-
-  echo $(chmod +x ${__file_name})&>/dev/null
-  source ${__file_name} ${__file_params}
-  return 0
-}
+#   if ! [[ -f ${__file_name} ]]; then
+#     return 0
+#   fi
+#   echo $(chmod +x ${__file_name})&>/dev/null
+#   source ${__file_name} ${__file_params}
+#   return 0
+# }
 
 function envsPrepareFile()
 {

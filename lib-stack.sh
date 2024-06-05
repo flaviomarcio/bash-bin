@@ -534,7 +534,6 @@ function stackInitTargetEnvFile()
   # save envs
   envsFileAddIfNotExists "${PUBLIC_STACK_TARGET_ENVS_FILE}" "${__local_add}"
 
-  echo $(chmod +x ${PUBLIC_STACK_TARGET_ENVS_FILE})&>/dev/null
   return 1
 }
 
@@ -652,7 +651,6 @@ function stackEnvsLoad()
     if ! [[ -f ${PUBLIC_STACK_TARGETS_FILE} ]]; then
       echo "${PUBLIC_STACK_TARGETS}">${PUBLIC_STACK_TARGETS_FILE}
     fi
-
     __private_stackEnvsLoadByTarget ${__target}
     if ! [ "$?" -eq 1 ]; then
       export __func_return="fail on calling __private_stackEnvsLoadByTarget, ${__func_return}"
