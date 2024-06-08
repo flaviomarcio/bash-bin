@@ -12,6 +12,7 @@ fi
 . ${BASH_BIN}/lib-strings.sh
 . ${BASH_BIN}/lib-docker.sh
 . ${BASH_BIN}/lib-vault.sh
+. ${BASH_BIN}/lib-ssl.sh
 
 function __private_stackEnvsLoadByStack()
 {
@@ -56,6 +57,7 @@ function __private_stackEnvsLoadByStack()
     # export STACK_SERVICE_STORAGE_PROVIDER_DIR="${__storage_base_dir}provider"
     # export STACK_SERVICE_STORAGE_CERT_DIR="${__storage_base_dir}certificates"
     # export STACK_SERVICE_STORAGE_THEME_DIR="${__storage_base_dir}theme"
+    # export STACK_SERVICE_STORAGE_SSH_DIR="${__storage_base_dir}ssh"
 
     #image
     export STACK_SERVICE_IMAGE="${STACK_SERVICE_NAME}"
@@ -171,6 +173,15 @@ function __private_stackEnvsDefaultByStack()
   envsSetIfIsEmpty APPLICATION_DEPLOY_VAULT_ENABLED "${STACK_VAULT_ENABLED}"
 }
 
+function __private_storage_base_dir()
+{
+  if [[ ${STACK_NFS_ENABLED} == true ]]; then
+    echo ${STACK_NFS_REMOTE_DATA_DIR}/storage-data
+  else
+    echo ${STACK_STORAGE_DIR}
+  fi
+}
+
 function stackMkDir()
 {
   unset __func_return
@@ -200,43 +211,85 @@ function stackMkDir()
   return 1
 }
 
+#cria certificados de seguranca e ssh
+function stackCertificatesCreate()
+{
+  unset __func_return
+
+  local __stack_name=${1}
+  local __yml_file=${2}
+
+  if [[ ${__stack_name} == "" ]]; then
+    export __func_return="Invalid env \${__stack_name}"
+    return 0;
+  else
+    local __storage_base_dir=$(__private_storage_base_dir)
+
+    local __vol_subdirs=(cert ssh)
+    local __vol_subir=
+    local __pwd=${PWD}
+
+    for __vol_subir in ${__vol_subdirs[*]};
+    do
+      local __env_name=$(toUpper STACK_SERVICE_STORAGE_${__vol_subir}_DIR)
+      local __check=$(cat ${__yml_file} | grep ${__env_name})
+      if [[ ${__check} != "" ]]; then
+        local __vol_dir="${__storage_base_dir}/${__stack_name}/${__vol_subir}"
+        if [[ -d ${__vol_dir} ]]; then
+          cd ${__vol_dir}
+
+          if [[ ${__vol_subir} == "ssh" ]]; then
+            local __rsa_key_name=id_rsa
+            local __rsa_key_dest=${__vol_dir}
+            local __rsa_key_repl=false
+            rsaKeyCreate "${__rsa_key_name}" "${__rsa_key_dest}" "${__rsa_key_repl}"
+          elif [[ ${__vol_subir} == "cert" ]]; then
+            local __cert_name=cert
+            local __cert_days=""
+            local __cert_pass=""
+            local __cert_dest=${__vol_dir}
+            local __cert_repl=false
+            certCreate "${__cert_name}" "${__cert_days}" "${__cert_pass}" "${__cert_dest}" "${__cert_repl}"
+          fi
+        fi
+      fi
+    done
+    return 1
+  fi
+}
+
 function stackMkVolumes()
 {
   unset __func_return
 
-  local __vol_name=${1}
+  local __stack_name=${1}
   local __yml_file=${2}
 
-  if [[ ${__vol_name} == "" ]]; then
-    export __func_return="Invalid env \${__vol_name}"
+  if [[ ${__stack_name} == "" ]]; then
+    export __func_return="Invalid env \${__stack_name}"
     return 0;
   elif ! [[ -f ${__yml_file} ]]; then
     export __func_return="Invalid env \${__yml_file}"
     return 0;
   else
-    if [[ ${STACK_NFS_ENABLED} == true ]]; then
-      local __storage_base_dir="${STACK_NFS_REMOTE_DATA_DIR}/storage-data"
-    else
-      local __storage_base_dir="${STACK_STORAGE_DIR}"
-    fi
+    local __storage_base_dir=$(__private_storage_base_dir)
 
-    local __vol_paths=(${__vol_paths})
-    local __vol_subdirs=(data db log config backup extension plugin addon import provider cert theme)
+    local __vol_subdirs=(data db log config backup extension plugin addon import provider cert theme ssh m2)
     local __vol_subir=
 
     local __vol_dir=
     #criar localmente os diretorios remotos
     for __vol_subir in ${__vol_subdirs[*]};
     do
-      mkdir -p "${STACK_STORAGE_DIR}/${__vol_name}/${__vol_subir}"
+      mkdir -p "${STACK_STORAGE_DIR}/${__stack_name}/${__vol_subir}"
     done
 
     #loop para criar apenas os volumes defininos no docker-compose.yml
     for __vol_subir in ${__vol_subdirs[*]};
     do
       local __env_name=$(toUpper STACK_SERVICE_STORAGE_${__vol_subir}_DIR)
-      local __env_value=$(toLower "${__vol_name}_${__vol_subir}" | sed 's/-/_/g')
-      local __vol_dir="${__storage_base_dir}/${__vol_name}/${__vol_subir}"
+      local __env_value=$(toLower "${__stack_name}_${__vol_subir}" | sed 's/-/_/g')
+      local __vol_dir="${__storage_base_dir}/${__stack_name}/${__vol_subir}"
 
       local __check=$(cat ${__yml_file} | grep ${__env_name})
       if [[ ${__check} != "" ]]; then
