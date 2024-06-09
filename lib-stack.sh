@@ -231,10 +231,10 @@ function stackSettingWrittenSingle()
     export __func_return="Invalid env: \${__destine_dir}"
     return 0;
   elif [[ ${STACK_CONFIG_LOCAL_DIR} == "" ]]; then
-    echFail "${1}" "fail invalid env \${STACK_CONFIG_LOCAL_DIR}"
+    export __func_return="Invalid env \${STACK_CONFIG_LOCAL_DIR}"
     return 0;
   elif ! [[ -d ${STACK_CONFIG_LOCAL_DIR} ]]; then
-    echFail "${1}" "fail dir not found : ${STACK_CONFIG_LOCAL_DIR}"
+    export __func_return="Dir not found : ${STACK_CONFIG_LOCAL_DIR}"
     return 0;
   else
     if ! [[ -d ${__destine_dir} ]]; then
@@ -246,19 +246,8 @@ function stackSettingWrittenSingle()
       return 0;      
     fi
 
-    # if [[ -d ${STACK_INFRA_CONF_DIR}  ]]; then
-    #   local OLD_DIR=${STACK_INFRA_CONF_DIR}_old  
-    #   echCommand "${1}" "rm -rf ${OLD_DIR}"
-    #   echCommand "${1}" "mv ${STACK_INFRA_CONF_DIR} ${OLD_DIR}"
-    # fi
     local __config_dir=$(dirname ${STACK_INFRA_CONF_DIR})
-    # if ! [[ -d ${__config_dir} ]]; then
-    #   mkdir -p ${__config_dir}
-    #   if ! [[ -d ${__config_dir} ]]; then
-    #     echFail "${1}" "fail on create dir: ${__config_dir}"
-    #     return 0;
-    #   fi
-    # fi
+
     echM "      Copying settings"
     echC "        Coping to volume: ${COLOR_YELLOW}\${STACK_SERVICE_STORAGE_ICONFIG_DIR}"
     echY "        command ..."
@@ -306,6 +295,7 @@ function stackSettingWritten()
 
   local __stack_name=${1}
   local __yml_file=${2}
+  local __bash_file=${3}
 
   if [[ ${__stack_name} == "" ]]; then
     export __func_return="Invalid env \${__stack_name}"
@@ -367,6 +357,7 @@ function stackMkVolumes()
 
   local __stack_name=${1}
   local __yml_file=${2}
+  local __vol_bash_file=${3}
 
   if [[ ${__stack_name} == "" ]]; then
     export __func_return="Invalid env \${__stack_name}"
@@ -384,7 +375,8 @@ function stackMkVolumes()
     #criar localmente os diretorios remotos
     for __vol_subir in ${__vol_subdirs[*]};
     do
-      mkdir -p "${STACK_STORAGE_DIR}/${__stack_name}/${__vol_subir}"
+      mkdir -p ${STACK_STORAGE_DIR}/${__stack_name}/${__vol_subir}
+      bashAppend "${__vol_bash_file}" "mkdir -p ${STACK_STORAGE_DIR}/${__stack_name}/${__vol_subir}"
     done
 
     #loop para criar apenas os volumes defininos no docker-compose.yml
@@ -398,13 +390,13 @@ function stackMkVolumes()
       if [[ ${__check} != "" ]]; then
         export ${__env_name}=${__env_value}
         if [[ ${STACK_NFS_ENABLED} == true ]]; then
-          dockerVolumeCreateNFS "${__env_value}" "${STACK_NFS_SERVER}" "${__vol_dir}"
+          dockerVolumeCreateNFS "${__env_value}" "${STACK_NFS_SERVER}" "${__vol_dir}" "${__vol_bash_file}"
           if ! [ "$?" -eq 1 ]; then
             export __func_return="fail on calling dockerVolumeCreateNFS, ${__func_return}"
             return 0;
           fi
         else
-          dockerVolumeCreateLocal "${__env_value}" "${__vol_dir}"
+          dockerVolumeCreateLocal "${__env_value}" "${__vol_dir}" "${__vol_bash_file}"
           if ! [ "$?" -eq 1 ]; then
             export __func_return="fail on calling dockerVolumeCreateLocal, ${__func_return}"
             return 0;
@@ -418,13 +410,16 @@ function stackMkVolumes()
 
 function stackVolumePrepare()
 {
-  stackMkVolumes "${__service_name}" "${__compose_file_dst}"
+  local __service_name=${1}
+  local __compose_file_dst=${2}
+  local __bash_file=${3}
+  stackMkVolumes "${__service_name}" "${__compose_file_dst}" "${__bash_file}"
   if ! [ "$?" -eq 1 ]; then
     export __func_return="fail on calling stackMkVolumes, ${__func_return}"
     return 0;
   fi
 
-  stackSettingWritten "${__service_name}" "${__compose_file_dst}"
+  stackSettingWritten "${__service_name}" "${__compose_file_dst}" "${__bash_file}"
   if ! [ "$?" -eq 1 ]; then
     export __func_return="fail on calling stackSettingWritten, ${__func_return}"
     return 0;

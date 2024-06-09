@@ -1302,3 +1302,21 @@ function nameFormat()
   echo ${__nameFormat_output}
   return 1;
 }
+
+function bashAppend()
+{
+  local __bash_file=${1}
+  local __bash_command=${2}
+  if [[ ${__bash_file} == "" ]]; then
+    return 0
+  elif [[ ${__bash_command} == "" ]]; then
+    return 0
+  else
+    touch ${__bash_file}
+    if ! [[ ${__bash_file} ]]; then
+      return 0;
+    fi
+    echo "${__bash_command}">>${__bash_file}
+    return 1;    
+  fi
+}
