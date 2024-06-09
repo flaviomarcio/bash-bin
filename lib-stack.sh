@@ -94,7 +94,6 @@ function __private_stackEnvsLoadByTarget()
   export STACK_INFRA_DIR="${STACK_TARGET_ROOT_DIR}/infrastructure"
   export STACK_INFRA_CONF_DIR="${STACK_TARGET_ROOT_DIR}/infrastructure/conf"
   export STACK_INFRA_CERT_DIR="${STACK_INFRA_CONF_DIR}/cert"
-  export STACK_INFRA_DEPLOY_SETTINGS_FILE="${STACK_INFRA_CONF_DIR}/deploy-config.json"
   export STACK_TEMPLATES_DIR="${STACK_TARGET_ROOT_DIR}/templates"
   
   stackMkDir 755 "${STACK_TARGET_ROOT_DIR} ${STACK_INFRA_CERT_DIR} ${STACK_INFRA_DIR} ${STACK_INFRA_CONF_DIR} ${STACK_STORAGE_DIR}"
@@ -251,8 +250,8 @@ function stackSettingWrittenSingle()
     local __config_dir=$(dirname ${STACK_INFRA_CONF_DIR})
 
     echM "      Copying settings"
-    echC "        Coping to volume: ${COLOR_YELLOW}\${STACK_SERVICE_STORAGE_ICONFIG_DIR}"
-    echY "        command ..."
+    echC "        Coping to volume: ${COLOR_BLUE}\${STACK_SERVICE_STORAGE_ICONFIG_DIR}: ${COLOR_YELLOW}${STACK_SERVICE_STORAGE_ICONFIG_DIR}"
+    echY "        Command ..."
     echB "          - rm ${COLOR_CIANO}-rf ${COLOR_YELLOW}${__destine_dir}"
     echB "          - cp ${COLOR_CIANO}-rf ${COLOR_YELLOW}${__source_dir} ${__destine_dir}"
 
@@ -261,7 +260,7 @@ function stackSettingWrittenSingle()
 
     local __filters=(crt sh cfg conf yml yaml hcl json properties xml sql ldif)
     local __filter=
-    echC "        Parsing"
+    echY "        Parsing ..."
     for __filter in ${__filters[*]};
     do
       local __files=$(find  ${__source_dir} -iname "*.${__filter}" | sort)
@@ -272,18 +271,21 @@ function stackSettingWrittenSingle()
         local __file=
         for __file in ${__files[*]};
         do
-          if [[ ${__filter} == "sh" || ${__filter} == "crt" || ${__filter} == "key" || ${__filter} == "csr" || ${__filter} == "pem" || ${__filter} == "ca" ]]; then
+          if [[ ${__filter} == "crt" || ${__filter} == "key" || ${__filter} == "csr" || ${__filter} == "pem" || ${__filter} == "ca" ]]; then
             echY "            - ${__file}, ${COLOR_GREEN}ignored"
+          elif [[ ${__filter} == "sh" ]]; then
+            echY "            - ${__file}, ${COLOR_GREEN}set +x"
+            chmod +x ${__file}
           else
             local __ignore_check=$(cat ${__file} | grep "\#\[\[envs-ignore-replace\]\]")
             local __fileName=$(basename ${__file})
             if [[ ${__ignore_check} != "" ]]; then
-              echB "            - ${__fileName} skipped, using #[[envs-ignore-replace]]"
+              echB "            - ${__file} skipped, using #[[envs-ignore-replace]]"
             else
               local __file_temp="/tmp/$(basename ${__file}).tmp"
               cat ${__file}>${__file_temp}
               envsubst < ${__file_temp} > ${__file}
-              echY "            - ${__fileName}, ${COLOR_GREEN}parsed"
+              echY "            - ${__file}, ${COLOR_GREEN}parsed"
             fi
           fi
         done
@@ -383,10 +385,11 @@ function stackMkVolumes()
     for __vol_subir in ${__vol_subdirs[*]};
     do
       local __env_name=$(toUpper STACK_SERVICE_STORAGE_${__vol_subir}_DIR)
-      mkdir -p ${STACK_STORAGE_DIR}/${__stack_name}/${__vol_subir}
+      stackMkDir 777 "${STACK_STORAGE_DIR}/${__stack_name}/${__vol_subir}"
       local __check=$(cat ${__yml_file} | grep ${__env_name})
       if [[ ${__check} != "" ]]; then
         bashAppend "${__vol_bash_file}" "mkdir -p \${volumeBaseDir}/${__vol_subir}"
+        bashAppend "${__vol_bash_file}" "chmod 777 \${volumeBaseDir}/${__vol_subir}"
       fi
     done
 

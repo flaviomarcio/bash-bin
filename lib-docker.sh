@@ -754,7 +754,7 @@ function dockerVolumeCreateLocal()
     fi
 
     local __base_name=$(basename ${__vol_dir})
-    bashAppend "${__vol_bash_file}" "export __vol_dir=${__vol_dir}"
+    bashAppend "${__vol_bash_file}" "export __vol_dir=\${volumeBaseDir}/$(basename ${__vol_dir})"
     bashAppend "${__vol_bash_file}" "docker volume create --driver local --opt type=none --opt o=bind --opt device=\${__vol_dir} ${__vol_name}"
     return 1;
   fi
@@ -779,7 +779,7 @@ function dockerVolumeCreateNFS()
     if [[ ${__check} == "" ]]; then
       docker volume create --driver local --opt type=nfs --opt o=addr=${__vol_server},rw,sync --opt device=:${__vol_dir} ${__vol_name}> /dev/null
     fi
-    bashAppend "${__vol_bash_file}" "export __vol_dir=${__vol_dir}"
+    bashAppend "${__vol_bash_file}" "export __vol_dir=\${volumeBaseDir}/$(basename ${__vol_dir})"
     bashAppend "${__vol_bash_file}" "docker volume create --driver local --opt type=nfs --opt o=addr=${__vol_server},rw,sync --opt device=:\${__vol_dir} ${__vol_name}"
     return 1;
   fi
