@@ -211,8 +211,96 @@ function stackMkDir()
   return 1
 }
 
-#cria certificados de seguranca e ssh
-function stackCertificatesCreate()
+function stackSettingWrittenSingle()
+{
+  unset __func_return
+  local __stack_name=${1}
+  local __source_dir=${2}
+  local __destine_dir=${3}
+  # export STACK_SCOPE_INITED=
+
+  if [[ ${__stack_name} == "" ]]; then
+    export __func_return="Invalid env: \${__stack_name}"
+    return 0;
+  elif [[ ${__source_dir} == "" ]]; then
+    export __func_return="Invalid env: \${__source_dir}"
+    return 0;
+  elif ! [[ -d ${__source_dir} ]]; then
+    return 1;
+  elif [[ ${__destine_dir} == "" ]]; then
+    export __func_return="Invalid env: \${__destine_dir}"
+    return 0;
+  elif [[ ${STACK_CONFIG_LOCAL_DIR} == "" ]]; then
+    echFail "${1}" "fail invalid env \${STACK_CONFIG_LOCAL_DIR}"
+    return 0;
+  elif ! [[ -d ${STACK_CONFIG_LOCAL_DIR} ]]; then
+    echFail "${1}" "fail dir not found : ${STACK_CONFIG_LOCAL_DIR}"
+    return 0;
+  else
+    if ! [[ -d ${__destine_dir} ]]; then
+      mkdir ${__destine_dir}
+    fi
+
+    if ! [[ -d ${__destine_dir} ]]; then
+      export __func_return="Destine dir not found: \${__destine_dir}"
+      return 0;      
+    fi
+
+    # if [[ -d ${STACK_INFRA_CONF_DIR}  ]]; then
+    #   local OLD_DIR=${STACK_INFRA_CONF_DIR}_old  
+    #   echCommand "${1}" "rm -rf ${OLD_DIR}"
+    #   echCommand "${1}" "mv ${STACK_INFRA_CONF_DIR} ${OLD_DIR}"
+    # fi
+    local __config_dir=$(dirname ${STACK_INFRA_CONF_DIR})
+    # if ! [[ -d ${__config_dir} ]]; then
+    #   mkdir -p ${__config_dir}
+    #   if ! [[ -d ${__config_dir} ]]; then
+    #     echFail "${1}" "fail on create dir: ${__config_dir}"
+    #     return 0;
+    #   fi
+    # fi
+    echM "      Copying settings"
+    echC "        Coping to volume: ${COLOR_YELLOW}\${STACK_SERVICE_STORAGE_ICONFIG_DIR}"
+    echY "        command ..."
+    echB "          - cp ${COLOR_CIANO}-rf ${COLOR_YELLOW}${__source_dir} ${__destine_dir}"
+
+    local __filters=(crt sh cfg conf yml yaml hcl json properties xml sql ldif)
+    local __filter=
+    echC "        Parsing"
+    for __filter in ${__filters[*]};
+    do
+      local __files=$(find  ${__source_dir} -iname "*.${__filter}" | sort)
+      if [[ ${__files} != "" ]]; then
+        echB "          - *.${__filter}${COLOR_GREEN}(FOUND)"
+
+        local __files=(${__files})
+        local __file=
+        for __file in ${__files[*]};
+        do
+          if [[ ${__filter} == "sh" || ${__filter} == "crt" || ${__filter} == "key" || ${__filter} == "csr" || ${__filter} == "pem" || ${__filter} == "ca" ]]; then
+            echY "            - ${__file}, ${COLOR_GREEN}ignored"
+          else
+            local __ignore_check=$(cat ${__file} | grep "\#\[\[envs-ignore-replace\]\]")
+            local __fileName=$(basename ${__file})
+            if [[ ${__ignore_check} != "" ]]; then
+              echB "            - ${__fileName} skipped, using #[[envs-ignore-replace]]"
+            else
+              local __file_temp="/tmp/$(basename ${__file}).tmp"
+              cat ${__file}>${__file_temp}
+              envsubst < ${__file_temp} > ${__file}
+              echY "            - ${__fileName}, ${COLOR_GREEN}parsed"
+            fi
+          fi
+        done
+      fi
+    done 
+    echG "      Finished"
+  fi
+  return 1
+
+}
+
+function stackSettingWritten()
 {
   unset __func_return
 
@@ -225,7 +313,7 @@ function stackCertificatesCreate()
   else
     local __storage_base_dir=$(__private_storage_base_dir)
 
-    local __vol_subdirs=(cert ssh)
+    local __vol_subdirs=(cert ssh iconfig)
     local __vol_subir=
     local __pwd=${PWD}
 
@@ -243,6 +331,10 @@ function stackCertificatesCreate()
             local __rsa_key_dest=${__vol_dir}
             local __rsa_key_repl=false
             rsaKeyCreate "${__rsa_key_name}" "${__rsa_key_dest}" "${__rsa_key_repl}"
+            if ! [ "$?" -eq 1 ]; then
+              export __func_return="fail on calling rsaKeyCreate, ${__func_return}"
+              return 0;
+            fi
           elif [[ ${__vol_subir} == "cert" ]]; then
             local __cert_name=cert
             local __cert_days=""
@@ -250,6 +342,17 @@ function stackCertificatesCreate()
             local __cert_dest=${__vol_dir}
             local __cert_repl=false
             certCreate "${__cert_name}" "${__cert_days}" "${__cert_pass}" "${__cert_dest}" "${__cert_repl}"
+            if ! [ "$?" -eq 1 ]; then
+              export __func_return="fail on calling certCreate, ${__func_return}"
+              return 0;
+            fi
+          elif [[ ${__vol_subir} == "iconfig" ]]; then
+            local __config_dir=${STACK_INFRA_CONF_DIR}/${STACK_NAME}
+            stackSettingWrittenSingle "${__stack_name}" "${__config_dir}" "${__vol_dir}"
+            if ! [ "$?" -eq 1 ]; then
+              export __func_return="fail on calling stackSettingWrittenSingle, ${__func_return}"
+              return 0;
+            fi
           fi
         fi
       fi
@@ -274,7 +377,7 @@ function stackMkVolumes()
   else
     local __storage_base_dir=$(__private_storage_base_dir)
 
-    local __vol_subdirs=(data db log config backup extension plugin addon import provider cert theme ssh m2)
+    local __vol_subdirs=(data db log config backup extension plugin addon import provider cert theme ssh m2 iconfig)
     local __vol_subir=
 
     local __vol_dir=
@@ -312,6 +415,24 @@ function stackMkVolumes()
     return 1
   fi
 }
+
+function stackVolumePrepare()
+{
+  stackMkVolumes "${__service_name}" "${__compose_file_dst}"
+  if ! [ "$?" -eq 1 ]; then
+    export __func_return="fail on calling stackMkVolumes, ${__func_return}"
+    return 0;
+  fi
+
+  stackSettingWritten "${__service_name}" "${__compose_file_dst}"
+  if ! [ "$?" -eq 1 ]; then
+    export __func_return="fail on calling stackSettingWritten, ${__func_return}"
+    return 0;
+  fi
+
+  return 1
+}
+
 
 function stackEnvironmentConfigure()
 {

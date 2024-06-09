@@ -41,6 +41,7 @@ function rsaKeyCreate()
   fi
 
   ssh-keygen -t rsa -f ${__rsa_key_file} -N ''
+  return 1
 }
 
 
@@ -107,6 +108,7 @@ function certCreate()
   # Append KEY and CRT to cert.pem
   cat ${__cert_file_key} ${__cert_file_ctr} >> ${__cert_file_pem}
   echo ${__cert_pass} > ${__cert_dest}/${__cert_name}.password
+  return 1
 }
 
 # __cert_name=
