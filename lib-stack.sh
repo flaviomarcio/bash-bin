@@ -237,9 +237,11 @@ function stackSettingWrittenSingle()
     export __func_return="Dir not found : ${STACK_CONFIG_LOCAL_DIR}"
     return 0;
   else
-    if ! [[ -d ${__destine_dir} ]]; then
-      mkdir ${__destine_dir}
-    fi
+    # rm -rf ${__destine_dir}
+    # mkdir ${__destine_dir}
+    # if ! [[ -d ${__destine_dir} ]]; then
+    #   mkdir ${__destine_dir}
+    # fi
 
     if ! [[ -d ${__destine_dir} ]]; then
       export __func_return="Destine dir not found: \${__destine_dir}"
@@ -251,7 +253,11 @@ function stackSettingWrittenSingle()
     echM "      Copying settings"
     echC "        Coping to volume: ${COLOR_YELLOW}\${STACK_SERVICE_STORAGE_ICONFIG_DIR}"
     echY "        command ..."
+    echB "          - rm ${COLOR_CIANO}-rf ${COLOR_YELLOW}${__destine_dir}"
     echB "          - cp ${COLOR_CIANO}-rf ${COLOR_YELLOW}${__source_dir} ${__destine_dir}"
+
+    rm -rf ${__destine_dir}
+    cp -rf ${__source_dir} ${__destine_dir}
 
     local __filters=(crt sh cfg conf yml yaml hcl json properties xml sql ldif)
     local __filter=
@@ -337,7 +343,7 @@ function stackSettingWritten()
               return 0;
             fi
           elif [[ ${__vol_subir} == "iconfig" ]]; then
-            local __config_dir=${STACK_INFRA_CONF_DIR}/${STACK_NAME}
+            local __config_dir=${STACK_CONFIG_LOCAL_DIR}/${STACK_NAME}
             stackSettingWrittenSingle "${__stack_name}" "${__config_dir}" "${__vol_dir}"
             if ! [ "$?" -eq 1 ]; then
               export __func_return="fail on calling stackSettingWrittenSingle, ${__func_return}"
@@ -432,7 +438,6 @@ function stackVolumePrepare()
 
   return 1
 }
-
 
 function stackEnvironmentConfigure()
 {
