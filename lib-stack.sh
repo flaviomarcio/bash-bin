@@ -372,11 +372,16 @@ function stackMkVolumes()
     local __vol_subir=
 
     local __vol_dir=
+    bashAppend "${__vol_bash_file}" "export volumeBaseDir=${STACK_STORAGE_DIR}/${__stack_name}"
     #criar localmente os diretorios remotos
     for __vol_subir in ${__vol_subdirs[*]};
     do
+      local __env_name=$(toUpper STACK_SERVICE_STORAGE_${__vol_subir}_DIR)
       mkdir -p ${STACK_STORAGE_DIR}/${__stack_name}/${__vol_subir}
-      bashAppend "${__vol_bash_file}" "mkdir -p ${STACK_STORAGE_DIR}/${__stack_name}/${__vol_subir}"
+      local __check=$(cat ${__yml_file} | grep ${__env_name})
+      if [[ ${__check} != "" ]]; then
+        bashAppend "${__vol_bash_file}" "mkdir -p \${volumeBaseDir}/${__vol_subir}"
+      fi
     done
 
     #loop para criar apenas os volumes defininos no docker-compose.yml
