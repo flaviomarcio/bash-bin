@@ -263,7 +263,7 @@ function stackSettingWrittenSingle()
     echY "        Parsing ..."
     for __filter in ${__filters[*]};
     do
-      local __files=$(find  ${__source_dir} -iname "*.${__filter}" | sort)
+      local __files=$(find  ${__destine_dir} -iname "*.${__filter}" | sort)
       if [[ ${__files} != "" ]]; then
         echB "          - *.${__filter}${COLOR_GREEN}(FOUND)"
 
