@@ -780,6 +780,9 @@ function stackEnvsLoad()
     envsSetIfIsEmpty STACK_NFS_MOUNT_DIR /data
     envsSetIfIsEmpty STACK_NFS_REMOTE_DATA_DIR "/mnt/NFSPOOL"
 
+    envsSetIfIsEmpty STACK_NFS_LOCAL_SHARE_DIR "${HOME}"
+    envsSetIfIsEmpty STACK_NFS_LOCAL_EXPORT_FILE "/etc/exports"
+
   }
   unset __func_return
   unset PUBLIC_STACK_TARGETS_FILE
