@@ -778,7 +778,7 @@ function stackEnvsLoad()
     envsSetIfIsEmpty STACK_NFS_SERVER 127.0.0.1
     envsSetIfIsEmpty STACK_NFS_MOUNT_DIR /mnt/stack-data
     envsSetIfIsEmpty STACK_NFS_REMOTE_DATA_DIR "/mnt/stack-data"
-    envsSetIfIsEmpty STACK_NFS_LOCAL_SHARE_DIR "/mnt/stack-data"
+    envsSetIfIsEmpty STACK_NFS_LOCAL_SHARE_DIR "/mnt/nfs_share"
     envsSetIfIsEmpty STACK_NFS_LOCAL_EXPORT_FILE "/etc/exports"
 
   }
