@@ -61,7 +61,7 @@ function __private_stackEnvsLoadByStack()
 
     #image
     export STACK_SERVICE_IMAGE="${STACK_SERVICE_NAME}"
-    export STACK_SERVICE_IMAGE_URL="${STACK_REGISTRY_DNS_PUBLIC}/${STACK_SERVICE_IMAGE}"
+    export STACK_SERVICE_IMAGE_URL="${PUBLIC_STACK_REGISTRY_DNS}/${STACK_SERVICE_IMAGE}"
 
     #load envs DNS
     stackMakeStructure
@@ -81,7 +81,7 @@ function __private_stackEnvsLoadByTarget()
   unset STACK_INFRA_DIR
   unset STACK_INFRA_CERT_DIR
   unset STACK_INFRA_CONF_DIR
-  unset STACK_REGISTRY_DNS_PUBLIC
+  unset PUBLIC_STACK_REGISTRY_DNS
   unset PUBLIC_STACK_TARGET_ENVS_FILE
 
   if [[ ${STACK_TARGET} == "" ]]; then
@@ -109,10 +109,10 @@ function __private_stackEnvsLoadByTarget()
   envsSetIfIsEmpty STACK_NETWORK_KONG "${STACK_NETWORK_PREFIX}-kong-net"
 
   envsSetIfIsEmpty PUBLIC_STACK_FIX_ENVS_FILE "${STACK_DATA_DIR}/stack_envs.env"
-  envsSetIfIsEmpty STACK_REGISTRY_DNS_PUBLIC "${STACK_ENVIRONMENT}-${STACK_TARGET}-registry.${STACK_DOMAIN}:5000"
   envsSetIfIsEmpty PUBLIC_STACK_TARGET_ENVS_FILE "${STACK_TARGET_ROOT_DIR}/stack_envs.env"
- 
-  
+   
+  envsSetIfIsEmpty PUBLIC_STACK_REGISTRY_DNS "${STACK_ENVIRONMENT}-${STACK_TARGET}-registry.${STACK_DOMAIN}:5000"
+
   if [[ -f ${PUBLIC_STACK_TARGET_ENVS_FILE} ]]; then
     source ${PUBLIC_STACK_TARGET_ENVS_FILE}
   fi
@@ -711,7 +711,7 @@ function stackInitTargetEnvFile()
   STACK_NO_DOCKER_RESET
   STACK_DOMAIN
   STACK_PREFIX_HOST_ENABLED
-  $(envsGet STACK_ADMIN_ STACK_PROXY_ STACK_DEFAULT_ STACK_SERVICE_DEFAULT_ STACK_SERVICE_HEALTH_ STACK_GOCD_ STACK_SERVICE_IMAGE STACK_VOLUME_ STACK_LDAP_ STACK_TRAEFIK_ STACK_NFS_ POSTGRES_)
+  $(envsGet STACK_ADMIN_ STACK_PROXY_ STACK_DEFAULT_ STACK_SERVICE_DEFAULT_ STACK_SERVICE_HEALTH_ STACK_GOCD_ STACK_SERVICE_IMAGE STACK_VOLUME_ STACK_LDAP_ STACK_TRAEFIK_ STACK_NFS_ POSTGRES_ STACK_VAULT_)
   "
 
   # save envs
@@ -728,18 +728,19 @@ function stackEnvsLoad()
     #obrigatory envs
     envsSetIfIsEmpty STACK_TZ "America/Sao_Paulo"
     envsSetIfIsEmpty STACK_TARGET undefined
-    envsSetIfIsEmpty STACK_DOMAIN "portela-professional.com.br"
+    envsSetIfIsEmpty STACK_DOMAIN "local"
 
     envsSetIfIsEmpty STACK_PROTOCOL http
     envsSetIfIsEmpty STACK_PROXY_PORT_HTTP 80
     envsSetIfIsEmpty STACK_PROXY_PORT_HTTPS 443
     envsSetIfIsEmpty STACK_PREFIX_HOST_ENABLED false
 
-      #resources limit
+    #resources limit
     envsSetIfIsEmpty STACK_SERVICE_DEFAULT_SHELF_LIFE "24h"
     envsSetIfIsEmpty STACK_SERVICE_HEALTH_CHECK_INTERVAL "60s"
     envsSetIfIsEmpty STACK_SERVICE_HEALTH_CHECK_TIMEOUT "5s"
     envsSetIfIsEmpty STACK_SERVICE_HEALTH_CHECK_RETRIES "5"
+
     #services default images
     envsSetIfIsEmpty STACK_SERVICE_IMAGE_DNSMASQ "dockurr/dnsmasq:latest"
     envsSetIfIsEmpty STACK_SERVICE_IMAGE_TRAEFIK "traefik:v2.11.0"
@@ -756,14 +757,14 @@ function stackEnvsLoad()
     envsSetIfIsEmpty STACK_SERVICE_IMAGE_VAULT "hashicorp/vault:1.16"
     envsSetIfIsEmpty STACK_SERVICE_IMAGE_MINIO "bitnami/minio:2024.3.26"
 
-
+    #VAULT
     envsSetIfIsEmpty STACK_VAULT_PORT 8200
-    envsSetIfIsEmpty STACK_VAULT_URI "http://${STACK_PREFIX_HOST}vault"
+    envsSetIfIsEmpty STACK_VAULT_URI "http://int-vault"
     envsSetIfIsEmpty STACK_VAULT_METHOD token
     envsSetIfIsEmpty STACK_VAULT_TOKEN "${STACK_SERVICE_DEFAULT_TOKEN}"
     envsSetIfIsEmpty STACK_VAULT_TOKEN_DEPLOY "${STACK_VAULT_TOKEN}"
     envsSetIfIsEmpty STACK_VAULT_APP_ROLE_ID "${STACK_SERVICE_DEFAULT_USER}"
-    envsSetIfIsEmpty STACK_VAULT_APP_ROLE_SECRET "${STACK_SERVICE_DEFAULT_PASS}"
+    envsSetIfIsEmpty STACK_VAULT_APP_ROLE_SECRET "${STACK_SERVICE_DEFAULT_TOKEN}"
     envsSetIfIsEmpty STACK_VAULT_IMPORT "vault:/kv/${STACK_TARGET}/${STACK_ENVIRONMENT}"
     envsSetIfIsEmpty STACK_VAULT_ENABLED false
 
@@ -771,15 +772,21 @@ function stackEnvsLoad()
     envsSetIfIsEmpty STACK_DEFAULT_DEPLOY_MEMORY "2GB"
     envsSetIfIsEmpty STACK_DEFAULT_DEPLOY_REPLICAS 1
 
+    #HAPROXY
     envsSetIfIsEmpty STACK_HAPROXY_CERT_DIR "${STACK_INFRA_CONF_DIR}/haproxy/cert"
     envsSetIfIsEmpty STACK_HAPROXY_CONFIG_FILE "${STACK_INFRA_CONF_DIR}/haproxy/haproxy.cfg"
 
+    #NFS
     envsSetIfIsEmpty STACK_NFS_ENABLED false
     envsSetIfIsEmpty STACK_NFS_SERVER 127.0.0.1
     envsSetIfIsEmpty STACK_NFS_MOUNT_DIR /mnt/stack-data
     envsSetIfIsEmpty STACK_NFS_REMOTE_DATA_DIR "/mnt/stack-data"
     envsSetIfIsEmpty STACK_NFS_LOCAL_SHARE_DIR "/mnt/nfs_share"
     envsSetIfIsEmpty STACK_NFS_LOCAL_EXPORT_FILE "/etc/exports"
+
+    #LDAP
+    envsSetIfIsEmpty STACK_LDAP_DOMAIN "${STACK_TARGET}.int"
+    envsSetIfIsEmpty STACK_LDAP_ROOT_DN "dc=${STACK_TARGET},dc=int"
 
   }
   unset __func_return

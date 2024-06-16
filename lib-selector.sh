@@ -35,7 +35,7 @@ function __private_print_os_information()
   fi
   if [[ ${__public_environment} != "" ]]; then
     echC "  - Stack : Environment: ${COLOR_YELLOW}${__public_environment}${COLOR_CIANO}, Target: ${COLOR_YELLOW}${__public_target}${COLOR_CIANO}, Prefix: ${COLOR_YELLOW}${__public_environment}-${__public_target}"
-    echC "            Registry: ${COLOR_YELLOW}${STACK_REGISTRY_DNS_PUBLIC}"
+    echC "            Registry: ${COLOR_YELLOW}${PUBLIC_STACK_REGISTRY_DNS}"
     if [[ ${STACK_NFS_ENABLED} == true ]]; then
       echC "            NFS: MountPoint: ${COLOR_YELLOW}${STACK_NFS_MOUNT_DIR}${COLOR_CIANO}, Mapping: ${COLOR_YELLOW}${STACK_NFS_SERVER}:${STACK_NFS_REMOTE_DATA_DIR}"
     fi

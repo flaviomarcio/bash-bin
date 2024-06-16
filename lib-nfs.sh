@@ -32,7 +32,6 @@ function __nfs_env_check()
 
 function nfsIsMounted()
 {
-  echo "mount | grep \"${STACK_NFS_MOUNT_DIR}\""
   __nfs_env_check
   if ! [ "$?" -eq 1 ]; then
     return 0;
@@ -75,6 +74,7 @@ function nfsMountPoint()
 
 function nfsVerify()
 {
+ 
   unset __func_return
   if [[ ${STACK_NFS_ENABLED} != true ]]; then
     return 1;
@@ -82,8 +82,6 @@ function nfsVerify()
 
   echM ""
   echM "NFS verify"
-  echM ""
-
   __nfs_env_check
   if ! [ "$?" -eq 1 ]; then
     echR "fail on calling __nfs_env_check: ${__func_return}"
@@ -125,9 +123,9 @@ function nfsVerify()
       else
         echG "        Successful"
       fi
-      echG "  Finished"
     fi
   fi
+  echC "  - NFS ${COLOR_GREEN}OK"
   echG "Finished"
   return 1;
 }
