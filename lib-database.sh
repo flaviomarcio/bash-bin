@@ -176,7 +176,7 @@ function __private_pg_envs_check()
     return 0;       
   fi
 
-  envsSetIfIsEmpty POSTGRES_HOST localhost
+  envsSetIfIsEmpty POSTGRES_HOST "127.0.0.1"
   envsSetIfIsEmpty POSTGRES_USER services
   envsSetIfIsEmpty POSTGRES_PASSWORD services
   envsSetIfIsEmpty POSTGRES_DATABASE services
