@@ -599,9 +599,6 @@ function dockerBuildCompose()
   fi
 
   export COMPOSE_HTTP_TIMEOUT=$(parserTime ${APPLICATION_DEPLOY_SHELF_LIFE})
-
-  # ref https://docs.docker.com/compose/environment-variables/envvars/
-
   local __old_file=${__dockerfile}
   if [[ -f ${__old_file} ]]; then
     local __dockerfile=${__builder_dir}/${__service}.dockerfile
