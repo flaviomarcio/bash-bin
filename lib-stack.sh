@@ -14,6 +14,62 @@ fi
 . ${BASH_BIN}/lib-vault.sh
 . ${BASH_BIN}/lib-ssl.sh
 
+function __private_envsLoadTraefik()
+{
+  unset __func_return
+  local __domain=${1}
+
+  envsSetIfIsEmpty STACK_TRAEFIK_USER ${STACK_SERVICE_DEFAULT_USER}
+  envsSetIfIsEmpty STACK_TRAEFIK_PASS ${STACK_SERVICE_DEFAULT_PASS}
+  envsSetIfIsEmpty STACK_TRAEFIK_API_ENABLED false
+  envsSetIfIsEmpty STACK_TRAEFIK_DASHBOARD_ENABLED false
+  envsSetIfIsEmpty STACK_TRAEFIK_API_INSECURE true
+  envsSetIfIsEmpty STACK_TRAEFIK_TLS_ENABLED false
+  envsSetIfIsEmpty STACK_TRAEFIK_TLS_DOMAIN ${__domain}
+  envsSetIfIsEmpty STACK_TRAEFIK_TLS_DOMAIN_SANS "*.${__domain}"
+
+  envsSetIfIsEmpty STACK_TRAEFIK_PORT_HTTP "${STACK_PROXY_PORT_HTTP}"
+  envsSetIfIsEmpty STACK_TRAEFIK_PORT_HTTPS "${STACK_PROXY_PORT_HTTPS}"
+  envsSetIfIsEmpty STACK_TRAEFIK_PORT_VAULT 8200
+  envsSetIfIsEmpty STACK_TRAEFIK_PORT_REGISTRY 5000
+  envsSetIfIsEmpty STACK_TRAEFIK_PORT_POSTGRES 5432
+  envsSetIfIsEmpty STACK_TRAEFIK_PORT_RABBITMQ 5672
+  envsSetIfIsEmpty STACK_TRAEFIK_PORT_INFLUXDB 8086
+  envsSetIfIsEmpty STACK_TRAEFIK_PORT_MYSQL 3306
+  envsSetIfIsEmpty STACK_TRAEFIK_PORT_REDIS 6379
+  envsSetIfIsEmpty STACK_TRAEFIK_PORT_MSSQL 1433
+  envsSetIfIsEmpty STACK_TRAEFIK_PORT_ACTIVEMQ 61616
+  envsSetIfIsEmpty STACK_TRAEFIK_PORT_CASSANDRA 9042
+  envsSetIfIsEmpty STACK_TRAEFIK_PORT_LOCALSTACK 4566
+  envsSetIfIsEmpty STACK_TRAEFIK_PORT_S3 9000
+  envsSetIfIsEmpty STACK_TRAEFIK_PORT_NFS 2049
+
+  return 1
+}
+
+function __private_envsLoadHaProxy()
+{
+  unset __func_return
+
+  envsSetIfIsEmpty STACK_PROXY_PORT_HTTP "${STACK_PROXY_PORT_HTTP}"
+  envsSetIfIsEmpty STACK_PROXY_PORT_HTTPS "${STACK_PROXY_PORT_HTTPS}"
+
+  return 1
+}
+
+function __private_envsLoadGoCD()
+{
+  #gocd
+  envsSetIfIsEmpty STACK_GOCD_REGISTER_KEY "00000000-0000-0000-0000-000000000000"
+  envsSetIfIsEmpty STACK_GOCD_WEB_HOOK_SECRET "00000000-0000-0000-0000-000000000000"
+  envsSetIfIsEmpty STACK_GOCD_SERVER_ID "00000000-0000-0000-0000-000000000000"
+  envsSetIfIsEmpty STACK_GOCD_GIT_REPOSITORY
+  envsSetIfIsEmpty STACK_GOCD_GIT_BRANCH
+  envsSetIfIsEmpty STACK_GOCD_AGENT_REPLICAS 1
+  return 1
+}
+
+
 function __private_stackEnvsLoadByStack()
 {
   unset __func_return
@@ -253,10 +309,10 @@ function stackSettingWrittenSingle()
     echC "        Coping to volume: ${COLOR_BLUE}\${STACK_SERVICE_STORAGE_ICONFIG_DIR}: ${COLOR_YELLOW}${STACK_SERVICE_STORAGE_ICONFIG_DIR}"
     echY "        Command ..."
     echB "          - rm ${COLOR_CIANO}-rf ${COLOR_YELLOW}${__destine_dir}"
+    rm -rf ${__destine_dir} 2> /dev/null
     echB "          - cp ${COLOR_CIANO}-rf ${COLOR_YELLOW}${__source_dir} ${__destine_dir}"
+    cp -rf ${__source_dir} ${__destine_dir} 2> /dev/null
 
-    rm -rf ${__destine_dir}
-    cp -rf ${__source_dir} ${__destine_dir}
 
     local __filters=(crt sh cfg conf yml yaml hcl json properties xml sql ldif)
     local __filter=
@@ -271,21 +327,26 @@ function stackSettingWrittenSingle()
         local __file=
         for __file in ${__files[*]};
         do
-          if [[ ${__filter} == "crt" || ${__filter} == "key" || ${__filter} == "csr" || ${__filter} == "pem" || ${__filter} == "ca" ]]; then
-            echY "            - ${__file}, ${COLOR_GREEN}ignored"
-          elif [[ ${__filter} == "sh" ]]; then
-            echY "            - ${__file}, ${COLOR_GREEN}set +x"
-            chmod +x ${__file}
+          if ! [ -w "${__file}" ]; then
+            echY "            - ${__file} ${COLOR_GREEN}skipped, ${COLOR_RED}no writable"
+
           else
-            local __ignore_check=$(cat ${__file} | grep "\#\[\[envs-ignore-replace\]\]")
-            local __fileName=$(basename ${__file})
-            if [[ ${__ignore_check} != "" ]]; then
-              echB "            - ${__file} skipped, using #[[envs-ignore-replace]]"
+            if [[ ${__filter} == "crt" || ${__filter} == "key" || ${__filter} == "csr" || ${__filter} == "pem" || ${__filter} == "ca" ]]; then
+              echY "            - ${__file}, ${COLOR_GREEN}ignored"
+            elif [[ ${__filter} == "sh" ]]; then
+              echY "            - ${__file}, ${COLOR_GREEN}set +x"
+              echo $(chmod +x ${__file})>/dev/null
             else
-              local __file_temp="/tmp/$(basename ${__file}).tmp"
-              cat ${__file}>${__file_temp}
-              envsubst < ${__file_temp} > ${__file}
-              echY "            - ${__file}, ${COLOR_GREEN}parsed"
+              local __ignore_check=$(cat ${__file} | grep "\#\[\[envs-ignore-replace\]\]")
+              local __fileName=$(basename ${__file})
+              if [[ ${__ignore_check} != "" ]]; then
+                echB "            - ${__file} skipped, using #[[envs-ignore-replace]]"
+              else
+                local __file_temp="/tmp/$(basename ${__file}).tmp"
+                cat ${__file}>${__file_temp}
+                echo $(envsubst < ${__file_temp} > ${__file})>/dev/null
+                echY "            - ${__file}, ${COLOR_GREEN}parsed"
+              fi
             fi
           fi
         done
@@ -720,6 +781,55 @@ function stackInitTargetEnvFile()
   return 1
 }
 
+function stackPrepareInit()
+{
+  local __stack_environment=${1}
+  local __stack_target=${2}
+  local __stack_name=${3}
+
+  if [[ ${__stack_name} == "" ]];then
+    stackEnvsLoad "${__stack_environment}" "${__stack_target}"
+    if ! [ "$?" -eq 1 ]; then
+      export __func_return="fail on calling stackEnvsLoad, ${__func_return}"
+      return 0;
+    fi
+  else
+    stackEnvsLoadByStack "${__stack_environment}" "${__stack_target}" "${__stack_name}"
+    if ! [ "$?" -eq 1 ]; then
+      export __func_return="fail on calling stackEnvsLoadByStack, ${__func_return}"
+      return 0;
+    fi
+  fi
+
+  __private_envsLoadTraefik ${STACK_DOMAIN}
+  if ! [ "$?" -eq 1 ]; then
+    export __func_return="fail on calling __private_envsLoadTraefik: ${__func_return}"
+    return 0;
+  fi
+
+  __private_envsLoadHaProxy ${STACK_DOMAIN}
+    if ! [ "$?" -eq 1 ]; then
+    export __func_return="fail on calling __private_envsLoadHaProxy: ${__func_return}"
+    return 0;
+  fi
+
+  __private_envsLoadGoCD
+    if ! [ "$?" -eq 1 ]; then
+    export __func_return="fail on calling __private_envsLoadGoCD: ${__func_return}"
+    return 0;
+  fi
+
+  export STACK_ACTIONS_DIR=${STACK_RUN_BIN}/actions
+  export STACK_YML_DIR=${ROOT_DIR}/stack
+  export STACK_PLUGINS_DIR=${ROOT_DIR}/plugins
+  export STACK_IMAGES_DIR=${ROOT_DIR}/images
+  export STACK_CONFIG_LOCAL_DIR=${ROOT_DIR}/conf
+
+  stackInitTargetEnvFile
+
+  return 1
+}
+
 function stackEnvsLoad()
 {
   function __defaultCheck()
@@ -803,6 +913,8 @@ function stackEnvsLoad()
   elif [[ ${STACK_DOMAIN} == "" ]]; then
     export __func_return="Invalid env: \${STACK_DOMAIN}"
   else
+    export STACK_TARGET=${__target}
+
     export STACK_ENVIRONMENT="${__environment}"
     if [[ ${STACK_ENVIRONMENT} != "" && ${STACK_TARGET} != "" ]]; then
       export STACK_PREFIX="${STACK_ENVIRONMENT}-${STACK_TARGET}"
@@ -941,10 +1053,7 @@ function stackEnvsLoadByStack()
   local __target=${2}
   local __stack_name=${3}
 
-  if [[ ${STACK_DOMAIN} == "" ]]; then
-    export __func_return="Invaid env: \${STACK_DOMAIN}"
-    return 0;
-  elif [[ ${__environment} == "" ]]; then
+  if [[ ${__environment} == "" ]]; then
     export __func_return="Invaid env: \${__environment}"
     return 0;
   elif [[ ${__target} == "" ]]; then
@@ -1029,7 +1138,7 @@ function stackPublicEnvsConfigure()
   echo "source ${PUBLIC_STACK_FIX_ENVS_FILE}">>${__bashrc}
   chmod +x ${PUBLIC_STACK_FIX_ENVS_FILE}
   source ${PUBLIC_STACK_FIX_ENVS_FILE}
-  utilPrepareInit "${STACK_ENVIRONMENT}" "${STACK_TARGET}"
+  stackPrepareInit "${STACK_ENVIRONMENT}" "${STACK_TARGET}"
 }
 
 function stackPublicEnvs()
