@@ -339,6 +339,11 @@ function stackSettingWrittenSingle()
       fi
     }
 
+    if ! [[ -w ${__destine_dir} ]]; then
+      export __func_return="No writable directory ${__destine_dir}"
+      return 0;
+    fi
+
     #rm -rf ${__destine_dir} 2> /dev/null
     local __list_files=($(find ${__source_dir} -name '*.*'))
     local __list_file=
