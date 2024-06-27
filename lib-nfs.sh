@@ -36,7 +36,7 @@ function nfsIsMounted()
   if ! [ "$?" -eq 1 ]; then
     return 0;
   fi
-  echo "mount | grep "${STACK_NFS_MOUNT_DIR}""
+  echo "mount | grep \"${STACK_NFS_MOUNT_DIR}\""
   local __check=$(mount | grep "${STACK_NFS_MOUNT_DIR}")
   if [[ ${__check} == "" ]]; then
     return 0;
