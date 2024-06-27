@@ -311,8 +311,35 @@ function stackSettingWrittenSingle()
     #echB "          - rm ${COLOR_CIANO}-rf ${COLOR_YELLOW}${__destine_dir}"
     echB "          - cp ${COLOR_CIANO}-rf ${COLOR_YELLOW}${__source_dir} ${__destine_dir}"
 
+    function __parser_file()
+    {
+      local __file=${1}
+      if ! [ -w "${__file}" ]; then
+        echY "            - ${__file} ${COLOR_GREEN}skipped, ${COLOR_RED}no writable"
+      else
+        if [[ ${__filter} == "crt" || ${__filter} == "key" || ${__filter} == "csr" || ${__filter} == "pem" || ${__filter} == "ca" ]]; then
+          echY "            - ${__file}, ${COLOR_GREEN}ignored"
+        elif [[ ${__filter} == "sh" ]]; then
+          echY "            - ${__file}, ${COLOR_GREEN}set +x"
+          echo $(chmod +x ${__file})>/dev/null
+        else
+          local __ignore_check=$(cat ${__file} | grep "\#\[\[envs-ignore-replace\]\]")
+          local __fileName=$(basename ${__file})
+          if [[ ${__ignore_check} != "" ]]; then
+            echB "            - ${__file} skipped, using #[[envs-ignore-replace]]"
+          else
+            local __file_temp="/tmp/$(basename ${__file}).tmp"
+            cat ${__file}>${__file_temp}
+            echo $(envsubst < ${__file_temp} > ${__file})>/dev/null
+            echY "            - ${__file}, ${COLOR_GREEN}parsed"
+          fi
+        fi
+      fi
+    }
+
     #rm -rf ${__destine_dir} 2> /dev/null
     local __list_files=($(find ${__source_dir} -name '*.*'))
+    local __list_file=
     for __list_file in ${__list_files[*]};
     do
       local __ext=$(strExtractFileExtension ${__list_file})
@@ -322,7 +349,10 @@ function stackSettingWrittenSingle()
       local __fileName=$(basename ${__list_file})
 
       if [[ -f ${__list_file_dst} ]]; then
-        if [[ ${__ext} == "crt" || ${__ext} == "csr" || ${__ext} == "key" ]]; then
+        if ! [ -w "${__file}" ]; then
+          echB "            - copying ${COLOR_YELLOW}$(basename ${__list_file}), ${COLOR_RED}no writable"
+          continue;
+        elif [[ ${__ext} == "crt" || ${__ext} == "csr" || ${__ext} == "key" ]]; then
           echB "            - copying ${COLOR_YELLOW}$(basename ${__list_file}), ${COLOR_GREEN}ignored"
           continue;
         fi
@@ -331,11 +361,13 @@ function stackSettingWrittenSingle()
       local __list_file_path=$(dirname ${__list_file_dst})
       mkdir -p ${__list_file_path}
       cp -rf ${__list_file} ${__list_file_dst} 2> /dev/null
+      __parser_file ${__list_file_dst}
+
     done
 
     #cp -rf ${__source_dir} ${__destine_dir} 2> /dev/null
 
-    local __filters=(crt sh cfg conf yml yaml hcl json properties xml sql ldif)
+    local __filters=(sh cfg conf yml yaml hcl properties xml sql ldif)
     local __filter=
     echY "        Parsing ..."
     for __filter in ${__filters[*]};
@@ -348,28 +380,7 @@ function stackSettingWrittenSingle()
         local __file=
         for __file in ${__files[*]};
         do
-          if ! [ -w "${__file}" ]; then
-            echY "            - ${__file} ${COLOR_GREEN}skipped, ${COLOR_RED}no writable"
-
-          else
-            if [[ ${__filter} == "crt" || ${__filter} == "key" || ${__filter} == "csr" || ${__filter} == "pem" || ${__filter} == "ca" ]]; then
-              echY "            - ${__file}, ${COLOR_GREEN}ignored"
-            elif [[ ${__filter} == "sh" ]]; then
-              echY "            - ${__file}, ${COLOR_GREEN}set +x"
-              echo $(chmod +x ${__file})>/dev/null
-            else
-              local __ignore_check=$(cat ${__file} | grep "\#\[\[envs-ignore-replace\]\]")
-              local __fileName=$(basename ${__file})
-              if [[ ${__ignore_check} != "" ]]; then
-                echB "            - ${__file} skipped, using #[[envs-ignore-replace]]"
-              else
-                local __file_temp="/tmp/$(basename ${__file}).tmp"
-                cat ${__file}>${__file_temp}
-                echo $(envsubst < ${__file_temp} > ${__file})>/dev/null
-                echY "            - ${__file}, ${COLOR_GREEN}parsed"
-              fi
-            fi
-          fi
+          __parser_file ${__list_file_dst}
         done
       fi
     done 
