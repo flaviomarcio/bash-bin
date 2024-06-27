@@ -420,11 +420,12 @@ function stackSettingWritten()
   do
     local __env_name=$(toUpper STACK_SERVICE_STORAGE_${__vol_subir}_DIR)
     local __check=$(cat ${__yml_file} | grep ${__env_name})
-    echo "\${__check}: ${__check}"
     if [[ ${__check} != "" ]]; then
       local __vol_dir="${__storage_base_dir}/${__stack_name}/${__vol_subir}"
       if [[ -d ${__vol_dir} ]]; then
         cd ${__vol_dir}
+
+        echo "\${__vol_subir}: ${__vol_subir}"
 
         if [[ ${__vol_subir} == "ssh" ]]; then
           local __rsa_key_name=id_rsa
