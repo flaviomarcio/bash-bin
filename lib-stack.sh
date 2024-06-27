@@ -405,6 +405,10 @@ function stackSettingWritten()
   local __yml_file=${2}
   local __bash_file=${3}
 
+  echo "local __stack_name=${1}"
+  echo "local __yml_file=${2}"
+  echo "local __bash_file=${3}"
+
   if [[ ${__stack_name} == "" ]]; then
     export __func_return="Invalid env \${__stack_name}"
     return 0;
@@ -446,7 +450,6 @@ function stackSettingWritten()
             fi
           elif [[ ${__vol_subir} == "iconfig" ]]; then
             local __config_dir=${STACK_CONFIG_LOCAL_DIR}/${STACK_NAME}
-            echo "stackSettingWrittenSingle \"${__stack_name}\" \"${__config_dir}\" \"${__vol_dir}\""
             stackSettingWrittenSingle "${__stack_name}" "${__config_dir}" "${__vol_dir}"
             if ! [ "$?" -eq 1 ]; then
               export __func_return="fail on calling stackSettingWrittenSingle, ${__func_return}"
