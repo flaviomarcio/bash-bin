@@ -422,11 +422,17 @@ function stackSettingWritten()
     local __check=$(cat ${__yml_file} | grep ${__env_name})
     if [[ ${__check} != "" ]]; then
       local __vol_dir="${__storage_base_dir}/${__stack_name}/${__vol_subir}"
-      if [[ -d ${__vol_dir} ]]; then
+      
+
+      if [[ ${__vol_subir} == "iconfig" ]]; then
+        local __config_dir=${STACK_CONFIG_LOCAL_DIR}/${STACK_NAME}
+        stackSettingWrittenSingle "${__stack_name}" "${__config_dir}" "${__vol_dir}"
+        if ! [ "$?" -eq 1 ]; then
+          export __func_return="fail on calling stackSettingWrittenSingle, ${__func_return}"
+          return 0;
+        fi
+      elif [[ -d ${__vol_dir} ]]; then
         cd ${__vol_dir}
-
-        echo "\${__vol_subir}: ${__vol_subir}"
-
         if [[ ${__vol_subir} == "ssh" ]]; then
           local __rsa_key_name=id_rsa
           local __rsa_key_dest=${__vol_dir}
@@ -445,13 +451,6 @@ function stackSettingWritten()
           certCreate "${__cert_name}" "${__cert_days}" "${__cert_pass}" "${__cert_dest}" "${__cert_repl}"
           if ! [ "$?" -eq 1 ]; then
             export __func_return="fail on calling certCreate, ${__func_return}"
-            return 0;
-          fi
-        elif [[ ${__vol_subir} == "iconfig" ]]; then
-          local __config_dir=${STACK_CONFIG_LOCAL_DIR}/${STACK_NAME}
-          stackSettingWrittenSingle "${__stack_name}" "${__config_dir}" "${__vol_dir}"
-          if ! [ "$?" -eq 1 ]; then
-            export __func_return="fail on calling stackSettingWrittenSingle, ${__func_return}"
             return 0;
           fi
         fi
