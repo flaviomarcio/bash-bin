@@ -86,8 +86,7 @@ function __app_installed_check()
     return 0;
   fi
   echG "Finished"
-  return 1;
-  
+  return 1; 
 }
 
 function appInstallRequired()
