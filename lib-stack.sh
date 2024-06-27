@@ -308,11 +308,32 @@ function stackSettingWrittenSingle()
     echM "      Copying settings"
     echC "        Coping to volume: ${COLOR_BLUE}\${STACK_SERVICE_STORAGE_ICONFIG_DIR}: ${COLOR_YELLOW}${STACK_SERVICE_STORAGE_ICONFIG_DIR}"
     echY "        Command ..."
-    echB "          - rm ${COLOR_CIANO}-rf ${COLOR_YELLOW}${__destine_dir}"
-    rm -rf ${__destine_dir} 2> /dev/null
+    #echB "          - rm ${COLOR_CIANO}-rf ${COLOR_YELLOW}${__destine_dir}"
     echB "          - cp ${COLOR_CIANO}-rf ${COLOR_YELLOW}${__source_dir} ${__destine_dir}"
-    cp -rf ${__source_dir} ${__destine_dir} 2> /dev/null
 
+    #rm -rf ${__destine_dir} 2> /dev/null
+    local __list_files=($(find ${__source_dir} -name '*.*'))
+    for __list_file in ${__list_files[*]};
+    do
+      local __ext=$(strExtractFileExtension ${__list_file})
+      local __argA=$(echo ${__source_dir} | sed 's/\//\\\//g')
+      local __argB=$(echo ${__destine_dir} | sed 's/\//\\\//g')
+      local __list_file_dst=$(echo ${__list_file} | sed "s/${__argA}/${__argB}/g")
+      local __fileName=$(basename ${__list_file})
+
+      if [[ -f ${__list_file_dst} ]]; then
+        if [[ ${__ext} == "crt" || ${__ext} == "csr" || ${__ext} == "key" ]]; then
+          echB "            - copying ${COLOR_YELLOW}$(basename ${__list_file}), ${COLOR_GREEN}ignored"
+          continue;
+        fi
+      fi
+      echB "            - copying ${COLOR_YELLOW}$(basename ${__list_file})"
+      local __list_file_path=$(dirname ${__list_file_dst})
+      mkdir -p ${__list_file_path}
+      cp -rf ${__list_file} ${__list_file_dst} 2> /dev/null
+    done
+
+    #cp -rf ${__source_dir} ${__destine_dir} 2> /dev/null
 
     local __filters=(crt sh cfg conf yml yaml hcl json properties xml sql ldif)
     local __filter=
