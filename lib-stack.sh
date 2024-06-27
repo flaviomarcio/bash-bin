@@ -235,7 +235,7 @@ function __private_storage_base_dir()
   else
     local __return=${STACK_STORAGE_DIR}
   fi
-  echo "__return: ${__return}"
+  echo ${__return}
 }
 
 function stackMkDir()
@@ -412,6 +412,8 @@ function stackSettingWritten()
   fi
 
   local __storage_base_dir=$(__private_storage_base_dir)
+  echo "\${STACK_NFS_ENABLED}: ${STACK_NFS_ENABLED}"
+  echo "__storage_base_dir: ${__storage_base_dir}"
 
   local __vol_subdirs=(cert ssh iconfig)
   local __vol_subir=
