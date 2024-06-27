@@ -405,62 +405,59 @@ function stackSettingWritten()
   local __yml_file=${2}
   local __bash_file=${3}
 
-  echo "local __stack_name=${1}"
-  echo "local __yml_file=${2}"
-  echo "local __bash_file=${3}"
-
   if [[ ${__stack_name} == "" ]]; then
     export __func_return="Invalid env \${__stack_name}"
     return 0;
-  else
-    local __storage_base_dir=$(__private_storage_base_dir)
+  fi
 
-    local __vol_subdirs=(cert ssh iconfig)
-    local __vol_subir=
-    local __pwd=${PWD}
+  local __storage_base_dir=$(__private_storage_base_dir)
 
-    for __vol_subir in ${__vol_subdirs[*]};
-    do
-      local __env_name=$(toUpper STACK_SERVICE_STORAGE_${__vol_subir}_DIR)
-      local __check=$(cat ${__yml_file} | grep ${__env_name})
-      if [[ ${__check} != "" ]]; then
-        local __vol_dir="${__storage_base_dir}/${__stack_name}/${__vol_subir}"
-        if [[ -d ${__vol_dir} ]]; then
-          cd ${__vol_dir}
+  local __vol_subdirs=(cert ssh iconfig)
+  local __vol_subir=
+  local __pwd=${PWD}
 
-          if [[ ${__vol_subir} == "ssh" ]]; then
-            local __rsa_key_name=id_rsa
-            local __rsa_key_dest=${__vol_dir}
-            local __rsa_key_repl=false
-            rsaKeyCreate "${__rsa_key_name}" "${__rsa_key_dest}" "${__rsa_key_repl}"
-            if ! [ "$?" -eq 1 ]; then
-              export __func_return="fail on calling rsaKeyCreate, ${__func_return}"
-              return 0;
-            fi
-          elif [[ ${__vol_subir} == "cert" ]]; then
-            local __cert_name=cert
-            local __cert_days=""
-            local __cert_pass=""
-            local __cert_dest=${__vol_dir}
-            local __cert_repl=false
-            certCreate "${__cert_name}" "${__cert_days}" "${__cert_pass}" "${__cert_dest}" "${__cert_repl}"
-            if ! [ "$?" -eq 1 ]; then
-              export __func_return="fail on calling certCreate, ${__func_return}"
-              return 0;
-            fi
-          elif [[ ${__vol_subir} == "iconfig" ]]; then
-            local __config_dir=${STACK_CONFIG_LOCAL_DIR}/${STACK_NAME}
-            stackSettingWrittenSingle "${__stack_name}" "${__config_dir}" "${__vol_dir}"
-            if ! [ "$?" -eq 1 ]; then
-              export __func_return="fail on calling stackSettingWrittenSingle, ${__func_return}"
-              return 0;
-            fi
+  for __vol_subir in ${__vol_subdirs[*]};
+  do
+    local __env_name=$(toUpper STACK_SERVICE_STORAGE_${__vol_subir}_DIR)
+    local __check=$(cat ${__yml_file} | grep ${__env_name})
+    echo "\${__check}: ${__check}"
+    if [[ ${__check} != "" ]]; then
+      local __vol_dir="${__storage_base_dir}/${__stack_name}/${__vol_subir}"
+      if [[ -d ${__vol_dir} ]]; then
+        cd ${__vol_dir}
+
+        if [[ ${__vol_subir} == "ssh" ]]; then
+          local __rsa_key_name=id_rsa
+          local __rsa_key_dest=${__vol_dir}
+          local __rsa_key_repl=false
+          rsaKeyCreate "${__rsa_key_name}" "${__rsa_key_dest}" "${__rsa_key_repl}"
+          if ! [ "$?" -eq 1 ]; then
+            export __func_return="fail on calling rsaKeyCreate, ${__func_return}"
+            return 0;
+          fi
+        elif [[ ${__vol_subir} == "cert" ]]; then
+          local __cert_name=cert
+          local __cert_days=""
+          local __cert_pass=""
+          local __cert_dest=${__vol_dir}
+          local __cert_repl=false
+          certCreate "${__cert_name}" "${__cert_days}" "${__cert_pass}" "${__cert_dest}" "${__cert_repl}"
+          if ! [ "$?" -eq 1 ]; then
+            export __func_return="fail on calling certCreate, ${__func_return}"
+            return 0;
+          fi
+        elif [[ ${__vol_subir} == "iconfig" ]]; then
+          local __config_dir=${STACK_CONFIG_LOCAL_DIR}/${STACK_NAME}
+          stackSettingWrittenSingle "${__stack_name}" "${__config_dir}" "${__vol_dir}"
+          if ! [ "$?" -eq 1 ]; then
+            export __func_return="fail on calling stackSettingWrittenSingle, ${__func_return}"
+            return 0;
           fi
         fi
       fi
-    done
-    return 1
-  fi
+    fi
+  done
+  return 1
 }
 
 function stackMkVolumes()
