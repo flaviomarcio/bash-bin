@@ -446,6 +446,7 @@ function stackSettingWritten()
             fi
           elif [[ ${__vol_subir} == "iconfig" ]]; then
             local __config_dir=${STACK_CONFIG_LOCAL_DIR}/${STACK_NAME}
+            echo "stackSettingWrittenSingle \"${__stack_name}\" \"${__config_dir}\" \"${__vol_dir}\""
             stackSettingWrittenSingle "${__stack_name}" "${__config_dir}" "${__vol_dir}"
             if ! [ "$?" -eq 1 ]; then
               export __func_return="fail on calling stackSettingWrittenSingle, ${__func_return}"
@@ -532,7 +533,6 @@ function stackVolumePrepare()
     export __func_return="fail on calling stackMkVolumes, ${__func_return}"
     return 0;
   fi
-  echo "stackSettingWritten \"${__service_name}\" \"${__compose_file_dst}\" \"${__bash_file}\""
   stackSettingWritten "${__service_name}" "${__compose_file_dst}" "${__bash_file}"
   if ! [ "$?" -eq 1 ]; then
     export __func_return="fail on calling stackSettingWritten, ${__func_return}"
