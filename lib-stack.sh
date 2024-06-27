@@ -317,23 +317,24 @@ function stackSettingWrittenSingle()
     {
       local __file=${1}
       if ! [ -w "${__file}" ]; then
-        echY "              - $(basename ${__file}) ${COLOR_GREEN}skipped, ${COLOR_RED}no writable"
+        echY "                - $(basename ${__file}) ${COLOR_GREEN}skipped, ${COLOR_RED}no writable"
       else
-        if [[ ${__filter} == "crt" || ${__filter} == "key" || ${__filter} == "csr" || ${__filter} == "pem" || ${__filter} == "ca" ]]; then
-          echY "            - ${__file}, ${COLOR_GREEN}ignored"
+        local __ext=$(strExtractFileExtension ${__list_file})
+        if [[ ${__ext} == "crt" || ${__ext} == "key" || ${__ext} == "csr" || ${__ext} == "pem" || ${__ext} == "ca" ]]; then
+          echY "              - ${__file}, ${COLOR_GREEN}ignored"
         elif [[ ${__filter} == "sh" ]]; then
-          echY "            - ${__file}, ${COLOR_GREEN}set +x"
+          echY "              - ${__file}, ${COLOR_GREEN}set +x"
           echo $(chmod +x ${__file})>/dev/null
         else
           local __ignore_check=$(cat ${__file} | grep "\#\[\[envs-ignore-replace\]\]")
           local __fileName=$(basename ${__file})
           if [[ ${__ignore_check} != "" ]]; then
-            echB "            - ${__file} skipped, using #[[envs-ignore-replace]]"
+            echY "              - ${__file} skipped, using #[[envs-ignore-replace]]"
           else
             local __file_temp="/tmp/$(basename ${__file}).tmp"
             cat ${__file}>${__file_temp}
             echo $(envsubst < ${__file_temp} > ${__file})>/dev/null
-            echY "            - ${__file}, ${COLOR_GREEN}parsed"
+            echY "              - ${__file}, ${COLOR_GREEN}parsed"
           fi
         fi
       fi
