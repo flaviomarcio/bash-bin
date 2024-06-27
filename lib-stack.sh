@@ -231,10 +231,11 @@ function __private_stackEnvsDefaultByStack()
 function __private_storage_base_dir()
 {
   if [[ ${STACK_NFS_ENABLED} == true ]]; then
-    echo ${STACK_NFS_REMOTE_DATA_DIR}/storage-data
+    local __return=${STACK_NFS_REMOTE_DATA_DIR}/storage-data
   else
-    echo ${STACK_STORAGE_DIR}
+    local __return=${STACK_STORAGE_DIR}
   fi
+  echo "__return: ${__return}"
 }
 
 function stackMkDir()
@@ -421,12 +422,10 @@ function stackSettingWritten()
     local __env_name=$(toUpper STACK_SERVICE_STORAGE_${__vol_subir}_DIR)
     local __check=$(cat ${__yml_file} | grep ${__env_name})
     if [[ ${__check} != "" ]]; then
-      local __vol_dir="${__storage_base_dir}/${__stack_name}/${__vol_subir}"
-      
+      local __vol_dir="${__storage_base_dir}/${__stack_name}/${__vol_subir}"   
 
       if [[ ${__vol_subir} == "iconfig" ]]; then
         local __config_dir=${STACK_CONFIG_LOCAL_DIR}/${STACK_NAME}
-        echo "stackSettingWrittenSingle \"${__stack_name}\" \"${__config_dir}\" \"${__vol_dir}\""
         stackSettingWrittenSingle "${__stack_name}" "${__config_dir}" "${__vol_dir}"
         if ! [ "$?" -eq 1 ]; then
           export __func_return="fail on calling stackSettingWrittenSingle, ${__func_return}"
