@@ -315,7 +315,7 @@ function stackSettingWrittenSingle()
     {
       local __file=${1}
       if ! [ -w "${__file}" ]; then
-        echY "            - ${__file} ${COLOR_GREEN}skipped, ${COLOR_RED}no writable"
+        echY "              - $(basename ${__file}) ${COLOR_GREEN}skipped, ${COLOR_RED}no writable"
       else
         if [[ ${__filter} == "crt" || ${__filter} == "key" || ${__filter} == "csr" || ${__filter} == "pem" || ${__filter} == "ca" ]]; then
           echY "            - ${__file}, ${COLOR_GREEN}ignored"
@@ -349,11 +349,8 @@ function stackSettingWrittenSingle()
       local __fileName=$(basename ${__list_file})
 
       if [[ -f ${__list_file_dst} ]]; then
-        if ! [ -w "${__file}" ]; then
-          echB "            - copying ${COLOR_YELLOW}$(basename ${__list_file}), ${COLOR_RED}no writable"
-          continue;
-        elif [[ ${__ext} == "crt" || ${__ext} == "csr" || ${__ext} == "key" ]]; then
-          echB "            - copying ${COLOR_YELLOW}$(basename ${__list_file}), ${COLOR_GREEN}ignored"
+        if [[ ${__ext} == "crt" || ${__ext} == "csr" || ${__ext} == "key" ]]; then
+          echB "            - file exists ${COLOR_YELLOW}$(basename ${__list_file}), ${COLOR_GREEN}ignored ${COLOR_RED}special file"
           continue;
         fi
       fi
