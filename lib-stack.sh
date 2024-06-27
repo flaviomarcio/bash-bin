@@ -309,7 +309,9 @@ function stackSettingWrittenSingle()
     echC "        Coping to volume: ${COLOR_BLUE}\${STACK_SERVICE_STORAGE_ICONFIG_DIR}: ${COLOR_YELLOW}${STACK_SERVICE_STORAGE_ICONFIG_DIR}"
     echY "        Command ..."
     #echB "          - rm ${COLOR_CIANO}-rf ${COLOR_YELLOW}${__destine_dir}"
-    echB "          - cp ${COLOR_CIANO}-rf ${COLOR_YELLOW}${__source_dir} ${__destine_dir}"
+    echB "          - export __source_dir=${COLOR_YELLOW}${__source_dir}"
+    echB "          - export __destine_dir=${COLOR_YELLOW}${__destine_dir}"
+    echB "          - cp ${COLOR_CIANO}-rf ${COLOR_YELLOW}\${__source_dir} \${__destine_dir}"
 
     function __parser_file()
     {
@@ -381,6 +383,7 @@ function stackSettingWrittenSingle()
         done
       fi
     done 
+    echG "        Finished"
     echG "      Finished"
   fi
   return 1
