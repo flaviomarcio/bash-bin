@@ -307,11 +307,11 @@ function stackSettingWrittenSingle()
 
     echM "      Copying settings"
     echC "        Coping to volume: ${COLOR_BLUE}\${STACK_SERVICE_STORAGE_ICONFIG_DIR}: ${COLOR_YELLOW}${STACK_SERVICE_STORAGE_ICONFIG_DIR}"
-    echY "        Command ..."
-    #echB "          - rm ${COLOR_CIANO}-rf ${COLOR_YELLOW}${__destine_dir}"
-    echB "          - export __source_dir=${COLOR_YELLOW}${__source_dir}"
-    echB "          - export __destine_dir=${COLOR_YELLOW}${__destine_dir}"
-    echB "          - cp ${COLOR_CIANO}-rf ${COLOR_YELLOW}\${__source_dir} \${__destine_dir}"
+    echC "          Executing..."
+    #echB "           - rm ${COLOR_CIANO}-rf ${COLOR_YELLOW}${__destine_dir}"
+    echB "            - export __source_dir=${COLOR_YELLOW}${__source_dir}"
+    echB "            - export __destine_dir=${COLOR_YELLOW}${__destine_dir}"
+    echB "            - cp ${COLOR_CIANO}-rf ${COLOR_YELLOW}\${__source_dir} \${__destine_dir}"
 
     function __parser_file()
     {
@@ -321,20 +321,20 @@ function stackSettingWrittenSingle()
       else
         local __ext=$(strExtractFileExtension ${__list_file})
         if [[ ${__ext} == "crt" || ${__ext} == "key" || ${__ext} == "csr" || ${__ext} == "pem" || ${__ext} == "ca" ]]; then
-          echY "              - ${__file}, ${COLOR_GREEN}ignored"
+          echY "                - ${__file}, ${COLOR_GREEN}ignored"
         elif [[ ${__filter} == "sh" ]]; then
-          echY "              - ${__file}, ${COLOR_GREEN}set +x"
+          echY "                - ${__file}, ${COLOR_GREEN}set +x"
           echo $(chmod +x ${__file})>/dev/null
         else
           local __ignore_check=$(cat ${__file} | grep "\#\[\[envs-ignore-replace\]\]")
           local __fileName=$(basename ${__file})
           if [[ ${__ignore_check} != "" ]]; then
-            echY "              - ${__file} skipped, using #[[envs-ignore-replace]]"
+            echY "                - ${__file} ${COLOR_GREEN}skipped, ${COLOR_BLUE}using ${COLOR_YELLOW}#[[envs-ignore-replace]]"
           else
             local __file_temp="/tmp/$(basename ${__file}).tmp"
             cat ${__file}>${__file_temp}
             echo $(envsubst < ${__file_temp} > ${__file})>/dev/null
-            echY "              - ${__file}, ${COLOR_GREEN}parsed"
+            echY "                - ${__file}, ${COLOR_GREEN}parsed"
           fi
         fi
       fi
@@ -350,19 +350,20 @@ function stackSettingWrittenSingle()
     local __list_file=
     for __list_file in ${__list_files[*]};
     do
-      local __ext=$(strExtractFileExtension ${__list_file})
       local __argA=$(echo ${__source_dir} | sed 's/\//\\\//g')
       local __argB=$(echo ${__destine_dir} | sed 's/\//\\\//g')
       local __list_file_dst=$(echo ${__list_file} | sed "s/${__argA}/${__argB}/g")
       local __fileName=$(basename ${__list_file})
 
       if [[ -f ${__list_file_dst} ]]; then
+        local __ext=$(strExtractFileExtension ${__list_file})
         if [[ ${__ext} == "crt" || ${__ext} == "csr" || ${__ext} == "key" ]]; then
-          echB "            - file exists ${COLOR_YELLOW}$(basename ${__list_file}), ${COLOR_GREEN}ignored ${COLOR_RED}special file"
+          echB "              - file exists ${COLOR_YELLOW}$(basename ${__list_file}), ${COLOR_GREEN}ignored ${COLOR_RED}special file"
           continue;
         fi
+        unset __ext
       fi
-      echB "            - copying ${COLOR_YELLOW}$(basename ${__list_file})"
+      echB "              - copying ${COLOR_YELLOW}$(basename ${__list_file})"
       local __list_file_path=$(dirname ${__list_file_dst})
       mkdir -p ${__list_file_path}
       cp -rf ${__list_file} ${__list_file_dst} 2> /dev/null
@@ -374,18 +375,18 @@ function stackSettingWrittenSingle()
 
     local __filters=(sh cfg conf yml yaml hcl properties xml sql ldif)
     local __filter=
-    echY "        Parsing ..."
+    echY "          Parsing ..."
     for __filter in ${__filters[*]};
     do
       local __files=$(find  ${__destine_dir} -iname "*.${__filter}" | sort)
       if [[ ${__files} != "" ]]; then
-        echB "          - *.${__filter}${COLOR_GREEN}(FOUND)"
+        echB "            - *.${__filter}${COLOR_GREEN}(FOUND)"
 
         local __files=(${__files})
         local __file=
         for __file in ${__files[*]};
         do
-          __parser_file ${__list_file_dst}
+          __parser_file ${__file}
         done
       fi
     done 
