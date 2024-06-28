@@ -412,10 +412,10 @@ function stackSettingWritten()
   fi
 
   local __storage_base_dir=$(__private_storage_base_dir)
-  echo "\${STACK_NFS_ENABLED}: ${STACK_NFS_ENABLED}"
-  echo "\${STACK_NFS_REMOTE_DATA_DIR}: ${STACK_NFS_REMOTE_DATA_DIR}"
-  echo "\${STACK_STORAGE_DIR}: ${STACK_STORAGE_DIR}"
-  echo "\${__storage_base_dir}: ${__storage_base_dir}"
+  # echo "\${STACK_NFS_ENABLED}: ${STACK_NFS_ENABLED}"
+  # echo "\${STACK_NFS_REMOTE_DATA_DIR}: ${STACK_NFS_REMOTE_DATA_DIR}"
+  # echo "\${STACK_STORAGE_DIR}: ${STACK_STORAGE_DIR}"
+  # echo "\${__storage_base_dir}: ${__storage_base_dir}"
 
   local __vol_subdirs=(cert ssh iconfig)
   local __vol_subir=
@@ -430,7 +430,7 @@ function stackSettingWritten()
 
       if [[ ${__vol_subir} == "iconfig" ]]; then
         local __config_dir=${STACK_CONFIG_LOCAL_DIR}/${STACK_NAME}
-        stackSettingWrittenSingle "${__stack_name}" "${__config_dir}" "${__vol_dir}"
+        stackSettingWrittenSingle "${__stack_name}" "${__config_dir}" "${STACK_STORAGE_DIR}"
         if ! [ "$?" -eq 1 ]; then
           export __func_return="fail on calling stackSettingWrittenSingle, ${__func_return}"
           return 0;
