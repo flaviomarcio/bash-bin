@@ -429,9 +429,10 @@ function stackSettingWritten()
       local __vol_dir="${__storage_base_dir}/${__stack_name}/${__vol_subir}"   
 
       if [[ ${__vol_subir} == "iconfig" ]]; then
+        local __vol_dir="${STACK_STORAGE_DIR}/${STACK_NAME}"   
         local __config_dir=${STACK_CONFIG_LOCAL_DIR}/${STACK_NAME}
-        echG "stackSettingWrittenSingle \"${__stack_name}\" \"${__config_dir}\" \"\${STACK_STORAGE_DIR}/${__vol_subir}\""
-        stackSettingWrittenSingle "${__stack_name}" "${__config_dir}" "${STACK_STORAGE_DIR}/${__vol_subir}"
+        echG "stackSettingWrittenSingle \"${__stack_name}\" \"${__config_dir}\" \"${__vol_dir}\""
+        stackSettingWrittenSingle "${__stack_name}" "${__config_dir}" "${__vol_dir}"
         if ! [ "$?" -eq 1 ]; then
           export __func_return="fail on calling stackSettingWrittenSingle, ${__func_return}"
           echR "__func_return: ${__func_return}"
