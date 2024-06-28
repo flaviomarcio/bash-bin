@@ -277,20 +277,26 @@ function stackSettingWrittenSingle()
 
   if [[ ${__stack_name} == "" ]]; then
     export __func_return="Invalid env: \${__stack_name}"
+    echB "\${__func_return}:${__func_return}"
     return 0;
   elif [[ ${__source_dir} == "" ]]; then
     export __func_return="Invalid env: \${__source_dir}"
+    echB "\${__func_return}:${__func_return}"
     return 0;
   elif ! [[ -d ${__source_dir} ]]; then
+    echB "\${__source_dir}:${__source_dir}"
     return 1;
   elif [[ ${__destine_dir} == "" ]]; then
     export __func_return="Invalid env: \${__destine_dir}"
+    echB "\${__func_return}:${__func_return}"
     return 0;
   elif [[ ${STACK_CONFIG_LOCAL_DIR} == "" ]]; then
     export __func_return="Invalid env \${STACK_CONFIG_LOCAL_DIR}"
+    echB "\${__func_return}:${__func_return}"
     return 0;
   elif ! [[ -d ${STACK_CONFIG_LOCAL_DIR} ]]; then
     export __func_return="Dir not found : ${STACK_CONFIG_LOCAL_DIR}"
+    echB "\${__func_return}:${__func_return}"
     return 0;
   else
     # rm -rf ${__destine_dir}
@@ -299,8 +305,11 @@ function stackSettingWrittenSingle()
     #   mkdir ${__destine_dir}
     # fi
 
+    echB "\${xxxxx}:${yyyyy}"
+
     if ! [[ -d ${__destine_dir} ]]; then
       export __func_return="Destine dir not found: \${__destine_dir}"
+      echB "\${__func_return}:${__func_return}"
       return 0;      
     fi
 
