@@ -429,7 +429,7 @@ function stackSettingWritten()
       local __vol_dir="${__storage_base_dir}/${__stack_name}/${__vol_subir}"   
 
       if [[ ${__vol_subir} == "iconfig" ]]; then
-        local __vol_dir="${STACK_STORAGE_DIR}/${STACK_NAME}"   
+        local __vol_dir="${STACK_STORAGE_DIR}/${__stack_name}/${__vol_subir}"   
         local __config_dir=${STACK_CONFIG_LOCAL_DIR}/${STACK_NAME}
         echG "stackSettingWrittenSingle \"${__stack_name}\" \"${__config_dir}\" \"${__vol_dir}\""
         stackSettingWrittenSingle "${__stack_name}" "${__config_dir}" "${__vol_dir}"
