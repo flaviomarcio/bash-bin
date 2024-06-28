@@ -411,11 +411,11 @@ function stackSettingWritten()
     return 0;
   fi
 
+  local __storage_base_dir=$(__private_storage_base_dir)
   echo "\${STACK_NFS_ENABLED}: ${STACK_NFS_ENABLED}"
   echo "\${STACK_NFS_REMOTE_DATA_DIR}: ${STACK_NFS_REMOTE_DATA_DIR}"
   echo "\${STACK_STORAGE_DIR}: ${STACK_STORAGE_DIR}"
-
-  local __storage_base_dir=$(__private_storage_base_dir)
+  echo "\${__storage_base_dir}: ${__storage_base_dir}"
 
   local __vol_subdirs=(cert ssh iconfig)
   local __vol_subir=
