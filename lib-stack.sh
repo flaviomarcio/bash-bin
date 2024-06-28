@@ -434,7 +434,6 @@ function stackSettingWritten()
         stackSettingWrittenSingle "${__stack_name}" "${__config_dir}" "${__vol_dir}"
         if ! [ "$?" -eq 1 ]; then
           export __func_return="fail on calling stackSettingWrittenSingle, ${__func_return}"
-          echR "__func_return: ${__func_return}"
           return 0;
         fi
       elif [[ -d ${__vol_dir} ]]; then
