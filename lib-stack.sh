@@ -896,6 +896,7 @@ function stackEnvsLoad()
     envsSetIfIsEmpty STACK_SERVICE_HEALTH_CHECK_RETRIES "5"
 
     #services default images
+    envsSetIfIsEmpty STACK_SERVICE_IMAGE_DEBIAN "debian:latest"
     envsSetIfIsEmpty STACK_SERVICE_IMAGE_DNSMASQ "dockurr/dnsmasq:latest"
     envsSetIfIsEmpty STACK_SERVICE_IMAGE_TRAEFIK "traefik:v2.11.0"
     envsSetIfIsEmpty STACK_SERVICE_IMAGE_REGISTRY "registry:latest"
