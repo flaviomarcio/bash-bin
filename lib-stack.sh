@@ -898,6 +898,8 @@ function stackEnvsLoad()
     #services default images
     envsSetIfIsEmpty STACK_SERVICE_IMAGE_DEBIAN "debian:latest"
     envsSetIfIsEmpty STACK_SERVICE_IMAGE_DNSMASQ "dockurr/dnsmasq:latest"
+    
+    envsSetIfIsEmpty STACK_SERVICE_IMAGE_KONG "kong:3.7"
     envsSetIfIsEmpty STACK_SERVICE_IMAGE_TRAEFIK "traefik:v2.11.0"
     envsSetIfIsEmpty STACK_SERVICE_IMAGE_REGISTRY "registry:latest"
     envsSetIfIsEmpty STACK_SERVICE_IMAGE_POSTGRES_09 "postgres:9-bullseye"
@@ -910,7 +912,6 @@ function stackEnvsLoad()
     envsSetIfIsEmpty STACK_SERVICE_IMAGE_REDIS "docker.io/bitnami/redis:7.2"
     envsSetIfIsEmpty STACK_SERVICE_IMAGE_MSSQL "mcr.microsoft.com/mssql/server"
     envsSetIfIsEmpty STACK_SERVICE_IMAGE_VAULT "hashicorp/vault:1.16"
-    envsSetIfIsEmpty STACK_SERVICE_IMAGE_MINIO "bitnami/minio:2024.3.26"
 
     #VAULT
     envsSetIfIsEmpty STACK_VAULT_PORT 8200
