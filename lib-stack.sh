@@ -417,7 +417,7 @@ function stackSettingWritten()
   # echo "\${STACK_STORAGE_DIR}: ${STACK_STORAGE_DIR}"
   # echo "\${__storage_base_dir}: ${__storage_base_dir}"
 
-  local __vol_subdirs=(cert ssh iconfig)
+  local __vol_subdirs=(cert ssh iconfig letsencrypt)
   local __vol_subir=
   local __pwd=${PWD}
 
@@ -482,7 +482,7 @@ function stackMkVolumes()
   else
     local __storage_base_dir=$(__private_storage_base_dir)
 
-    local __vol_subdirs=(data db log config backup extension plugin addon import provider cert theme ssh m2 iconfig)
+    local __vol_subdirs=(data db log config backup extension plugin addon import provider cert theme ssh m2 iconfig letsencrypt)
     local __vol_subir=
 
     local __vol_dir=
