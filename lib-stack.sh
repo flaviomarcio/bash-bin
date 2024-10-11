@@ -43,6 +43,7 @@ function __private_envsLoadTraefik()
   envsSetIfIsEmpty STACK_TRAEFIK_PORT_LOCALSTACK 4566
   envsSetIfIsEmpty STACK_TRAEFIK_PORT_S3 9000
   envsSetIfIsEmpty STACK_TRAEFIK_PORT_NFS 2049
+  envsSetIfIsEmpty STACK_TRAEFIK_PORT_MEMCACHED 11211
 
   return 1
 }
