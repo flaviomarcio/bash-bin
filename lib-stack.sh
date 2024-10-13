@@ -483,7 +483,7 @@ function stackMkVolumes()
   else
     local __storage_base_dir=$(__private_storage_base_dir)
 
-    local __vol_subdirs=(data db log config backup extension plugin addon import provider cert theme ssh m2 iconfig letsencrypt)
+    local __vol_subdirs=(data db log config backup extension plugin addon import provider cert theme ssh m2 iconfig letsencrypt shared script agent_data)
     local __vol_subir=
 
     local __vol_dir=
