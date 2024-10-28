@@ -906,6 +906,7 @@ function stackEnvsLoad()
     envsSetIfIsEmpty STACK_SERVICE_IMAGE_POSTGRES_09 "postgres:9-bullseye"
     envsSetIfIsEmpty STACK_SERVICE_IMAGE_POSTGRES_15 "postgres:15-bullseye"
     envsSetIfIsEmpty STACK_SERVICE_IMAGE_POSTGRES_16 "postgres:16-bullseye"
+    envsSetIfIsEmpty STACK_SERVICE_IMAGE_POSTGRES_17 "postgres:17-bullseye"
     envsSetIfIsEmpty STACK_SERVICE_IMAGE_POSTGRES "${STACK_SERVICE_IMAGE_POSTGRES_16}"
     envsSetIfIsEmpty STACK_SERVICE_IMAGE_INFLUXDB "influxdb:1.8"
     envsSetIfIsEmpty STACK_SERVICE_IMAGE_MARIADB "lscr.io/linuxserver/mariadb"
