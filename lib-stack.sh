@@ -70,7 +70,6 @@ function __private_envsLoadGoCD()
   return 1
 }
 
-
 function __private_stackEnvsLoadByStack()
 {
   unset __func_return
