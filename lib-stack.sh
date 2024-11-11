@@ -852,13 +852,13 @@ function stackPrepareInit()
   fi
 
   __private_envsLoadHaProxy ${STACK_DOMAIN}
-    if ! [ "$?" -eq 1 ]; then
+  if ! [ "$?" -eq 1 ]; then
     export __func_return="fail on calling __private_envsLoadHaProxy: ${__func_return}"
     return 0;
   fi
 
   __private_envsLoadGoCD
-    if ! [ "$?" -eq 1 ]; then
+  if ! [ "$?" -eq 1 ]; then
     export __func_return="fail on calling __private_envsLoadGoCD: ${__func_return}"
     return 0;
   fi
