@@ -14,7 +14,7 @@ fi
 . ${BASH_BIN}/lib-nfs.sh
 
 export APP_REQUIRED_NAMES="ip ping telnet curl wget jq mc mcedit zip 7zz tmux git awk yarnpkg mvn"
-export APP_REQUIRED_PACKAGES_APT="coreutils inetutils-ping iputils-ping telnet curl wget jq mc mcedit zip 7zip tmux git nfs-kernel-server nfs-common yarnpkg maven libyaml-cpp-dev"
+export APP_REQUIRED_PACKAGES_APT="coreutils iputils-ping telnet curl wget jq mc mcedit zip 7zip tmux git nfs-kernel-server nfs-common yarnpkg maven libyaml-cpp-dev"
 
 export APP_SERVER_NAMES="htop atop ufw"
 export APP_SERVER_PACKAGES_APT="htop atop ufw"

@@ -916,7 +916,9 @@ function stackEnvsLoad()
 
     #VAULT
     envsSetIfIsEmpty STACK_VAULT_PORT 8200
-    envsSetIfIsEmpty STACK_VAULT_URI "http://int-vault"
+    envsSetIfIsEmpty STACK_VAULT_PROTOCOL "http"
+    envsSetIfIsEmpty STACK_VAULT_DNS "int-vault"
+    envsSetIfIsEmpty STACK_VAULT_URI "${STACK_PROTOCOL}://${STACK_VAULT_DNS}"
     envsSetIfIsEmpty STACK_VAULT_METHOD token
     envsSetIfIsEmpty STACK_VAULT_TOKEN "${STACK_SERVICE_DEFAULT_TOKEN}"
     envsSetIfIsEmpty STACK_VAULT_TOKEN_DEPLOY "${STACK_VAULT_TOKEN}"

@@ -2,6 +2,8 @@
 
 . lib-strings.sh
 
+export VAULT_LOGGING=0
+
 #ref
 # https://developer.hashicorp.com/vault/docs/commands
 
@@ -57,7 +59,6 @@ function __private_vault_clean_file()
 function vaultWaitOnLine()
 {
     return 1
-
 }
 
 function vaultEnvCheck()
@@ -117,7 +118,7 @@ function vaultLogin()
 
   export __private_vault_environment="${1}"
   export __private_vault_base_path=$(echo ${2} | sed 's/vault\:\///g')
-  export __private_vault_method="${3}"
+  export __private_vault_method=$(toLower ${3})
   export __private_vault_uri="${4}"
   export __private_vault_token="${5}"
   export __private_vault_username="${6}"
@@ -146,12 +147,9 @@ function vaultKvGet()
     export __func_return="Invalid vault session"
     return 0;
   fi
-  if [[ ${__private_vault_base_path} == "" ]]; then
-    local __kv_path=${1}
-  else
-    local __kv_path=${__private_vault_base_path}/${1}
-  fi  
-  export __func_return=$(vault kv get --format=json ${__kv_path} | jq '.data.data')
+  local __kv_path=${1}
+
+  vault kv get --format=json ${__kv_path} | jq '.data.data'
   return 1;
 }
 
@@ -194,6 +192,7 @@ function vaultKvPut()
   else
     echo ${__kv_source}>${_tmp_data}
   fi  
+
   local __return=$(cat ${_tmp_data} | vault kv put --format=json ${__kv_path} -)
   local __return=$(echo ${__return} | jq '.request_id')
   if [[ ${__return} == "" ]]; then
@@ -221,8 +220,7 @@ function vaultKvList()
     export __func_return="Invalid vault path, path is null"
     return 0;
   fi
-  export __func_return=$(vault kv list -format=json ${__kv_path} | jq '.[]' | sed 's/\"//g')
-  __func_return=$(echo ${__func_return})
+  vault kv list -format=json ${__kv_path} | jq '.[]' | sed 's/\"//g'
   return 1;
 }
 
@@ -343,38 +341,38 @@ function vaultGetAndConvertToEnvsShell()
 
 function vaultTests()
 {
-  local __kv_environment=dev
-  local __kv_base_path=/secret
-  local __kv_method=
-  local __kv_uri=
-  local __kv_token=
+  export VAULT_LOGGING=1
+  local __kv_path_base=staging
+  local __kv_method=TOKEN
+  local __kv_uri=http://staging-potiguar-vault.portela-professional.com.br:8200
+  local __kv_token=8cdac604-c40c-4126-816a-e958749faed6
   local __kv_username=
   local __kv_password=
-  local __kv_app_path=${__kv_base_path}/test
   local __kv_src_dir=${HOME}/temp
   
-  vaultLogin "${__kv_environment}" "${__kv_base_path}" "${__kv_method}" "${__kv_uri}" "${__kv_token}" "${__kv_username}" "${__kv_password}"
+  vaultLogin "${__kv_environment}" "${__kv_path_base}" "${__kv_method}" "${__kv_uri}" "${__kv_token}" "${__kv_username}" "${__kv_password}"
   local i=
-  for i in $(seq 1 9)
-  do
-    local __kv_app_data="{\"dt\":\"$(date)\", \"seq\":${i}}"
-    local __kv_app_path_final=${__kv_app_path}/app-${i}
-    vaultKvPut "${__kv_app_path_final}" "${__kv_app_data}";  echo -n "vaultKvPut: ";echo ${__kv_app_data} | jq
-    vaultKvGet "${__kv_app_path_final}"; echo -n "vaultKvGet:"; echo ${__func_return} | jq
-  done
-  vaultKvPullToDir "${__kv_src_dir}" "${__kv_app_path}"
-  vaultKvList "${__kv_app_path}"; echo "vaultKvList: [${__func_return}]"
-  local __kv_key_names=(${__func_return})
+  # for i in $(seq 1 9)
+  # do
+  #   local __kv_app_data="{\"dt\":\"$(date)\", \"seq\":${i}}"
+  #   local __kv_path_secret_final=${__kv_path_secret}/app-${i}
+  #   vaultKvPut "${__kv_path_secret_final}" "${__kv_app_data}";  echo -n "vaultKvPut: ";echo ${__kv_app_data} | jq
+  #   vaultKvGet "${__kv_path_secret_final}"; echo -n "vaultKvGet:"; echo ${__func_return} | jq
+  # done
+  # vaultKvPullToDir "${__kv_src_dir}" "${__kv_path_secret}"
+  
+  local __kv_key_names=($(vaultKvList "${__kv_path_base}/"))
   local __kv_key_name=
   for __kv_key_name in "${__kv_key_names[@]}"
   do
-    local __kv_app_path_final="${__kv_app_path}/${__kv_key_name}"
-    vaultGetAndConvertToEnvsJava ${__kv_app_path_final} ${__kv_src_dir}
-    vaultGetAndConvertToEnvsShell ${__kv_app_path_final} ${__kv_src_dir}
+    local __kv_path_secret=${__kv_path_base}/${__kv_key_name}
+    vaultKvGet ${__kv_path_secret}>${__kv_src_dir}/${__kv_key_name}.json
+  #   local __kv_path_secret_final="${__kv_path_secret}/${__kv_key_name}"
+  #   vaultGetAndConvertToEnvsJava ${__kv_path_secret_final} ${__kv_src_dir}
+  #   vaultGetAndConvertToEnvsShell ${__kv_path_secret_final} ${__kv_src_dir}
   done
   vaultLogoff
 
 }
 
-
-#vaultTests
+#printInfo
