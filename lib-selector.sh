@@ -377,7 +377,8 @@ function selectorCustomer()
 
   clearTerm
   __private_print_os_information
-  echM $'\n'"Customer menu"$'\n'
+  echM $'\n'"Customer menu"
+  echC "  - Setting file: ${COLOR_YELLOW}${__selector_file}\n"
   PS3=$'\n'"Choose a option: "
   select opt in "${options[@]}"
   do
