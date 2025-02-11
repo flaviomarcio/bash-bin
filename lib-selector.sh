@@ -40,6 +40,11 @@ function __private_print_os_information()
       echC "            NFS: MountPoint: ${COLOR_YELLOW}${STACK_NFS_MOUNT_DIR}${COLOR_CIANO}, Mapping: ${COLOR_YELLOW}${STACK_NFS_SERVER}:${STACK_NFS_REMOTE_DATA_DIR}"
     fi
     echC "            RootDir: ${COLOR_YELLOW}${STACK_TARGET_ROOT_DIR}${COLOR_CIANO}"
+    if [[ ${STACK_TRAEFIK_TLS_ENABLED} == "true" ]]; then
+      echC "            Traefik-TLS: ${COLOR_GREEN}ON, ${COLOR_CIANO} entryPoints: ${COLOR_YELLOW}${STACK_TRAEFIK_ENTRY_POINTS}"
+    else
+      echC "            Traefik-TLS: ${COLOR_RED}OFF, ${COLOR_CIANO} entryPoints: ${COLOR_YELLOW}${STACK_TRAEFIK_ENTRY_POINTS}"
+    fi
   fi
 }
 
