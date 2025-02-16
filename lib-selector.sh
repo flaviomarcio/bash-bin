@@ -187,7 +187,6 @@ function selectorDNS()
   echC "      sudo echo \"${PUBLIC_HOST_IP} adm-debian.local\">>\${ETC_HOST}"
   echC ""
   echG "    # append dns for services"
-  echC "      sudo echo \"${PUBLIC_HOST_IP} srv-activemq.local\">>\${ETC_HOST}"
   echC "      sudo echo \"${PUBLIC_HOST_IP} srv-auth.local\">>\${ETC_HOST}"
   echC "      sudo echo \"${PUBLIC_HOST_IP} srv-postgres.local\">>\${ETC_HOST}"
   echC "      sudo echo \"${PUBLIC_HOST_IP} srv-redis.local\">>\${ETC_HOST}"

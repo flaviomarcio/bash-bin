@@ -33,7 +33,6 @@ function systemIPvPrepare()
 function systemDNSEssentialList()
 {
   export __func_return="
-activemq \
 admin \
 cadvisor \
 cadvisorZFS \
