@@ -132,7 +132,7 @@ function dockerSwarmNodeLabels()
  stack-type-security
  stack-type-deploy
  stack-type-streaming
- stack-type-observability
+ stack-type-o11y
  stack-type-documentation
  stack-type-mcs"
   return 1
