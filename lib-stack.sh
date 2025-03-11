@@ -24,20 +24,8 @@ function __private_envsLoadTraefik()
   envsSetIfIsEmpty STACK_TRAEFIK_API_ENABLED false
   envsSetIfIsEmpty STACK_TRAEFIK_DASHBOARD_ENABLED false
   envsSetIfIsEmpty STACK_TRAEFIK_API_INSECURE true
-  envsSetIfIsEmpty STACK_TRAEFIK_TLS_ENABLED false
-  envsSetIfIsEmpty STACK_TRAEFIK_TLS_DOMAIN ${__domain}
-  envsSetIfIsEmpty STACK_TRAEFIK_TLS_DOMAIN_SANS "*.${__domain}"
-
-  if [[ ${STACK_TRAEFIK_TLS_ENABLED} == "true" ]]; then
-    export STACK_TRAEFIK_ENTRY_POINTS=websecure
-    export STACK_TRAEFIK_TLS_RESOLVER=tls_resolver
-  else
-    export STACK_TRAEFIK_ENTRY_POINTS=web  
-    export STACK_TRAEFIK_TLS_RESOLVER=tls_resolver
-  fi
 
   envsSetIfIsEmpty STACK_TRAEFIK_PORT_HTTP "${STACK_PROXY_PORT_HTTP}"
-  envsSetIfIsEmpty STACK_TRAEFIK_PORT_HTTPS "${STACK_PROXY_PORT_HTTPS}"
   envsSetIfIsEmpty STACK_TRAEFIK_PORT_VAULT 8200
   envsSetIfIsEmpty STACK_TRAEFIK_PORT_REGISTRY 5000
   envsSetIfIsEmpty STACK_TRAEFIK_PORT_POSTGRES 5432

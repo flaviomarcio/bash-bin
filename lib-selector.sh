@@ -18,21 +18,11 @@ __selector_environments="testing development staging production"
 function __private_print_os_information()
 {
   local __docker_daemon=/etc/docker/daemon.json
-  if [[ -f ${__docker_daemon} ]]; then
-    local __docker_tls=$(cat ${__docker_daemon} | jq '.tls')
-    local __docker_cert=$(cat ${__docker_daemon} | jq '.tlscert')
-  else
-    local __docker_tls="UNDEFINED"
-    local __docker_cert="UNDEFINED"
-  fi
 
   local __docker_info="Docker: ${COLOR_YELLOW}"$(docker --version | sed 's/Docker //g')
   echG "OS informations"
   echC "  - $(uname -a)"
   echC "  - ${__docker_info}${COLOR_CIANO}, IPv4: ${COLOR_YELLOW}${PUBLIC_HOST_IPv4}${COLOR_CIANO}, Domain: ${COLOR_YELLOW}${STACK_DOMAIN}"
-  if [[ ${__docker_tls} == true ]]; then
-    echC "    - tls: ${COLOR_YELLOW}${__docker_tls} ${COLOR_CIANO}, cert: ${COLOR_YELLOW}$(dirname ${__docker_cert})"
-  fi
   if [[ ${__public_environment} != "" ]]; then
     echC "  - Stack : Environment: ${COLOR_YELLOW}${__public_environment}${COLOR_CIANO}, Target: ${COLOR_YELLOW}${__public_target}${COLOR_CIANO}, Prefix: ${COLOR_YELLOW}${__public_environment}-${__public_target}"
     echC "            Registry: ${COLOR_YELLOW}${PUBLIC_STACK_REGISTRY_DNS}"
@@ -40,11 +30,6 @@ function __private_print_os_information()
       echC "            NFS: MountPoint: ${COLOR_YELLOW}${STACK_NFS_MOUNT_DIR}${COLOR_CIANO}, Mapping: ${COLOR_YELLOW}${STACK_NFS_SERVER}:${STACK_NFS_REMOTE_DATA_DIR}"
     fi
     echC "            RootDir: ${COLOR_YELLOW}${STACK_TARGET_ROOT_DIR}${COLOR_CIANO}"
-    if [[ ${STACK_TRAEFIK_TLS_ENABLED} == "true" ]]; then
-      echC "            Traefik-TLS: ${COLOR_GREEN}ON, ${COLOR_CIANO} entryPoints: ${COLOR_YELLOW}${STACK_TRAEFIK_ENTRY_POINTS}"
-    else
-      echC "            Traefik-TLS: ${COLOR_RED}OFF, ${COLOR_CIANO} entryPoints: ${COLOR_YELLOW}${STACK_TRAEFIK_ENTRY_POINTS}"
-    fi
   fi
 }
 
