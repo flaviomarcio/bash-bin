@@ -40,6 +40,8 @@ function __private_envsLoadTraefik()
   envsSetIfIsEmpty STACK_TRAEFIK_PORT_S3 9000
   envsSetIfIsEmpty STACK_TRAEFIK_PORT_NFS 2049
   envsSetIfIsEmpty STACK_TRAEFIK_PORT_MEMCACHED 11211
+  envsSetIfIsEmpty STACK_TRAEFIK_PORT_KAFKA 9092
+  
 
   return 1
 }
@@ -478,7 +480,7 @@ function stackMkVolumes()
   else
     local __storage_base_dir=$(__private_storage_base_dir)
 
-    local __vol_subdirs=(data db log config backup extension plugin addon import provider cert theme ssh m2 iconfig letsencrypt shared script agent_data)
+    local __vol_subdirs=(data db log config backup extension plugin addon import provider cert theme ssh m2 iconfig letsencrypt shared script agent_data zookeeper_data zookeeper_log)
     local __vol_subir=
 
     local __vol_dir=
