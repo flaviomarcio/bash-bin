@@ -41,6 +41,7 @@ function __private_envsLoadTraefik()
   envsSetIfIsEmpty STACK_TRAEFIK_PORT_NFS 2049
   envsSetIfIsEmpty STACK_TRAEFIK_PORT_MEMCACHED 11211
   envsSetIfIsEmpty STACK_TRAEFIK_PORT_KAFKA 9092
+  envsSetIfIsEmpty STACK_TRAEFIK_PORT_MONGO 27017
   
 
   return 1
