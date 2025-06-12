@@ -475,7 +475,7 @@ function stackMkVolumes()
     export __func_return="Invalid env \${__stack_name}"
     return 0;
   elif ! [[ -f ${__yml_file} ]]; then
-    export __func_return="Invalid env \${__yml_file}"
+    export __func_return="Invalid env \${__yml_file}: ${__yml_file}"
     return 0;
   else
     local __storage_base_dir=$(__private_storage_base_dir)
