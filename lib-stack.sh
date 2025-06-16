@@ -909,7 +909,7 @@ function stackEnvsLoad()
     envsSetIfIsEmpty STACK_SERVICE_IMAGE_INFLUXDB "influxdb:1.8"
     envsSetIfIsEmpty STACK_SERVICE_IMAGE_MARIADB "lscr.io/linuxserver/mariadb"
     envsSetIfIsEmpty STACK_SERVICE_IMAGE_MYSQL "mysql:8.0.36-debian"
-    envsSetIfIsEmpty STACK_SERVICE_IMAGE_REDIS "docker.io/bitnami/redis:7.2"
+    #envsSetIfIsEmpty STACK_SERVICE_IMAGE_REDIS "docker.io/bitnami/redis:7.2"
     envsSetIfIsEmpty STACK_SERVICE_IMAGE_MSSQL "mcr.microsoft.com/mssql/server"
     envsSetIfIsEmpty STACK_SERVICE_IMAGE_VAULT "hashicorp/vault:1.16"
 
